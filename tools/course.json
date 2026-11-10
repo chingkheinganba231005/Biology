@@ -32,7 +32,7 @@
           "n": "P4",
           "title": "From gene to protein",
           "path": "prereq/04-central-dogma/",
-          "ready": false,
+          "ready": true,
           "kind": "Foundations",
           "desc": "Transcription, splicing, the genetic code and translation: how a DNA sequence becomes a working protein."
         },
@@ -40,7 +40,7 @@
           "n": "P5",
           "title": "Proteins: shape is function",
           "path": "prereq/05-proteins/",
-          "ready": false,
+          "ready": true,
           "kind": "Foundations",
           "desc": "Amino acids, folding, the four levels of structure, enzymes and how fast they work."
         },
@@ -48,7 +48,7 @@
           "n": "P6",
           "title": "Gene regulation and epigenetics",
           "path": "prereq/06-regulation/",
-          "ready": false,
+          "ready": true,
           "kind": "Foundations",
           "desc": "How a cell decides which genes to switch on: promoters, transcription factors, chromatin and cell identity."
         },
@@ -56,7 +56,7 @@
           "n": "P7",
           "title": "The cell cycle, division and death",
           "path": "prereq/07-cell-cycle/",
-          "ready": false,
+          "ready": true,
           "kind": "Foundations",
           "desc": "Mitosis, meiosis, checkpoints, p53 and apoptosis: the machinery cancer breaks."
         },
@@ -64,7 +64,7 @@
           "n": "P8",
           "title": "Genetics, mutation and evolution",
           "path": "prereq/08-genetics-evolution/",
-          "ready": false,
+          "ready": true,
           "kind": "Foundations",
           "desc": "Inheritance, alleles, mutations, populations, natural selection and the tree of life."
         },

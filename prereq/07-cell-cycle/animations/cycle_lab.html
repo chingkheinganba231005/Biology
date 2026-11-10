@@ -1,0 +1,99 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Cell Cycle Lab</title><link rel="stylesheet" href="../../../assets/pg.css">
+<style>.tg{display:flex;gap:8px;flex-wrap:wrap;margin:6px 0}.tg button.on{background:var(--accent);color:var(--bg);border-color:var(--accent)}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:10px}@media(max-width:560px){.two{grid-template-columns:1fr}}</style></head><body>
+<div class="tabs"><button class="on" data-t="pop" type="button">Grow a culture and treat it</button><button data-t="apo" type="button">Live or die: the BCL-2 balance</button></div>
+<section class="pane on" id="pop">
+  <div class="row"><button class="pri" type="button" id="prun">Run</button><button type="button" id="preset">Restart</button><span class="tx" id="pstat"></span></div>
+  <div class="tg" id="drugs"></div>
+  <div class="two"><svg id="hsvg" viewBox="0 0 340 230" role="img" aria-label="DNA content histogram"></svg><svg id="gsvg" viewBox="0 0 340 230" role="img" aria-label="Number of cells over time"></svg></div>
+  <div class="msg" id="pmsg"></div>
+</section>
+<section class="pane" id="apo">
+  <div class="ctl" id="actl"></div>
+  <svg id="asvg" viewBox="0 0 700 200" role="img" aria-label="Balance between pro-survival and pro-death proteins"></svg>
+  <div class="msg" id="amsg"></div>
+</section>
+<script src="../../../assets/pg.js"></script>
+<script>
+const {$, h, s, tabs, slider, plot, rng} = PG; tabs();
+const r = rng(7), DUR = {G1: 11, S: 8, G2: 4, M: 1}, NEXT = {G1: "S", S: "G2", G2: "M", M: "G1"}, DT = 0.25, CAP = 3000;
+const D = {cdk: ["CDK4/6 inhibitor (palbociclib)", false], tax: ["paclitaxel (taxane)", false], dmg: ["DNA damage (radiation)", false], p53: ["p53 working", true]};
+let cells, t, total, hist, timer = null;
+Object.entries(D).forEach(([k, [label]]) => { const b = h("button", {type: "button"}, label); b.dataset.k = k; b.onclick = () => { D[k][1] = !D[k][1]; if (k === "dmg" && D.dmg[1]) damage(); draw(); }; $("drugs").append(b); });
+const newCell = (ph, prog) => ({ph, prog, dur: DUR[ph] * (0.75 + 0.5 * r()), arrest: 0, dmg: false, stuck: 0});
+function reset() {
+  cells = []; t = 0; total = 1000; hist = [[0, 1000]];
+  const tot = 24;
+  for (let i = 0; i < 1000; i++) { let x = r() * tot, ph = "G1"; for (const p of ["G1", "S", "G2", "M"]) { if (x < DUR[p]) { ph = p; break; } x -= DUR[p]; } const c = newCell(ph, 0); c.prog = x; cells.push(c); }
+  Object.keys(D).forEach((k) => { if (k !== "p53") D[k][1] = false; });
+}
+function damage() { cells.forEach((c) => { c.dmg = true; if (D.p53[1] && (c.ph === "G1" || c.ph === "G2")) c.arrest = 12 + 6 * r(); }); }
+function step() {
+  const born = [];
+  let died = 0;
+  for (const c of cells) {
+    if (c.arrest > 0) { c.arrest -= DT; if (c.arrest <= 0) c.dmg = false; continue; }      // p53/p21 arrest while repairing
+    if (c.ph === "G1" && D.cdk[1] && c.prog > 0.6 * c.dur) continue;                       // stuck before the restriction point
+    if (c.ph === "M" && D.tax[1] && !c.res) { c.stuck += DT; if (c.stuck > 8 && r() < 0.01) { c.dead = true; died++; } continue; }  // spindle checkpoint, then death
+    c.prog += DT;
+    if (c.prog >= c.dur) {
+      if (c.ph === "M") {
+        if (c.dmg && r() < 0.6) { c.dead = true; died++; continue; }                         // mitotic catastrophe
+        const d = newCell("G1", 0); d.dmg = c.dmg && r() < 0.5; d.res = c.res || r() < 2e-4; born.push(d);
+        const res = c.res; Object.assign(c, newCell("G1", 0)); c.dmg = d.dmg; c.res = res;
+      } else { const nx = NEXT[c.ph], keep = c.dmg, res = c.res; Object.assign(c, newCell(nx, 0)); c.dmg = keep; c.res = res; }
+    }
+  }
+  cells = cells.filter((c) => !c.dead).concat(born);
+  const before = cells.length + died - born.length;
+  total *= cells.length / Math.max(before, 1);
+  if (cells.length > CAP) { cells.sort(() => r() - 0.5); cells.length = CAP; }
+  t += DT; if (Math.abs(t % 1) < 1e-9) hist.push([t, total]);
+}
+function dna(c) { const n = 0.16 * (r() + r() + r() - 1.5); return c.ph === "G1" ? 2 + n : c.ph === "S" ? 2 + 2 * c.prog / c.dur + n : 4 + 2 * n; }
+function draw() {
+  document.querySelectorAll("#drugs button").forEach((b) => b.classList.toggle("on", D[b.dataset.k][1]));
+  const bins = new Array(40).fill(0); cells.forEach((c) => { const b = Math.floor((dna(c) - 1.5) / 3 * 40); if (b >= 0 && b < 40) bins[b]++; });
+  const mx = Math.max(...bins, 1), parts = [];
+  bins.forEach((v, i) => parts.push(s("rect", {x: 30 + i * 7.5, y: 190 - 160 * v / mx, width: 6.5, height: 160 * v / mx, fill: "var(--accent)"})));
+  parts.push(s("line", {x1: 30, x2: 330, y1: 190, y2: 190, class: "ax"}));
+  [[2, "2N (G1)"], [3, "S"], [4, "4N (G2/M)"]].forEach(([v, l]) => parts.push(s("text", {x: 30 + (v - 1.5) / 3 * 300, y: 206, class: "tx", "text-anchor": "middle"}, l)));
+  parts.push(s("text", {x: 180, y: 224, class: "tx", "text-anchor": "middle"}, "DNA content per cell (flow cytometry)"));
+  $("hsvg").replaceChildren(...parts);
+  const xs = hist.map((p) => p[0]), ys = hist.map((p) => Math.log10(p[1]));
+  plot($("gsvg"), [{xs: xs.length > 1 ? xs : [0, 1], ys: ys.length > 1 ? ys : [3, 3], color: "var(--accent2)"}], {W: 340, H: 230, L: 40, ymin: 2, ymax: Math.max(5, Math.ceil(Math.max(...ys))), xmin: 0, xmax: Math.max(96, Math.ceil(t / 48) * 48), xlabel: "hours", ylabel: "cells", yfmt: (v) => "1e" + v, yticks: 3});
+  const f = {G1: 0, S: 0, G2: 0, M: 0}; cells.forEach((c) => f[c.ph]++);
+  const n = cells.length || 1;
+  $("pstat").textContent = `t = ${t.toFixed(0)} h · ${Math.round(total).toLocaleString()} cells`;
+  const act = Object.entries(D).filter(([k, v]) => v[1] && k !== "p53").map(([k]) => k);
+  $("pmsg").innerHTML = `G1 ${(100 * f.G1 / n).toFixed(0)}% · S ${(100 * f.S / n).toFixed(0)}% · G2 ${(100 * f.G2 / n).toFixed(0)}% · M ${(100 * f.M / n).toFixed(0)}%. ` +
+    (act.includes("cdk") ? "The <b>CDK4/6 inhibitor</b> stops cells at the G1 restriction point: the 2N peak grows and S phase empties. Growth stops, but cells don't die (the drug is cytostatic); it is used with hormone therapy in breast cancer. " : "") +
+    (act.includes("tax") ? `<b>Paclitaxel</b> freezes microtubules, so cells cannot finish mitosis: they pile up at 4N, and many eventually die. Keep running: a rare <b>resistant</b> cell (here about 1 in 5,000 divisions produces one) can survive and regrow the culture. ${cells.filter((c) => c.res).length.toLocaleString()} of the ${cells.length.toLocaleString()} cells sampled are resistant. This is how drug resistance evolves in tumours (chapter 19). ` : "") +
+    (act.includes("dmg") ? (D.p53[1] ? "After <b>DNA damage</b>, working p53 switches on p21 and halts damaged cells in G1 and G2 while they repair. " : "<b>p53 is broken</b>, so damaged cells don't stop: they carry the damage into mitosis and many die (mitotic catastrophe), while survivors pass mutations on. ") : "") +
+    (!act.length ? "An untreated culture doubles about once a day: about half the cells are in G1 (2N DNA), about a third in S (copying their DNA), and the rest in G2 and M (4N). Press Run, then switch on a drug." : "");
+}
+$("prun").onclick = () => { if (timer) { clearInterval(timer); timer = null; $("prun").textContent = "Run"; return; } $("prun").textContent = "Pause"; timer = setInterval(() => { for (let i = 0; i < 4; i++) step(); draw(); if (t >= 480) { clearInterval(timer); timer = null; $("prun").textContent = "Run"; } }, 50); };
+$("preset").onclick = () => { reset(); draw(); };
+window.addEventListener("tabchange", () => { if (timer) { clearInterval(timer); timer = null; $("prun").textContent = "Run"; } });
+reset(); draw();
+// ---------- apoptosis balance: BH3 activators vs BCL-2; venetoclax neutralises BCL-2
+const bcl = slider("BCL-2 (survival protein)", 0, 10, 0.5, 6, (v) => v, drawA);
+const bh3 = slider("stress signals (BH3 proteins: DNA damage, no growth factors)", 0, 10, 0.5, 4, (v) => v, drawA);
+const ven = slider("venetoclax dose", 0, 10, 0.5, 0, (v) => v === 0 ? "none" : v, drawA);
+$("actl").append(bcl.el, bh3.el, ven.el);
+function drawA() {
+  const freeBcl = bcl.value * (1 - ven.value / (ven.value + 2)), net = bh3.value - freeBcl, pDie = 1 / (1 + Math.exp(-1.5 * net));
+  const parts = [], cx = 350, ang = Math.max(-0.35, Math.min(0.35, -net * 0.06));
+  parts.push(s("polygon", {points: `${cx},170 ${cx - 16},196 ${cx + 16},196`, fill: "var(--muted)"}));
+  const dx = 220 * Math.cos(ang), dy = 220 * Math.sin(ang);
+  parts.push(s("line", {x1: cx - dx, y1: 170 + dy, x2: cx + dx, y2: 170 - dy, stroke: "var(--ink)", "stroke-width": 4}));
+  const pile = (x, y, n, c, lab) => { for (let i = 0; i < Math.round(n); i++) parts.push(s("rect", {x: x - 30 + (i % 5) * 12, y: y - 14 - Math.floor(i / 5) * 12, width: 10, height: 10, rx: 2, fill: c})); parts.push(s("text", {x, y: y - 46, class: "tx", "text-anchor": "middle"}, lab)); };
+  pile(cx - dx, 170 + dy, freeBcl, "var(--g)", "free BCL-2: survive"); pile(cx + dx, 170 - dy, bh3.value, "var(--t)", "stress: die");
+  $("asvg").replaceChildren(...parts);
+  $("amsg").innerHTML = `Chance the cell commits to apoptosis: <b>${(100 * pDie).toFixed(0)}%</b>. Stress signals activate the proteins BAX and BAK, which punch holes in the mitochondria; cytochrome c leaks out and triggers the caspase enzymes that dismantle the cell. Survival proteins like BCL-2 hold BAX and BAK back. ` +
+    (ven.value > 0 ? `<b>Venetoclax</b> sits in BCL-2's binding groove and releases the brakes: here it neutralises ${(100 * ven.value / (ven.value + 2)).toFixed(0)}% of BCL-2. It is approved for chronic lymphocytic leukaemia and acute myeloid leukaemia, cancers that survive by making too much BCL-2.` : "Many cancers tip the balance towards survival by over-producing BCL-2. Try adding venetoclax.");
+}
+drawA();
+</script></body></html>

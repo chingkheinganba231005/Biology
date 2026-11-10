@@ -13,11 +13,11 @@ No biology assumed. From atoms and cells to DNA, proteins, genetics, the immune 
 | P1 | [Life, scale and the cell](prereq/01-life-and-cells/) | What living things are made of, how big everything is, and a tour of the cell as a factory. |
 | P2 | [The chemistry of life](prereq/02-chemistry/) | Atoms, bonds, water, pH, energy, and the four families of molecules every cell is built from. |
 | P3 | [DNA and genomes](prereq/03-dna/) | The double helix, base pairing, chromosomes, how DNA is copied, and what a genome really contains. |
-| P4 | From gene to protein *(coming)* | Transcription, splicing, the genetic code and translation: how a DNA sequence becomes a working protein. |
-| P5 | Proteins: shape is function *(coming)* | Amino acids, folding, the four levels of structure, enzymes and how fast they work. |
-| P6 | Gene regulation and epigenetics *(coming)* | How a cell decides which genes to switch on: promoters, transcription factors, chromatin and cell identity. |
-| P7 | The cell cycle, division and death *(coming)* | Mitosis, meiosis, checkpoints, p53 and apoptosis: the machinery cancer breaks. |
-| P8 | Genetics, mutation and evolution *(coming)* | Inheritance, alleles, mutations, populations, natural selection and the tree of life. |
+| P4 | [From gene to protein](prereq/04-central-dogma/) | Transcription, splicing, the genetic code and translation: how a DNA sequence becomes a working protein. |
+| P5 | [Proteins: shape is function](prereq/05-proteins/) | Amino acids, folding, the four levels of structure, enzymes and how fast they work. |
+| P6 | [Gene regulation and epigenetics](prereq/06-regulation/) | How a cell decides which genes to switch on: promoters, transcription factors, chromatin and cell identity. |
+| P7 | [The cell cycle, division and death](prereq/07-cell-cycle/) | Mitosis, meiosis, checkpoints, p53 and apoptosis: the machinery cancer breaks. |
+| P8 | [Genetics, mutation and evolution](prereq/08-genetics-evolution/) | Inheritance, alleles, mutations, populations, natural selection and the tree of life. |
 | P9 | Signalling and metabolism *(coming)* | How cells sense and respond (receptors, kinase cascades) and how they make and use energy. |
 | P10 | The immune system *(coming)* | Innate and adaptive immunity, antibodies, T cells and the basis of vaccines and immunotherapy. |
 | P11 | The lab toolkit *(coming)* | PCR, gels, cloning, sequencing, CRISPR, microscopy and assays: where biological data comes from. |

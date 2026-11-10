@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Genetics Lab</title><link rel="stylesheet" href="../../../assets/pg.css">
+<style>.ps{display:grid;gap:3px;margin:8px 0;max-width:420px}.ps div{border:1px solid var(--line);border-radius:6px;padding:6px;text-align:center;font:600 15px "JetBrains Mono",monospace}
+.ps .hd{background:var(--soft);color:var(--accent)}.ps .aff{background:color-mix(in srgb,var(--accent2) 22%,transparent)}.ps .car{background:color-mix(in srgb,var(--c) 20%,transparent)}</style></head><body>
+<div class="tabs"><button class="on" data-t="cross" type="button">Punnett squares</button><button data-t="drift" type="button">Drift and selection</button></div>
+<section class="pane on" id="cross">
+  <div class="row"><label>trait<select id="mode"><option value="rec">recessive disease (e.g. sickle-cell, cystic fibrosis)</option><option value="dom">dominant disease (e.g. Huntington's)</option><option value="x">X-linked recessive (e.g. haemophilia, colour blindness)</option></select></label></div>
+  <div class="row"><label>parent 1<select id="p1"></select></label><label>parent 2<select id="p2"></select></label><button type="button" id="kids">Simulate 100 children</button></div>
+  <div class="ps" id="ps"></div>
+  <div class="msg" id="cmsg"></div>
+</section>
+<section class="pane" id="drift">
+  <div class="ctl" id="dctl"></div>
+  <div class="row"><button class="pri" type="button" id="drun">Run 12 populations</button></div>
+  <svg id="dsvg" viewBox="0 0 700 290" role="img" aria-label="Allele frequency trajectories in several populations"></svg>
+  <div class="msg" id="dmsg"></div>
+</section>
+<script src="../../../assets/pg.js"></script>
+<script>
+const {$, h, s, tabs, slider, plot, rng} = PG; tabs();
+const r = rng(21);
+const G = {rec: ["AA", "Aa", "aa"], dom: ["DD", "Dd", "dd"], x: {m: ["XᴬY", "XᵃY"], f: ["XᴬXᴬ", "XᴬXᵃ", "XᵃXᵃ"]}};
+function setOpts() {
+  const m = $("mode").value;
+  const o1 = m === "x" ? G.x.f : G[m], o2 = m === "x" ? G.x.m : G[m];
+  $("p1").replaceChildren(...o1.map((g) => h("option", {value: g}, m === "x" ? "mother " + g : g)));
+  $("p2").replaceChildren(...o2.map((g) => h("option", {value: g}, m === "x" ? "father " + g : g)));
+  $("p1").value = m === "x" ? "XᴬXᵃ" : o1[1]; $("p2").value = m === "x" ? "XᴬY" : o2[1];
+  draw();
+}
+const gam = (g, m) => m === "x" ? (g.endsWith("Y") ? [g.slice(0, 2), "Y"] : [g.slice(0, 2), g.slice(2)]) : [g[0], g[1]];
+function combine(a, b, m) {
+  if (m === "x") { if (b === "Y") return a + "Y"; return [a, b].sort((x, y) => (x === "Xᴬ" ? -1 : 1)).join(""); }
+  return [a, b].sort((x, y) => (x === x.toUpperCase() ? -1 : 1)).join("");
+}
+function status(g, m) {
+  if (m === "rec") return g === "aa" ? "aff" : g.includes("a") ? "car" : "";
+  if (m === "dom") return g.includes("D") ? "aff" : "";
+  return (g.endsWith("Y") ? g.startsWith("Xᵃ") : g === "XᵃXᵃ") ? "aff" : g.includes("Xᵃ") ? "car" : "";
+}
+let sim = null;
+function draw() {
+  const m = $("mode").value, g1 = gam($("p1").value, m), g2 = gam($("p2").value, m);
+  const ps = $("ps"); ps.style.gridTemplateColumns = "repeat(3, 1fr)";
+  const cells = [h("div", {class: "hd"}, "♀ \\ ♂"), ...g2.map((x) => h("div", {class: "hd"}, x))];
+  const kids = [];
+  g1.forEach((a) => { cells.push(h("div", {class: "hd"}, a)); g2.forEach((b) => { const k = combine(a, b, m); kids.push(k); cells.push(h("div", {class: status(k, m)}, k)); }); });
+  ps.replaceChildren(...cells);
+  const aff = kids.filter((k) => status(k, m) === "aff").length, car = kids.filter((k) => status(k, m) === "car").length;
+  let txt = `Each parent passes on one of its two copies at random, so each box is equally likely (25%). Chance a child is <b>affected: ${aff * 25}%</b>` + (car ? `, an unaffected <b>carrier: ${car * 25}%</b>` : "") + ". ";
+  if (m === "rec") txt += "A recessive disease needs two broken copies; carriers are healthy. Two carrier parents have a 1 in 4 chance per child, every pregnancy, independently. ";
+  if (m === "dom") txt += "One broken copy is enough, so an affected parent passes the disease to half of their children on average. ";
+  if (m === "x") txt += "Boys have one X, so a single broken copy (from the mother) causes the disease. That's why X-linked conditions are far more common in males. ";
+  if (sim) txt += `<br>Simulated ${sim.n} children: <b>${sim.aff}</b> affected (${(100 * sim.aff / sim.n).toFixed(0)}%). Real families are small, so the observed fraction varies a lot around the expected value.`;
+  $("cmsg").innerHTML = txt;
+}
+$("mode").onchange = () => { sim = null; setOpts(); };
+$("p1").onchange = $("p2").onchange = () => { sim = null; draw(); };
+$("kids").onclick = () => {
+  const m = $("mode").value, g1 = gam($("p1").value, m), g2 = gam($("p2").value, m); let aff = 0;
+  for (let i = 0; i < 100; i++) if (status(combine(g1[Math.floor(r() * 2)], g2[Math.floor(r() * 2)], m), m) === "aff") aff++;
+  sim = {n: 100, aff}; draw();
+};
+setOpts();
+// ---------- Wright-Fisher drift + selection
+const N = slider("population size N", 1, 4, 0.1, 2, (v) => Math.round(10 ** v).toLocaleString(), run);
+const S = slider("selection advantage s of the new allele", -0.05, 0.1, 0.005, 0, (v) => (v >= 0 ? "+" : "") + (100 * v).toFixed(1) + "%", run);
+const P0 = slider("starting frequency", 0.01, 0.9, 0.01, 0.5, (v) => (100 * v).toFixed(0) + "%", run);
+$("dctl").append(N.el, S.el, P0.el);
+function binom(n, p) { if (n < 200) { let k = 0; for (let i = 0; i < n; i++) if (r() < p) k++; return k; } const m = n * p, sd = Math.sqrt(n * p * (1 - p)); return Math.max(0, Math.min(n, Math.round(m + sd * r.normal()))); }
+function run() {
+  const n = Math.round(10 ** N.value), s = S.value, gens = 200, ser = [];
+  let fixed = 0, lost = 0;
+  for (let k = 0; k < 12; k++) {
+    let p = P0.value; const ys = [p];
+    for (let g = 1; g <= gens; g++) { const w = p * (1 + s) / (p * (1 + s) + 1 - p); p = binom(2 * n, w) / (2 * n); ys.push(p); }
+    if (p === 1) fixed++; if (p === 0) lost++;
+    ser.push({xs: ys.map((_, i) => i), ys, color: `hsl(${270 + k * 9} 55% ${45 + (k % 3) * 8}%)`, width: 1.5});
+  }
+  plot($("dsvg"), ser, {ymin: 0, ymax: 1, xlabel: "generations", ylabel: "allele frequency", xmin: 0, xmax: 200});
+  $("dmsg").innerHTML = `In ${n.toLocaleString()} individuals (${(2 * n).toLocaleString()} gene copies) over 200 generations, the new allele was <b>fixed</b> (reached 100%) in ${fixed} and <b>lost</b> in ${lost} of 12 populations. ` +
+    `Each generation, the next one's genes are a random sample of the last: that randomness is <b>genetic drift</b>, and it is strongest in small populations. ` +
+    (Math.abs(s) < 0.001 ? "With no selection, a neutral allele's fate is pure chance: it is eventually fixed with probability equal to its starting frequency." : s > 0 ? `With a ${(100 * s).toFixed(1)}% advantage, selection pushes the allele up, but in small populations drift can still lose it, especially when it starts rare. Selection beats drift roughly when N·s is much greater than 1 (here N·s = ${(n * s).toFixed(1)}).` : "A harmful allele is pushed down by selection, but in a small population drift can still carry it to high frequency.");
+}
+$("drun").onclick = run;
+run();
+</script></body></html>

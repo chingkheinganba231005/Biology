@@ -1,0 +1,141 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Gene to Protein Lab</title><link rel="stylesheet" href="../../../assets/pg.css">
+<style>
+.cod{display:inline-flex;flex-direction:column;align-items:center;margin:0 4px 10px 0;padding:3px 4px;border-radius:8px;border:1px solid var(--line);background:var(--surface);vertical-align:top}
+.cod.chg{border-color:var(--bad);box-shadow:0 0 0 1px var(--bad)}
+.cod .bs{font:600 14px "JetBrains Mono",ui-monospace,monospace;letter-spacing:1px}
+.cod .bs span{cursor:pointer;padding:0 1px;border-radius:3px}
+.cod .bs span.sel{outline:2px solid var(--accent);background:var(--soft)}
+.cod .aa{font:700 12.5px Manrope,sans-serif;margin-top:2px}
+.cod .aa.stop{color:var(--bad)}
+.grid{display:grid;grid-template-columns:28px repeat(4,1fr);gap:3px;font:12.5px "JetBrains Mono",ui-monospace,monospace}
+.grid .hd{font-weight:700;color:var(--muted);display:flex;align-items:center;justify-content:center}
+.grid .cell{display:flex;flex-direction:column;gap:2px}
+.grid button{border-radius:6px;padding:2px 4px;font:12px "JetBrains Mono",ui-monospace,monospace;text-align:left;white-space:nowrap;overflow:hidden}
+.grid button.hl{background:var(--accent);color:var(--bg);border-color:var(--accent)}
+.grid button.st{border-color:var(--bad)}
+</style></head><body>
+<div class="tabs"><button class="on" data-t="read" type="button">Read and mutate a gene</button><button data-t="code" type="button">The genetic code</button><button data-t="splice" type="button">Splice the HBB gene</button></div>
+<section class="pane on" id="read">
+  <div class="row"><input id="dna" type="text" aria-label="coding DNA sequence" style="flex:1;min-width:220px">
+    <select id="frame" aria-label="reading frame"><option value="0">frame 1</option><option value="1">frame 2</option><option value="2">frame 3</option></select></div>
+  <div class="row"><button type="button" id="hbb">Normal β-globin (HBB)</button><button type="button" id="sickle">Sickle-cell mutation</button><button type="button" id="rand">Random DNA</button></div>
+  <div class="row tx" style="font-size:12.5px">Click a base to select it, then:
+    <button type="button" data-b="A">→A</button><button type="button" data-b="C">→C</button><button type="button" data-b="G">→G</button><button type="button" data-b="T">→T</button>
+    <button type="button" id="del">delete it</button><button type="button" id="ins">insert G after it</button><button type="button" id="undo">back to original</button></div>
+  <div id="codons" aria-live="polite"></div>
+  <div class="msg" id="rmsg"></div>
+</section>
+<section class="pane" id="code">
+  <div class="grid" id="grid"></div>
+  <div class="msg" id="cmsg">Click any codon. Read a codon as row letter (1st base), column letter (2nd) and the letter inside the box (3rd).</div>
+</section>
+<section class="pane" id="splice">
+  <div class="row"><button class="pri" type="button" id="sstep">Next step ▶</button><button type="button" id="sreset">Restart</button><span class="tx" id="scount"></span></div>
+  <svg id="ssvg" viewBox="0 0 700 250" role="img" aria-label="The HBB gene being transcribed, spliced and translated"></svg>
+  <div class="msg" id="smsg"></div>
+</section>
+<script src="../../../assets/pg.js"></script>
+<script>
+const {$, h, s, tabs, rng} = PG; tabs();
+const B = "TCAG", AAS = "FFLLSSSSYY**CC*WLLLLPPPPHHQQRRRRIIIMTTTTNNKKSSRRVVVVAAAADDEEGGGG";
+const CODE = {}; for (let i = 0; i < 64; i++) CODE[B[i >> 4] + B[(i >> 2) & 3] + B[i & 3]] = AAS[i];
+const NAME = {A: "Ala alanine", R: "Arg arginine", N: "Asn asparagine", D: "Asp aspartate", C: "Cys cysteine", Q: "Gln glutamine", E: "Glu glutamate", G: "Gly glycine", H: "His histidine", I: "Ile isoleucine", L: "Leu leucine", K: "Lys lysine", M: "Met methionine", F: "Phe phenylalanine", P: "Pro proline", S: "Ser serine", T: "Thr threonine", W: "Trp tryptophan", Y: "Tyr tyrosine", V: "Val valine", "*": "STOP"};
+const KIND = {A: "hydrophobic", V: "hydrophobic", L: "hydrophobic", I: "hydrophobic", M: "hydrophobic", F: "hydrophobic", W: "hydrophobic", P: "special (kinks the chain)", G: "special (tiny, flexible)", C: "special (can form disulfide bridges)", S: "polar", T: "polar", N: "polar", Q: "polar", Y: "polar", D: "negatively charged", E: "negatively charged", K: "positively charged", R: "positively charged", H: "positively charged (partly)", "*": "stop signal"};
+const three = (a) => NAME[a].split(" ")[0];
+// ---------- read and mutate
+const HBB = "ATGGTGCATCTGACTCCTGAGGAGAAGTCTGCCGTTACTGCCCTGTGGGGCAAGGTGAACGTG";
+let ref = HBB, cur = HBB, sel = -1;
+const translate = (dna, f) => { const out = []; for (let i = f; i + 3 <= dna.length; i += 3) out.push(CODE[dna.slice(i, i + 3)] || "?"); return out; };
+const protein = (dna, f) => { const p = translate(dna, f); const k = p.indexOf("*"); return k < 0 ? p.join("") : p.slice(0, k + 1).join(""); };
+function classify() {
+  const f = +$("frame").value;
+  if (cur === ref) return "This is the original sequence. Click a base and change it to see what a mutation does.";
+  if ((cur.length - ref.length) % 3 !== 0) return `<b>Frameshift.</b> The length changed by ${cur.length - ref.length} base${Math.abs(cur.length - ref.length) === 1 ? "" : "s"}, not a multiple of 3, so every codon after the change is read in the wrong frame. The protein becomes garbage and usually hits an early stop codon. Frameshifts almost always destroy a gene.`;
+  const a = protein(ref, f), b = protein(cur, f);
+  if (a === b) return `<b>Silent (synonymous) mutation.</b> The DNA changed but the protein is identical, because several codons code for the same amino acid. Usually harmless.`;
+  if (b.endsWith("*") && b.length < a.length) return `<b>Nonsense mutation.</b> A codon became a STOP codon, so the protein is cut short after ${b.length - 1} amino acids instead of ${a.replace("*", "").length}${a.endsWith("*") ? "" : "+"}. Usually the gene is lost entirely.`;
+  if (cur.length !== ref.length) return `<b>In-frame insertion or deletion.</b> A whole codon was gained or lost. The protein gains or loses one amino acid but the rest is read correctly.`;
+  const ch = [];
+  for (let i = 0; i < Math.min(a.length, b.length); i++) if (a[i] !== b[i]) ch.push(`${three(a[i])}${i + 1}${three(b[i])}`);
+  const one = ch.length === 1 ? (() => { const i = [...a].findIndex((x, k) => x !== b[k]); return ` ${NAME[a[i]].split(" ")[1]} (${KIND[a[i]]}) became ${NAME[b[i]].split(" ")[1]} (${KIND[b[i]]}).`; })() : "";
+  const sick = ch.join() === "Glu7Val" ? " This is exactly the <b>sickle-cell</b> mutation. Doctors call it Glu6Val because they don't count the first methionine, which is removed from the finished protein. A charged amino acid on the surface became a hydrophobic one, so haemoglobin molecules stick together into long fibres and bend red blood cells into sickles." : "";
+  return `<b>Missense mutation:</b> ${ch.join(", ")}.${one}${sick} Whether it matters depends on where the amino acid sits and how different the new one is.`;
+}
+function drawRead() {
+  const f = +$("frame").value, wrap = $("codons"); wrap.replaceChildren();
+  const pr = translate(ref, f);
+  if (f > 0) wrap.append(h("span", {class: "cod"}, h("span", {class: "bs"}, ...[...cur.slice(0, f)].map((b, k) => h("span", {class: "b-" + b, "data-i": k}, b))), h("span", {class: "aa tx"}, "skip")));
+  for (let i = f, c = 0; i < cur.length; i += 3, c++) {
+    const tri = cur.slice(i, i + 3), aa = tri.length === 3 ? CODE[tri] : "";
+    const box = h("span", {class: "cod" + (aa && pr[c] !== aa ? " chg" : ""), title: aa ? NAME[aa] : "incomplete codon"},
+      h("span", {class: "bs"}, ...[...tri].map((b, k) => h("span", {class: "b-" + b + (i + k === sel ? " sel" : ""), "data-i": i + k}, b))),
+      h("span", {class: "aa" + (aa === "*" ? " stop" : "")}, aa ? (aa === "*" ? "STOP" : three(aa)) : "–"));
+    wrap.append(box);
+  }
+  wrap.querySelectorAll("[data-i]").forEach((e) => e.addEventListener("click", () => { sel = +e.dataset.i; drawRead(); }));
+  const p = protein(cur, f);
+  $("rmsg").innerHTML = classify() + `<br><span class="tx">protein (one letter per amino acid):</span> <span class="mono">${p.replace("*", "■")}</span>`;
+}
+function setSeq(x) { ref = cur = x; sel = -1; $("dna").value = x; drawRead(); }
+$("dna").addEventListener("change", () => setSeq($("dna").value.toUpperCase().replace(/U/g, "T").replace(/[^ACGT]/g, "").slice(0, 120)));
+$("frame").addEventListener("change", drawRead);
+$("hbb").onclick = () => { $("frame").value = 0; setSeq(HBB); };
+$("sickle").onclick = () => { $("frame").value = 0; setSeq(HBB); cur = HBB.slice(0, 19) + "T" + HBB.slice(20); sel = 19; drawRead(); };
+const r = rng(11);
+$("rand").onclick = () => setSeq(Array.from({length: 60}, () => "ACGT"[Math.floor(r() * 4)]).join(""));
+document.querySelectorAll("[data-b]").forEach((b) => b.onclick = () => { if (sel < 0) return; cur = cur.slice(0, sel) + b.dataset.b + cur.slice(sel + 1); drawRead(); });
+$("del").onclick = () => { if (sel < 0) return; cur = cur.slice(0, sel) + cur.slice(sel + 1); sel = Math.min(sel, cur.length - 1); drawRead(); };
+$("ins").onclick = () => { if (sel < 0) return; cur = cur.slice(0, sel + 1) + "G" + cur.slice(sel + 1); drawRead(); };
+$("undo").onclick = () => { cur = ref; drawRead(); };
+setSeq(HBB);
+// ---------- genetic code table
+const grid = $("grid");
+grid.append(h("span", {class: "hd"}, ""), ...[..."TCAG"].map((b) => h("span", {class: "hd b-" + b}, "2nd " + b)));
+const btns = [];
+for (const b1 of "TCAG") {
+  grid.append(h("span", {class: "hd b-" + b1}, b1));
+  for (const b2 of "TCAG") {
+    const cell = h("div", {class: "cell"});
+    for (const b3 of "TCAG") {
+      const cod = b1 + b2 + b3, aa = CODE[cod];
+      const bt = h("button", {type: "button", class: aa === "*" ? "st" : "", "data-aa": aa}, cod + " " + (aa === "*" ? "Stop" : three(aa)));
+      bt.onclick = () => {
+        btns.forEach((x) => x.classList.toggle("hl", x.dataset.aa === aa));
+        const syn = Object.keys(CODE).filter((k) => CODE[k] === aa);
+        $("cmsg").innerHTML = aa === "*" ? `<b>${cod} is a STOP codon.</b> There are 3 (TAA, TAG, TGA). No tRNA matches them; instead a release factor binds and the ribosome lets go of the finished protein.`
+          : `<b>${cod} → ${NAME[aa]}</b> (${KIND[aa]}). ${syn.length} codon${syn.length > 1 ? "s" : ""} code for it: ${syn.join(", ")}. ${syn.length > 1 ? "Notice that synonymous codons usually differ only in the third base, so many third-position mutations are silent." : ""}${cod === "ATG" ? " ATG is also the START codon: translation begins at the first ATG." : ""}`;
+      };
+      btns.push(bt); cell.append(bt);
+    }
+    grid.append(cell);
+  }
+}
+// ---------- splicing HBB: exon lengths and intron lengths from NM_000518 and the GRCh38 gene region
+const EX = [142, 223, 263], IN = [130, 850], CDS = [50, 494];
+let stp = 0;
+const STEPS = [
+  "The <b>HBB gene</b> on chromosome 11 (1,608 base pairs). Three <b>exons</b> (coloured) are separated by two <b>introns</b> (grey). The gene is drawn to scale.",
+  "<b>Transcription.</b> RNA polymerase copies the whole gene, exons and introns, into a <b>pre-mRNA</b>. A cap is added to the 5′ end and a poly-A tail to the 3′ end.",
+  "<b>Splicing.</b> The spliceosome cuts out both introns (each starts with GT and ends with AG) and joins the exons. 980 of 1,608 bases are thrown away.",
+  "The <b>mature mRNA</b> (628 bases) leaves the nucleus. Only bases 51–494 code for protein (the CDS); the rest are untranslated regions (UTRs) that control stability and translation.",
+  "<b>Translation.</b> A ribosome reads the CDS three bases at a time: 444 bases → 147 amino acids + STOP. The first methionine is then removed, giving the 146-amino-acid β-globin chain.",
+];
+function drawSplice() {
+  const parts = [], X0 = 20, W = 620, tot = 1608, sc = W / tot;
+  const cols = ["var(--accent)", "var(--accent2)", "var(--g)"];
+  const bar = (y, segs, lab) => { let x = X0; parts.push(s("text", {x: X0, y: y - 8, class: "lb"}, lab)); segs.forEach(([len, c, t]) => { const w = len * sc; parts.push(s("rect", {x, y, width: w, height: 22, fill: c, rx: 2, opacity: c === "var(--muted)" ? 0.35 : 0.9})); if (w > 50 && t) parts.push(s("text", {x: x + w / 2, y: y + 15, class: "tx", "text-anchor": "middle", fill: c === "var(--muted)" ? null : "#fff", style: c === "var(--muted)" ? null : "fill:#fff"}, t)); x += w; }); return x; };
+  const gene = [[EX[0], cols[0], "exon 1"], [IN[0], "var(--muted)", "intron 1"], [EX[1], cols[1], "exon 2"], [IN[1], "var(--muted)", "intron 2 (850)"], [EX[2], cols[2], "exon 3"]];
+  bar(30, gene, "DNA (gene)");
+  if (stp >= 1) { const xe = bar(90, gene, "pre-mRNA"); parts.push(s("text", {x: X0 - 4, y: 106, class: "lb", "text-anchor": "end"}, "")); parts.push(s("text", {x: xe + 4, y: 106, class: "tx"}, "AAAA")); }
+  if (stp >= 2) { const xe = bar(150, [[EX[0], cols[0], "exon 1"], [EX[1], cols[1], "exon 2"], [EX[2], cols[2], "exon 3"]], "mature mRNA (628 bases)"); parts.push(s("text", {x: xe + 4, y: 166, class: "tx"}, "AAAA"));
+    if (stp >= 3) { parts.push(s("line", {x1: X0 + CDS[0] * sc, x2: X0 + CDS[1] * sc, y1: 180, y2: 180, stroke: "var(--ink)", "stroke-width": 2})); parts.push(s("text", {x: X0 + (CDS[0] + CDS[1]) / 2 * sc, y: 194, class: "tx", "text-anchor": "middle"}, "coding sequence: ATG … TAA")); } }
+  if (stp >= 4) { const n = 146, w = W / n; parts.push(s("text", {x: X0, y: 214, class: "lb"}, "protein: β-globin, 146 amino acids (one bead each, not to the same scale)")); for (let i = 0; i < n; i++) parts.push(s("circle", {cx: X0 + (i + 0.5) * w, cy: 232, r: w * 0.45, fill: cols[Math.floor(i / 10) % 3]})); }
+  $("ssvg").replaceChildren(...parts);
+  $("smsg").innerHTML = STEPS[stp]; $("scount").textContent = `step ${stp + 1} of ${STEPS.length}`;
+}
+$("sstep").onclick = () => { stp = Math.min(stp + 1, STEPS.length - 1); drawSplice(); };
+$("sreset").onclick = () => { stp = 0; drawSplice(); };
+drawSplice();
+</script></body></html>

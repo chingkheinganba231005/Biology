@@ -1,0 +1,385 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Genetics, mutation and evolution · Cells to Code</title>
+<meta name="description" content="How traits are inherited, where genetic variation comes from, how chance and selection change populations, and how comparing sequences reveals the tree of life. The foundation for variant calling, phylogenetics and tumour evolution.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,600;1,6..72,400&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.css">
+<link rel="stylesheet" href="../../assets/guide.css">
+<script>try{var t=localStorage.getItem('c2c-theme');if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
+</head>
+<body>
+<header class="topbar">
+  <a class="brand" href="../../index.html"><span class="logo" aria-hidden="true"></span>Cells to Code</a>
+  <span class="crumb">Biology from zero · Chapter P8</span>
+  <button class="tocbtn" type="button" aria-controls="toc" aria-expanded="false">Contents</button>
+  <button class="themebtn" type="button" aria-label="Switch light or dark theme">Theme</button>
+  <span class="progress" aria-hidden="true"></span>
+</header>
+<div class="layout">
+  <nav class="toc" id="toc" aria-label="On this page">
+    <p class="toc-h">On this page</p>
+    <ol><li><a href="#genes-alleles-and-genotypes">Genes, alleles and genotypes</a></li>
+<li><a href="#mutations-the-source-of-variation">Mutations: the source of variation</a></li>
+<li><a href="#populations-allele-frequencies-and-hardyweinberg">Populations: allele frequencies and Hardy–Weinberg</a></li>
+<li><a href="#drift-evolution-by-chance">Drift: evolution by chance</a></li>
+<li><a href="#selection-evolution-with-a-direction">Selection: evolution with a direction</a></li>
+<li><a href="#reading-evolution-in-sequences">Reading evolution in sequences</a></li>
+<li><a href="#complex-traits-and-gwas">Complex traits and GWAS</a></li>
+<li><a href="#summary">Summary</a></li></ol>
+    <p class="toc-nb"><a href="genetics_evolution.ipynb" download>Download the notebook ↓</a></p>
+  </nav>
+  <main class="content">
+    <p class="eyebrow">Biology from zero · Chapter P8</p>
+    <h1>Genetics, mutation and evolution</h1>
+    <p class="lede">How traits are inherited, where genetic variation comes from, how chance and selection change populations, and how comparing sequences reveals the tree of life. The foundation for variant calling, phylogenetics and tumour evolution.</p>
+    <p class="meta">About 1.5 hours · Chapters P3, P4 and P7</p>
+<p>Every human genome is different. Any two people differ at about 4–5 million positions, and those differences, together with environment and chance, explain why we differ in height, disease risk and response to drugs. This chapter is about where that variation comes from (mutation), how it is passed on (inheritance), and how it changes over generations (drift and selection, which together drive evolution). The same ideas apply inside a tumour, where cells mutate, compete and evolve resistance to treatment.</p>
+<div class="box eli5">
+<p class="lab">Like you’re five</p>
+<p>You got one copy of each instruction book chapter from your mother and one from your father, so you have two versions of almost every gene. Sometimes a letter in a copy is changed by accident: a <strong>mutation</strong>. Most changes do nothing, some are harmful, a few are useful. Over many generations, useful changes tend to spread because their carriers have more children (<strong>natural selection</strong>), and in small groups some changes spread or vanish just by luck (<strong>drift</strong>). That slow change in the mix of versions in a population is <strong>evolution</strong>.</p>
+</div>
+<h2 id="genes-alleles-and-genotypes">Genes, alleles and genotypes</h2>
+<p>Humans are <strong>diploid</strong>: we carry two copies of each chromosome (except the X and Y in males), one from each parent. So we have two copies of most genes. Different versions of a gene are called <strong>alleles</strong>. The pair of alleles a person carries is their <strong>genotype</strong>; the observable result is their <strong>phenotype</strong>.</p>
+<table>
+<thead>
+<tr>
+<th>Genotype</th>
+<th>Name</th>
+<th>Example (sickle-cell gene <em>HBB</em>)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>AA</td>
+<td>homozygous</td>
+<td>two normal copies: healthy</td>
+</tr>
+<tr>
+<td>AS</td>
+<td>heterozygous</td>
+<td>one normal, one sickle copy: healthy carrier ("sickle-cell trait")</td>
+</tr>
+<tr>
+<td>SS</td>
+<td>homozygous</td>
+<td>two sickle copies: sickle-cell disease</td>
+</tr>
+</tbody>
+</table>
+<p>An allele is <strong>recessive</strong> if it shows only when both copies carry it (sickle-cell disease, cystic fibrosis), and <strong>dominant</strong> if one copy is enough (Huntington's disease, inherited <em>BRCA1</em> breast cancer risk, which is dominant in families although each tumour has lost both copies).</p>
+<p>Gregor Mendel worked out the basic rules in the 1860s by breeding pea plants:</p>
+<ol>
+<li><strong>Segregation</strong>: each parent passes on one of its two alleles, chosen at random.</li>
+<li><strong>Independent assortment</strong>: genes on different chromosomes are inherited independently.</li>
+</ol>
+<p>A <strong>Punnett square</strong> lists all equally likely combinations. Try the first tab of the playground, including the X-linked case that explains why haemophilia and colour blindness are far more common in boys.</p>
+<div class="playground"><div class="pg-bar"><span>Interactive playground</span><a href="animations/genetics_lab.html" target="_blank" rel="noopener">open full screen ↗</a></div><iframe src="animations/genetics_lab.html" loading="lazy" style="height:620px" title="Interactive playground"></iframe></div>
+
+<p>Let's check Mendel's ratios by simulation, the way you'll check many probability claims in this course:</p>
+<pre class="code"><code><span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">matplotlib.pyplot</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">plt</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">matplotlib</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">mpl</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pathlib</span><span class="w"> </span><span class="kn">import</span> <span class="n">Path</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">collections</span><span class="w"> </span><span class="kn">import</span> <span class="n">Counter</span>
+
+<span class="n">mpl</span><span class="o">.</span><span class="n">rc</span><span class="p">(</span><span class="s2">"figure"</span><span class="p">,</span> <span class="n">dpi</span><span class="o">=</span><span class="mi">110</span><span class="p">);</span> <span class="n">mpl</span><span class="o">.</span><span class="n">rc</span><span class="p">(</span><span class="s2">"axes"</span><span class="p">,</span> <span class="n">labelsize</span><span class="o">=</span><span class="mi">12</span><span class="p">,</span> <span class="n">titlesize</span><span class="o">=</span><span class="mi">13</span><span class="p">)</span>
+<span class="n">IMAGES</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="s2">"images"</span><span class="p">);</span> <span class="n">IMAGES</span><span class="o">.</span><span class="n">mkdir</span><span class="p">(</span><span class="n">exist_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">save_fig</span><span class="p">(</span><span class="n">name</span><span class="p">):</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">tight_layout</span><span class="p">();</span> <span class="n">plt</span><span class="o">.</span><span class="n">savefig</span><span class="p">(</span><span class="n">IMAGES</span> <span class="o">/</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">.png"</span><span class="p">,</span> <span class="n">dpi</span><span class="o">=</span><span class="mi">150</span><span class="p">,</span> <span class="n">bbox_inches</span><span class="o">=</span><span class="s2">"tight"</span><span class="p">)</span>
+<span class="n">R</span> <span class="o">=</span> <span class="p">{}</span>
+<span class="n">rng</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">default_rng</span><span class="p">(</span><span class="mi">8</span><span class="p">)</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">child</span><span class="p">(</span><span class="n">mum</span><span class="p">,</span> <span class="n">dad</span><span class="p">):</span>
+    <span class="k">return</span> <span class="s2">""</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="nb">sorted</span><span class="p">(</span><span class="n">rng</span><span class="o">.</span><span class="n">choice</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">mum</span><span class="p">))</span> <span class="o">+</span> <span class="n">rng</span><span class="o">.</span><span class="n">choice</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">dad</span><span class="p">))))</span>
+
+<span class="n">kids</span> <span class="o">=</span> <span class="n">Counter</span><span class="p">(</span><span class="n">child</span><span class="p">(</span><span class="s2">"AS"</span><span class="p">,</span> <span class="s2">"AS"</span><span class="p">)</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">100_000</span><span class="p">))</span>
+<span class="k">for</span> <span class="n">g</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">"AA"</span><span class="p">,</span> <span class="s2">"AS"</span><span class="p">,</span> <span class="s2">"SS"</span><span class="p">]:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">g</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">kids</span><span class="p">[</span><span class="n">g</span><span class="p">]</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="mf">1e5</span><span class="si">:</span><span class="s2">.3f</span><span class="si">}</span><span class="s2">  (expected </span><span class="si">{</span><span class="p">[</span><span class="mf">0.25</span><span class="p">,</span><span class="w"> </span><span class="mf">0.5</span><span class="p">,</span><span class="w"> </span><span class="mf">0.25</span><span class="p">][[</span><span class="s1">'AA'</span><span class="p">,</span><span class="w"> </span><span class="s1">'AS'</span><span class="p">,</span><span class="w"> </span><span class="s1">'SS'</span><span class="p">]</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">g</span><span class="p">)]</span><span class="si">}</span><span class="s2">)"</span><span class="p">)</span>
+
+<span class="c1"># how variable is a real family? chance that 4 children of two carriers include no affected child</span>
+<span class="n">fams</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="nb">sum</span><span class="p">(</span><span class="n">child</span><span class="p">(</span><span class="s2">"AS"</span><span class="p">,</span> <span class="s2">"AS"</span><span class="p">)</span> <span class="o">==</span> <span class="s2">"SS"</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">4</span><span class="p">))</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">20_000</span><span class="p">)])</span>
+<span class="n">R</span><span class="p">[</span><span class="s2">"none_of_4"</span><span class="p">]</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">fams</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="mi">0</span><span class="p">)</span><span class="si">:</span><span class="s2">.0%</span><span class="si">}</span><span class="s2">"</span><span class="p">;</span> <span class="n">R</span><span class="p">[</span><span class="s2">"two_plus"</span><span class="p">]</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">fams</span><span class="w"> </span><span class="o">&gt;=</span><span class="w"> </span><span class="mi">2</span><span class="p">)</span><span class="si">:</span><span class="s2">.0%</span><span class="si">}</span><span class="s2">"</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"families of 4: no affected child </span><span class="si">{</span><span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">fams</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="mi">0</span><span class="p">)</span><span class="si">:</span><span class="s2">.1%</span><span class="si">}</span><span class="s2"> (exact 0.75^4 = </span><span class="si">{</span><span class="mf">0.75</span><span class="w"> </span><span class="o">**</span><span class="w"> </span><span class="mi">4</span><span class="si">:</span><span class="s2">.1%</span><span class="si">}</span><span class="s2">), two or more </span><span class="si">{</span><span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">fams</span><span class="w"> </span><span class="o">&gt;=</span><span class="w"> </span><span class="mi">2</span><span class="p">)</span><span class="si">:</span><span class="s2">.1%</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+</code></pre>
+<pre class="out">AA: 0.252  (expected 0.25)
+AS: 0.497  (expected 0.5)
+SS: 0.250  (expected 0.25)</pre><pre class="out">families of 4: no affected child 31.2% (exact 0.75^4 = 31.6%), two or more 26.4%</pre>
+<p>The 1 : 2 : 1 ratio appears in large numbers, but individual families vary a lot: with two carrier parents and four children, 31% of families have no affected child at all and 26% have two or more. This is why genetic counsellors talk in probabilities per pregnancy, and why rare-disease genetics needs many families.</p>
+<h2 id="mutations-the-source-of-variation">Mutations: the source of variation</h2>
+<p>A <strong>mutation</strong> is any change in the DNA sequence. Two distinctions matter a lot in this course:</p>
+<ul>
+<li><strong>Germline</strong> mutations are in eggs or sperm, so they are inherited and present in every cell of the child. <strong>Somatic</strong> mutations arise in one body cell and are passed only to its descendants. Cancer is driven by somatic mutations, sometimes on top of an inherited germline risk.</li>
+<li>The <strong>size</strong> of the change:</li>
+</ul>
+<table>
+<thead>
+<tr>
+<th>Type</th>
+<th>What changes</th>
+<th>Typical detection</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>SNV</strong> (single-nucleotide variant)</td>
+<td>one base</td>
+<td>sequencing (chapter 5)</td>
+</tr>
+<tr>
+<td><strong>Indel</strong></td>
+<td>a few bases inserted or deleted</td>
+<td>sequencing</td>
+</tr>
+<tr>
+<td><strong>CNV</strong> (copy-number variant)</td>
+<td>a whole region duplicated or deleted</td>
+<td>sequencing depth, arrays</td>
+</tr>
+<tr>
+<td><strong>Structural variant</strong></td>
+<td>inversions, translocations (pieces of chromosomes swapped)</td>
+<td>long reads, karyotyping</td>
+</tr>
+<tr>
+<td><strong>Aneuploidy</strong></td>
+<td>whole chromosomes gained or lost</td>
+<td>karyotype; very common in cancer</td>
+</tr>
+</tbody>
+</table>
+<p>A common SNV, carried by more than about 1% of a population, is called a <strong>SNP</strong> (single-nucleotide polymorphism, "snip"). Each person carries about 4–5 million SNVs relative to the reference genome, mostly common SNPs shared with many others.</p>
+<p>Where do new mutations come from? Copying errors that escape proofreading (chapter P3), chemical damage (UV light, tobacco smoke, reactive oxygen), and the spontaneous loss of the methyl-C's amino group that turns it into T (chapter P6). How many new mutations does each child carry?</p>
+<pre class="code"><code><span class="n">mu</span> <span class="o">=</span> <span class="mf">1.2e-8</span>                     <span class="c1"># germline mutation rate per base per generation (whole-genome sequencing of families)</span>
+<span class="n">diploid_bp</span> <span class="o">=</span> <span class="mi">2</span> <span class="o">*</span> <span class="mf">3.1e9</span>
+<span class="n">expected</span> <span class="o">=</span> <span class="n">mu</span> <span class="o">*</span> <span class="n">diploid_bp</span>
+<span class="n">counts</span> <span class="o">=</span> <span class="n">rng</span><span class="o">.</span><span class="n">poisson</span><span class="p">(</span><span class="n">expected</span><span class="p">,</span> <span class="mi">100_000</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"expected new mutations per child: </span><span class="si">{</span><span class="n">expected</span><span class="si">:</span><span class="s2">.0f</span><span class="si">}</span><span class="s2">  (95% of children between </span><span class="si">{</span><span class="n">np</span><span class="o">.</span><span class="n">percentile</span><span class="p">(</span><span class="n">counts</span><span class="p">,</span><span class="w"> </span><span class="mf">2.5</span><span class="p">)</span><span class="si">:</span><span class="s2">.0f</span><span class="si">}</span><span class="s2"> and </span><span class="si">{</span><span class="n">np</span><span class="o">.</span><span class="n">percentile</span><span class="p">(</span><span class="n">counts</span><span class="p">,</span><span class="w"> </span><span class="mf">97.5</span><span class="p">)</span><span class="si">:</span><span class="s2">.0f</span><span class="si">}</span><span class="s2">)"</span><span class="p">)</span>
+<span class="n">coding_fraction</span> <span class="o">=</span> <span class="mf">0.015</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"of which in protein-coding sequence: about </span><span class="si">{</span><span class="n">expected</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">coding_fraction</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+<span class="n">R</span><span class="p">[</span><span class="s2">"dnm"</span><span class="p">]</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">expected</span><span class="si">:</span><span class="s2">.0f</span><span class="si">}</span><span class="s2">"</span><span class="p">;</span> <span class="n">R</span><span class="p">[</span><span class="s2">"dnm_coding"</span><span class="p">]</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">expected</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">coding_fraction</span><span class="si">:</span><span class="s2">.0f</span><span class="si">}</span><span class="s2">"</span>
+</code></pre>
+<pre class="out">expected new mutations per child: 74  (95% of children between 58 and 92)
+of which in protein-coding sequence: about 1.1</pre>
+<p>Each child carries about 74 brand-new mutations that neither parent had, about 1 of them in protein-coding sequence. Most are harmless. But because every child gets a fresh set, new (<strong>de novo</strong>) mutations are a major cause of severe childhood genetic disorders, and finding them is a routine job of clinical sequencing. The number also rises with the father's age, because sperm-making cells keep dividing throughout life.</p>
+<h2 id="populations-allele-frequencies-and-hardyweinberg">Populations: allele frequencies and Hardy–Weinberg</h2>
+<p>Population genetics tracks how common each allele is. If an allele has frequency $p$ and the other $q = 1 - p$, and people pair up at random with respect to this gene, then genotypes follow the <strong>Hardy–Weinberg</strong> proportions:</p>
+<div class="box math">
+<p class="lab">The maths, from scratch</p>
+<p>$$\text{AA}: p^2, \qquad \text{Aa}: 2pq, \qquad \text{aa}: q^2.$$</p>
+<p>This holds when there is random mating, no selection, no migration, no new mutation and a large population. It is a null model: a deviation hints that one of those assumptions is broken (or that the genotyping has errors, which is how Hardy–Weinberg is used for quality control in genetic studies).</p>
+</div>
+<p>A practical consequence for recessive diseases: almost all copies of the disease allele are hidden in healthy carriers.</p>
+<pre class="code"><code><span class="k">for</span> <span class="n">disease</span><span class="p">,</span> <span class="n">q</span> <span class="ow">in</span> <span class="p">[(</span><span class="s2">"cystic fibrosis (Europe)"</span><span class="p">,</span> <span class="mf">0.02</span><span class="p">),</span> <span class="p">(</span><span class="s2">"sickle-cell (parts of West Africa)"</span><span class="p">,</span> <span class="mf">0.10</span><span class="p">),</span> <span class="p">(</span><span class="s2">"Tay-Sachs (general population)"</span><span class="p">,</span> <span class="mf">0.004</span><span class="p">)]:</span>
+    <span class="n">p</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">-</span> <span class="n">q</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">disease</span><span class="si">:</span><span class="s2">36s</span><span class="si">}</span><span class="s2"> affected </span><span class="si">{</span><span class="n">q</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">q</span><span class="si">:</span><span class="s2">8.4%</span><span class="si">}</span><span class="s2">   carriers </span><span class="si">{</span><span class="mi">2</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">p</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">q</span><span class="si">:</span><span class="s2">6.2%</span><span class="si">}</span><span class="s2">   carriers per affected person </span><span class="si">{</span><span class="mi">2</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">p</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">q</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="p">(</span><span class="n">q</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">q</span><span class="p">)</span><span class="si">:</span><span class="s2">5.0f</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+<span class="n">R</span><span class="p">[</span><span class="s2">"cf_carrier"</span><span class="p">]</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"1 in </span><span class="si">{</span><span class="mi">1</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="p">(</span><span class="mi">2</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="mf">0.98</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="mf">0.02</span><span class="p">)</span><span class="si">:</span><span class="s2">.0f</span><span class="si">}</span><span class="s2">"</span><span class="p">;</span> <span class="n">R</span><span class="p">[</span><span class="s2">"cf_aff"</span><span class="p">]</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"1 in </span><span class="si">{</span><span class="mi">1</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="mf">0.02</span><span class="w"> </span><span class="o">**</span><span class="w"> </span><span class="mi">2</span><span class="si">:</span><span class="s2">,.0f</span><span class="si">}</span><span class="s2">"</span>
+</code></pre>
+<pre class="out">cystic fibrosis (Europe)             affected  0.0400%   carriers  3.92%   carriers per affected person    98
+sickle-cell (parts of West Africa)   affected  1.0000%   carriers 18.00%   carriers per affected person    18
+Tay-Sachs (general population)       affected  0.0016%   carriers  0.80%   carriers per affected person   498</pre>
+<p>With a cystic fibrosis allele frequency of 2%, about 1 in 2,500 people are affected, but 1 in 26 is a carrier. Selection against the affected few barely touches an allele that hides in so many healthy carriers, which is one reason harmful recessive alleles persist.</p>
+<h2 id="drift-evolution-by-chance">Drift: evolution by chance</h2>
+<p>Each generation's genes are a sample of the previous generation's. In a finite population, sampling alone changes allele frequencies at random: <strong>genetic drift</strong>. The standard model is the <strong>Wright–Fisher model</strong>: a population of $N$ diploid individuals ($2N$ gene copies) where each new generation draws its $2N$ copies at random, with replacement, from the last.</p>
+<pre class="code"><code><span class="k">def</span><span class="w"> </span><span class="nf">wright_fisher</span><span class="p">(</span><span class="n">N</span><span class="p">,</span> <span class="n">p0</span><span class="p">,</span> <span class="n">gens</span><span class="p">,</span> <span class="n">s</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">reps</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""Allele frequency trajectories. s = relative fitness advantage of the allele."""</span>
+    <span class="n">p</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">full</span><span class="p">(</span><span class="n">reps</span><span class="p">,</span> <span class="n">p0</span><span class="p">,</span> <span class="nb">float</span><span class="p">)</span>
+    <span class="n">out</span> <span class="o">=</span> <span class="p">[</span><span class="n">p</span><span class="o">.</span><span class="n">copy</span><span class="p">()]</span>
+    <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">gens</span><span class="p">):</span>
+        <span class="n">w</span> <span class="o">=</span> <span class="n">p</span> <span class="o">*</span> <span class="p">(</span><span class="mi">1</span> <span class="o">+</span> <span class="n">s</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="n">p</span> <span class="o">*</span> <span class="p">(</span><span class="mi">1</span> <span class="o">+</span> <span class="n">s</span><span class="p">)</span> <span class="o">+</span> <span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">p</span><span class="p">))</span>          <span class="c1"># selection shifts the sampling probability</span>
+        <span class="n">p</span> <span class="o">=</span> <span class="n">rng</span><span class="o">.</span><span class="n">binomial</span><span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">N</span><span class="p">,</span> <span class="n">w</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">N</span><span class="p">)</span>               <span class="c1"># drift: random sampling of 2N copies</span>
+        <span class="n">out</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">p</span><span class="o">.</span><span class="n">copy</span><span class="p">())</span>
+    <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">out</span><span class="p">)</span>
+
+<span class="n">fig</span><span class="p">,</span> <span class="n">axs</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">11</span><span class="p">,</span> <span class="mf">3.4</span><span class="p">),</span> <span class="n">sharey</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="k">for</span> <span class="n">ax</span><span class="p">,</span> <span class="n">N</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">axs</span><span class="p">,</span> <span class="p">[</span><span class="mi">20</span><span class="p">,</span> <span class="mi">200</span><span class="p">,</span> <span class="mi">2000</span><span class="p">]):</span>
+    <span class="n">traj</span> <span class="o">=</span> <span class="n">wright_fisher</span><span class="p">(</span><span class="n">N</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">,</span> <span class="mi">300</span><span class="p">,</span> <span class="n">reps</span><span class="o">=</span><span class="mi">20</span><span class="p">)</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">traj</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s2">"#5b3a8c"</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.45</span><span class="p">,</span> <span class="n">lw</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="sa">f</span><span class="s2">"N = </span><span class="si">{</span><span class="n">N</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">traj</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="mi">0</span><span class="p">)</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">traj</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="mi">1</span><span class="p">)</span><span class="si">:</span><span class="s2">.0%</span><span class="si">}</span><span class="s2"> fixed or lost"</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">11</span><span class="p">)</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">set_xlabel</span><span class="p">(</span><span class="s2">"generation"</span><span class="p">)</span>
+<span class="n">axs</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="s2">"allele frequency"</span><span class="p">)</span>
+<span class="n">save_fig</span><span class="p">(</span><span class="s2">"drift"</span><span class="p">);</span> <span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+</code></pre>
+
+<figure><img src="images/drift.png" alt="Figure P8-1. Twenty Wright–Fisher populations each, starting at 50%, for three population sizes. In small populations, drift quickly drives alleles to fixation (100%) or loss (0%); in large ones, frequencies wander slowly." loading="lazy"><figcaption><b>Figure P8-1.</b> Figure P8-1. Twenty Wright–Fisher populations each, starting at 50%, for three population sizes. In small populations, drift quickly drives alleles to fixation (100%) or loss (0%); in large ones, frequencies wander slowly.</figcaption></figure>
+
+<p>Drift is strong in small populations and weak in large ones: frequencies wander by roughly $\sqrt{p(1-p)/2N}$ per generation. This explains why some rare diseases are common in small or founder populations (Tay-Sachs in Ashkenazi Jews, Finnish disease heritage), and, in Part 5, why random genetic drift happens among the cells of a tumour too.</p>
+<h2 id="selection-evolution-with-a-direction">Selection: evolution with a direction</h2>
+<p>If carriers of an allele have, on average, more surviving children (higher <strong>fitness</strong>), the allele tends to spread. The strength of selection is the relative advantage $s$: $s = 0.01$ means 1% more offspring. Starting rare, how often does a beneficial allele survive drift?</p>
+<pre class="code"><code><span class="n">N</span><span class="p">,</span> <span class="n">s</span><span class="p">,</span> <span class="n">reps</span> <span class="o">=</span> <span class="mi">1000</span><span class="p">,</span> <span class="mf">0.02</span><span class="p">,</span> <span class="mi">4000</span>
+<span class="n">traj</span> <span class="o">=</span> <span class="n">wright_fisher</span><span class="p">(</span><span class="n">N</span><span class="p">,</span> <span class="mi">1</span> <span class="o">/</span> <span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">N</span><span class="p">),</span> <span class="mi">3000</span><span class="p">,</span> <span class="n">s</span><span class="o">=</span><span class="n">s</span><span class="p">,</span> <span class="n">reps</span><span class="o">=</span><span class="n">reps</span><span class="p">)</span>     <span class="c1"># one new mutant copy</span>
+<span class="n">fixed</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">traj</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="mi">1</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"new beneficial mutation (s = </span><span class="si">{</span><span class="n">s</span><span class="si">}</span><span class="s2">) in N = </span><span class="si">{</span><span class="n">N</span><span class="si">}</span><span class="s2">: fixed in </span><span class="si">{</span><span class="n">fixed</span><span class="si">:</span><span class="s2">.1%</span><span class="si">}</span><span class="s2"> of runs; theory ≈ 2s = </span><span class="si">{</span><span class="mi">2</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">s</span><span class="si">:</span><span class="s2">.0%</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+<span class="n">Nn</span> <span class="o">=</span> <span class="mi">100</span>                                                         <span class="c1"># a smaller population, so neutral fixation is common enough to count</span>
+<span class="n">neutral</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">wright_fisher</span><span class="p">(</span><span class="n">Nn</span><span class="p">,</span> <span class="mi">1</span> <span class="o">/</span> <span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">Nn</span><span class="p">),</span> <span class="mi">3000</span><span class="p">,</span> <span class="n">reps</span><span class="o">=</span><span class="mi">20_000</span><span class="p">)[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="mi">1</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"a neutral new mutation in N = </span><span class="si">{</span><span class="n">Nn</span><span class="si">}</span><span class="s2">: fixed in </span><span class="si">{</span><span class="n">neutral</span><span class="si">:</span><span class="s2">.2%</span><span class="si">}</span><span class="s2"> of runs; theory 1/2N = </span><span class="si">{</span><span class="mi">1</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="p">(</span><span class="mi">2</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">Nn</span><span class="p">)</span><span class="si">:</span><span class="s2">.2%</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+<span class="n">R</span><span class="p">[</span><span class="s2">"fix_ben"</span><span class="p">]</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">fixed</span><span class="si">:</span><span class="s2">.1%</span><span class="si">}</span><span class="s2">"</span><span class="p">;</span> <span class="n">R</span><span class="p">[</span><span class="s2">"fix_neu"</span><span class="p">]</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">neutral</span><span class="si">:</span><span class="s2">.2%</span><span class="si">}</span><span class="s2">"</span>
+</code></pre>
+<pre class="out">new beneficial mutation (s = 0.02) in N = 1000: fixed in 3.6% of runs; theory ≈ 2s = 4%</pre><pre class="out">a neutral new mutation in N = 100: fixed in 0.56% of runs; theory 1/2N = 0.50%</pre>
+<p>A new mutation with a 2% advantage still disappears most of the time: it is fixed in only about 3.6% of runs, close to the classic approximation $2s$ (Haldane, 1927), because while it exists in one or a few copies it is at the mercy of chance. A neutral mutation is fixed with probability $1/2N$: in a population of 100 that is 0.5%, and the simulation gives 0.56%. Most evolution at the DNA level is the drift of nearly neutral changes, while selection acts on the few that matter.</p>
+<p>The second tab of the playground lets you vary $N$, $s$ and the starting frequency.</p>
+<h3 id="sickle-cell-and-malaria-balancing-selection">Sickle cell and malaria: balancing selection</h3>
+<p>The sickle-cell allele is common in regions with malaria. Why would a disease allele be common? Carriers (AS) are healthy <em>and</em> resist severe malaria. So in a malaria region, AS has the highest fitness, AA is hit by malaria, and SS by sickle-cell disease. Neither allele can win, and the frequency settles at a balance:</p>
+<div class="box math">
+<p class="lab">The maths, from scratch</p>
+<p>If AA has fitness $1 - s_1$, AS has fitness 1 and SS has fitness $1 - s_2$, the sickle allele frequency settles at
+$$q^* = \frac{s_1}{s_1 + s_2}.$$</p>
+</div>
+<pre class="code"><code><span class="k">def</span><span class="w"> </span><span class="nf">selection_genotypes</span><span class="p">(</span><span class="n">q0</span><span class="p">,</span> <span class="n">w_AA</span><span class="p">,</span> <span class="n">w_AS</span><span class="p">,</span> <span class="n">w_SS</span><span class="p">,</span> <span class="n">gens</span><span class="o">=</span><span class="mi">150</span><span class="p">):</span>
+    <span class="n">q</span><span class="p">,</span> <span class="n">out</span> <span class="o">=</span> <span class="n">q0</span><span class="p">,</span> <span class="p">[</span><span class="n">q0</span><span class="p">]</span>
+    <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">gens</span><span class="p">):</span>
+        <span class="n">p</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">-</span> <span class="n">q</span>
+        <span class="n">wbar</span> <span class="o">=</span> <span class="n">p</span> <span class="o">*</span> <span class="n">p</span> <span class="o">*</span> <span class="n">w_AA</span> <span class="o">+</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">p</span> <span class="o">*</span> <span class="n">q</span> <span class="o">*</span> <span class="n">w_AS</span> <span class="o">+</span> <span class="n">q</span> <span class="o">*</span> <span class="n">q</span> <span class="o">*</span> <span class="n">w_SS</span>
+        <span class="n">q</span> <span class="o">=</span> <span class="p">(</span><span class="n">p</span> <span class="o">*</span> <span class="n">q</span> <span class="o">*</span> <span class="n">w_AS</span> <span class="o">+</span> <span class="n">q</span> <span class="o">*</span> <span class="n">q</span> <span class="o">*</span> <span class="n">w_SS</span><span class="p">)</span> <span class="o">/</span> <span class="n">wbar</span>                 <span class="c1"># frequency of S among the survivors' gametes</span>
+        <span class="n">out</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">q</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">out</span><span class="p">)</span>
+
+<span class="n">s1</span><span class="p">,</span> <span class="n">s2</span> <span class="o">=</span> <span class="mf">0.12</span><span class="p">,</span> <span class="mf">0.85</span>                       <span class="c1"># malaria cost to AA; sickle-cell disease cost to SS (illustrative)</span>
+<span class="n">fig</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">8</span><span class="p">,</span> <span class="mf">3.6</span><span class="p">))</span>
+<span class="k">for</span> <span class="n">q0</span> <span class="ow">in</span> <span class="p">[</span><span class="mf">0.005</span><span class="p">,</span> <span class="mf">0.05</span><span class="p">,</span> <span class="mf">0.3</span><span class="p">,</span> <span class="mf">0.6</span><span class="p">]:</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">selection_genotypes</span><span class="p">(</span><span class="n">q0</span><span class="p">,</span> <span class="mi">1</span> <span class="o">-</span> <span class="n">s1</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">,</span> <span class="mi">1</span> <span class="o">-</span> <span class="n">s2</span><span class="p">),</span> <span class="n">color</span><span class="o">=</span><span class="s2">"#c2416b"</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.8</span><span class="p">)</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">selection_genotypes</span><span class="p">(</span><span class="mf">0.3</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">,</span> <span class="mi">1</span> <span class="o">-</span> <span class="n">s2</span><span class="p">),</span> <span class="n">color</span><span class="o">=</span><span class="s2">"#5b3a8c"</span><span class="p">,</span> <span class="n">ls</span><span class="o">=</span><span class="s2">"--"</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s2">"no malaria: the allele declines"</span><span class="p">)</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">axhline</span><span class="p">(</span><span class="n">s1</span> <span class="o">/</span> <span class="p">(</span><span class="n">s1</span> <span class="o">+</span> <span class="n">s2</span><span class="p">),</span> <span class="n">color</span><span class="o">=</span><span class="s2">"0.4"</span><span class="p">,</span> <span class="n">ls</span><span class="o">=</span><span class="s2">":"</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="sa">f</span><span class="s2">"predicted balance q* = </span><span class="si">{</span><span class="n">s1</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="p">(</span><span class="n">s1</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">s2</span><span class="p">)</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">set_xlabel</span><span class="p">(</span><span class="s2">"generation"</span><span class="p">);</span> <span class="n">ax</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="s2">"sickle allele frequency"</span><span class="p">);</span> <span class="n">ax</span><span class="o">.</span><span class="n">legend</span><span class="p">(</span><span class="n">fontsize</span><span class="o">=</span><span class="mi">9</span><span class="p">)</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="s2">"Heterozygote advantage keeps the sickle-cell allele common"</span><span class="p">)</span>
+<span class="n">save_fig</span><span class="p">(</span><span class="s2">"sickle_balance"</span><span class="p">);</span> <span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+<span class="n">R</span><span class="p">[</span><span class="s2">"qstar"</span><span class="p">]</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">s1</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="p">(</span><span class="n">s1</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">s2</span><span class="p">)</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2">"</span>
+</code></pre>
+
+<figure><img src="images/sickle_balance.png" alt="Figure P8-2. With malaria, the sickle allele rises or falls to the same balance point from any starting frequency (red). Without malaria (purple, dashed), carriers have no advantage and the allele slowly declines." loading="lazy"><figcaption><b>Figure P8-2.</b> Figure P8-2. With malaria, the sickle allele rises or falls to the same balance point from any starting frequency (red). Without malaria (purple, dashed), carriers have no advantage and the allele slowly declines.</figcaption></figure>
+
+<p>From any starting point the frequency converges to about 0.12, in line with real frequencies of 10–20% in parts of Africa. The same kind of reasoning, an allele that is good in one context and bad in another, turns up in drug resistance: a mutation that protects a cancer cell from a drug may slow its growth when the drug is absent, which is the basis of "adaptive therapy" (chapter 19).</p>
+<h2 id="reading-evolution-in-sequences">Reading evolution in sequences</h2>
+<p>All living things descend from a common ancestor. As two lineages separate, each accumulates its own mutations, so the number of differences between their genes grows roughly with time: the <strong>molecular clock</strong>. Let's compare the β-globin protein (the <em>HBB</em> product) across species. We downloaded the sequences from UniProt, plus human α-globin, which arose from a duplication of an ancestral globin gene roughly 450 million years ago.</p>
+<pre class="code"><code><span class="kn">from</span><span class="w"> </span><span class="nn">Bio</span><span class="w"> </span><span class="kn">import</span> <span class="n">SeqIO</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">Bio</span><span class="w"> </span><span class="kn">import</span> <span class="n">Align</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">Bio.Align</span><span class="w"> </span><span class="kn">import</span> <span class="n">substitution_matrices</span>
+
+<span class="n">recs</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">SeqIO</span><span class="o">.</span><span class="n">parse</span><span class="p">(</span><span class="s2">"datasets/hbb_orthologs.fasta"</span><span class="p">,</span> <span class="s2">"fasta"</span><span class="p">))</span>
+<span class="n">names</span> <span class="o">=</span> <span class="p">{</span><span class="s2">"HBB_HUMAN"</span><span class="p">:</span> <span class="s2">"human"</span><span class="p">,</span> <span class="s2">"HBB_PANTR"</span><span class="p">:</span> <span class="s2">"chimpanzee"</span><span class="p">,</span> <span class="s2">"HBB1_MOUSE"</span><span class="p">:</span> <span class="s2">"mouse"</span><span class="p">,</span> <span class="s2">"HBB_CHICK"</span><span class="p">:</span> <span class="s2">"chicken"</span><span class="p">,</span> <span class="s2">"HBB_PIG"</span><span class="p">:</span> <span class="s2">"pig"</span><span class="p">,</span>
+         <span class="s2">"HBB1_DANRE"</span><span class="p">:</span> <span class="s2">"zebrafish"</span><span class="p">,</span> <span class="s2">"HBB_BOVIN"</span><span class="p">:</span> <span class="s2">"cow"</span><span class="p">,</span> <span class="s2">"HBB_HORSE"</span><span class="p">:</span> <span class="s2">"horse"</span><span class="p">,</span> <span class="s2">"HBA_HUMAN"</span><span class="p">:</span> <span class="s2">"human α-globin"</span><span class="p">}</span>
+<span class="n">labels</span> <span class="o">=</span> <span class="p">[</span><span class="n">names</span><span class="p">[</span><span class="n">r</span><span class="o">.</span><span class="n">id</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">"|"</span><span class="p">)[</span><span class="mi">2</span><span class="p">]]</span> <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="n">recs</span><span class="p">]</span>
+<span class="n">seqs</span> <span class="o">=</span> <span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="n">r</span><span class="o">.</span><span class="n">seq</span><span class="p">)</span> <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="n">recs</span><span class="p">]</span>
+
+<span class="n">aligner</span> <span class="o">=</span> <span class="n">Align</span><span class="o">.</span><span class="n">PairwiseAligner</span><span class="p">(</span><span class="n">mode</span><span class="o">=</span><span class="s2">"global"</span><span class="p">,</span> <span class="n">open_gap_score</span><span class="o">=-</span><span class="mi">10</span><span class="p">,</span> <span class="n">extend_gap_score</span><span class="o">=-</span><span class="mf">0.5</span><span class="p">)</span>
+<span class="n">aligner</span><span class="o">.</span><span class="n">substitution_matrix</span> <span class="o">=</span> <span class="n">substitution_matrices</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="s2">"BLOSUM62"</span><span class="p">)</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">identity</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">):</span>
+    <span class="n">aln</span> <span class="o">=</span> <span class="n">aligner</span><span class="o">.</span><span class="n">align</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="n">matches</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span><span class="n">x</span> <span class="o">==</span> <span class="n">y</span> <span class="k">for</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">aln</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">aln</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span> <span class="k">if</span> <span class="n">x</span> <span class="o">!=</span> <span class="s2">"-"</span> <span class="ow">and</span> <span class="n">y</span> <span class="o">!=</span> <span class="s2">"-"</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">matches</span> <span class="o">/</span> <span class="nb">min</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">a</span><span class="p">),</span> <span class="nb">len</span><span class="p">(</span><span class="n">b</span><span class="p">))</span>
+
+<span class="n">n</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">seqs</span><span class="p">)</span>
+<span class="n">D</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">n</span><span class="p">,</span> <span class="n">n</span><span class="p">))</span>
+<span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n</span><span class="p">):</span>
+    <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">n</span><span class="p">):</span>
+        <span class="n">D</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">]</span> <span class="o">=</span> <span class="n">D</span><span class="p">[</span><span class="n">j</span><span class="p">,</span> <span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">-</span> <span class="n">identity</span><span class="p">(</span><span class="n">seqs</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">seqs</span><span class="p">[</span><span class="n">j</span><span class="p">])</span>
+<span class="n">h</span> <span class="o">=</span> <span class="n">labels</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="s2">"human"</span><span class="p">)</span>
+<span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">np</span><span class="o">.</span><span class="n">argsort</span><span class="p">(</span><span class="n">D</span><span class="p">[</span><span class="n">h</span><span class="p">]):</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">labels</span><span class="p">[</span><span class="n">k</span><span class="p">]</span><span class="si">:</span><span class="s2">16s</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="mi">100</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="p">(</span><span class="mi">1</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">D</span><span class="p">[</span><span class="n">h</span><span class="p">,</span><span class="w"> </span><span class="n">k</span><span class="p">])</span><span class="si">:</span><span class="s2">5.1f</span><span class="si">}</span><span class="s2">% identical to human β-globin"</span><span class="p">)</span>
+<span class="n">R</span><span class="p">[</span><span class="s2">"chimp_id"</span><span class="p">]</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="mi">100</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="p">(</span><span class="mi">1</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">D</span><span class="p">[</span><span class="n">h</span><span class="p">,</span><span class="w"> </span><span class="n">labels</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="s1">'chimpanzee'</span><span class="p">)])</span><span class="si">:</span><span class="s2">.0f</span><span class="si">}</span><span class="s2">"</span>
+<span class="n">R</span><span class="p">[</span><span class="s2">"mouse_id"</span><span class="p">]</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="mi">100</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="p">(</span><span class="mi">1</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">D</span><span class="p">[</span><span class="n">h</span><span class="p">,</span><span class="w"> </span><span class="n">labels</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="s1">'mouse'</span><span class="p">)])</span><span class="si">:</span><span class="s2">.0f</span><span class="si">}</span><span class="s2">"</span>
+<span class="n">R</span><span class="p">[</span><span class="s2">"fish_id"</span><span class="p">]</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="mi">100</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="p">(</span><span class="mi">1</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">D</span><span class="p">[</span><span class="n">h</span><span class="p">,</span><span class="w"> </span><span class="n">labels</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="s1">'zebrafish'</span><span class="p">)])</span><span class="si">:</span><span class="s2">.0f</span><span class="si">}</span><span class="s2">"</span>
+<span class="n">R</span><span class="p">[</span><span class="s2">"alpha_id"</span><span class="p">]</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="mi">100</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="p">(</span><span class="mi">1</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">D</span><span class="p">[</span><span class="n">h</span><span class="p">,</span><span class="w"> </span><span class="n">labels</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="s1">'human α-globin'</span><span class="p">)])</span><span class="si">:</span><span class="s2">.0f</span><span class="si">}</span><span class="s2">"</span>
+</code></pre>
+<pre class="out">human            100.0% identical to human β-globin
+chimpanzee       100.0% identical to human β-globin
+pig               85.0% identical to human β-globin
+cow               84.8% identical to human β-globin
+horse             83.6% identical to human β-globin
+mouse             80.3% identical to human β-globin
+chicken           69.4% identical to human β-globin
+zebrafish         51.7% identical to human β-globin
+human α-globin    45.8% identical to human β-globin</pre>
+<p>Human and chimpanzee β-globin are 100% identical (the proteins are in fact identical), human and mouse 80%, human and zebrafish 52%. Human α-globin is only 46% identical to human β-globin: the duplication is older than the split between fish and mammals. Turning such a distance table into a tree is the job of <strong>phylogenetics</strong> (chapter 3). Here is the simplest method, <strong>UPGMA</strong>, which repeatedly joins the two closest groups:</p>
+<pre class="code"><code><span class="kn">from</span><span class="w"> </span><span class="nn">scipy.cluster.hierarchy</span><span class="w"> </span><span class="kn">import</span> <span class="n">linkage</span><span class="p">,</span> <span class="n">dendrogram</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">scipy.spatial.distance</span><span class="w"> </span><span class="kn">import</span> <span class="n">squareform</span>
+<span class="n">Z</span> <span class="o">=</span> <span class="n">linkage</span><span class="p">(</span><span class="n">squareform</span><span class="p">(</span><span class="n">D</span><span class="p">),</span> <span class="n">method</span><span class="o">=</span><span class="s2">"average"</span><span class="p">)</span>      <span class="c1"># average linkage = UPGMA</span>
+<span class="n">fig</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">8</span><span class="p">,</span> <span class="mf">3.8</span><span class="p">))</span>
+<span class="n">dendrogram</span><span class="p">(</span><span class="n">Z</span><span class="p">,</span> <span class="n">labels</span><span class="o">=</span><span class="n">labels</span><span class="p">,</span> <span class="n">orientation</span><span class="o">=</span><span class="s2">"left"</span><span class="p">,</span> <span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">,</span> <span class="n">color_threshold</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">above_threshold_color</span><span class="o">=</span><span class="s2">"#5b3a8c"</span><span class="p">)</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">set_xlabel</span><span class="p">(</span><span class="s2">"protein distance (1 − identity)"</span><span class="p">);</span> <span class="n">ax</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="s2">"A globin family tree from 9 protein sequences"</span><span class="p">)</span>
+<span class="n">save_fig</span><span class="p">(</span><span class="s2">"globin_tree"</span><span class="p">);</span> <span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+</code></pre>
+
+<figure><img src="images/globin_tree.png" alt="Figure P8-3. A tree built from pairwise differences between globin proteins. Mammals cluster together, chicken and fish branch off earlier, and α-globin sits outside all the β-globins because the gene duplication predates the split between these animals. (The position of mouse is an artefact, explained in the text.)" loading="lazy"><figcaption><b>Figure P8-3.</b> Figure P8-3. A tree built from pairwise differences between globin proteins. Mammals cluster together, chicken and fish branch off earlier, and α-globin sits outside all the β-globins because the gene duplication predates the split between these animals. (The position of mouse is an artefact, explained in the text.)</figcaption></figure>
+
+<p>From nothing but protein sequences, the tree recovers most of the known relationships: human and chimpanzee together, mammals together, then bird, then fish, then the older α/β duplication. One detail is wrong. Mice are really more closely related to primates than pigs, cows and horses are, but here mouse branches off first. Rodent genes evolve faster (rodents have short generations), and UPGMA assumes every lineage ticks at the same rate, so a fast lineage looks older than it is. Chapter 3 introduces tree methods that don't make that assumption. Genes in different species descended from one ancestral gene by speciation are <strong>orthologs</strong>; copies within one genome made by duplication (like α- and β-globin) are <strong>paralogs</strong>. The distinction matters whenever you transfer knowledge from a mouse experiment to a human patient.</p>
+<h2 id="complex-traits-and-gwas">Complex traits and GWAS</h2>
+<p>Most traits (height, blood pressure, risk of type 2 diabetes or breast cancer) are <strong>polygenic</strong>: influenced by thousands of variants of small effect, plus environment. They are studied by <strong>genome-wide association studies</strong> (GWAS): genotype hundreds of thousands of people at millions of SNPs and test, SNP by SNP, whether one allele is more common in people with the trait. With millions of tests, the significance threshold is very strict, conventionally $p &lt; 5 \times 10^{-8}$. Summing the small effects across a genome gives a <strong>polygenic risk score</strong>. Chapter 5 works with real variant data.</p>
+<div class="box idea">
+<p class="lab">The real idea</p>
+<p>A tumour is an evolving population. Its cells acquire somatic mutations (variation), some mutations help a cell divide faster or survive treatment (selection), and the many neutral ones hitch-hike or drift. Every idea in this chapter, from mutation rates to fixation probabilities to balancing selection, reappears in cancer genomics (chapter 20) and tumour evolution (chapter 19).</p>
+</div>
+<h2 id="summary">Summary</h2>
+<table>
+<thead>
+<tr>
+<th>Idea</th>
+<th>One line</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Alleles and genotype</td>
+<td>two copies of each gene; dominant, recessive, X-linked</td>
+</tr>
+<tr>
+<td>Mutation</td>
+<td>SNVs, indels, CNVs, structural; germline vs somatic; ~70 new per child</td>
+</tr>
+<tr>
+<td>Hardy–Weinberg</td>
+<td>genotype frequencies p², 2pq, q² under random mating</td>
+</tr>
+<tr>
+<td>Drift</td>
+<td>random change in allele frequency; strongest in small populations</td>
+</tr>
+<tr>
+<td>Selection</td>
+<td>fitness differences push frequencies; new beneficial alleles are often still lost</td>
+</tr>
+<tr>
+<td>Molecular clock</td>
+<td>sequence differences grow with time; distances make trees</td>
+</tr>
+</tbody>
+</table>
+<div class="box check">
+<p class="lab">Check yourself</p>
+<ol>
+<li>Two parents are both carriers of a recessive disease. What is the chance their third child is affected, if the first two were not? <em>(Still 1/4: each child is independent.)</em></li>
+<li>An allele has frequency 0.1. What fraction of people are heterozygous under Hardy–Weinberg? <em>(2 × 0.1 × 0.9 = 18%.)</em></li>
+<li>Why are new beneficial mutations usually lost? <em>(While rare, they are at the mercy of drift; fixation probability is only about 2s.)</em></li>
+<li>What is the difference between germline and somatic mutations? <em>(Germline: inherited, in every cell. Somatic: arise in one body cell and its descendants.)</em></li>
+<li>Are human α- and β-globin orthologs or paralogs? <em>(Paralogs: they arose by duplication within one lineage.)</em></li>
+</ol>
+</div>
+<div class="box exercise">
+<p class="lab">Try it</p>
+<p>Use the Wright–Fisher function to estimate the fixation probability of a new mutation with advantage $s = 0.01$ in populations of $N$ = 50, 500 and 5000. Compare with Kimura's formula $P_\text{fix} = \dfrac{1 - e^{-2s}}{1 - e^{-4Ns}}$. For which population sizes does selection "work"?</p>
+</div>
+<details><summary>Solution</summary>
+<pre class="code"><code><span class="n">s</span> <span class="o">=</span> <span class="mf">0.01</span>
+<span class="k">for</span> <span class="n">N</span> <span class="ow">in</span> <span class="p">[</span><span class="mi">50</span><span class="p">,</span> <span class="mi">500</span><span class="p">,</span> <span class="mi">5000</span><span class="p">]:</span>
+    <span class="n">sim</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">wright_fisher</span><span class="p">(</span><span class="n">N</span><span class="p">,</span> <span class="mi">1</span> <span class="o">/</span> <span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">N</span><span class="p">),</span> <span class="mi">20</span> <span class="o">*</span> <span class="n">N</span><span class="p">,</span> <span class="n">s</span><span class="o">=</span><span class="n">s</span><span class="p">,</span> <span class="n">reps</span><span class="o">=</span><span class="mi">4000</span><span class="p">)[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="mi">1</span><span class="p">)</span>
+    <span class="n">kimura</span> <span class="o">=</span> <span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="mi">2</span> <span class="o">*</span> <span class="n">s</span><span class="p">))</span> <span class="o">/</span> <span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="mi">4</span> <span class="o">*</span> <span class="n">N</span> <span class="o">*</span> <span class="n">s</span><span class="p">))</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"N = </span><span class="si">{</span><span class="n">N</span><span class="si">:</span><span class="s2">5d</span><span class="si">}</span><span class="s2">: simulated </span><span class="si">{</span><span class="n">sim</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">, Kimura </span><span class="si">{</span><span class="n">kimura</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">, neutral 1/2N = </span><span class="si">{</span><span class="mi">1</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="p">(</span><span class="mi">2</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">N</span><span class="p">)</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+</code></pre>
+<pre class="out">N =    50: simulated 0.0217, Kimura 0.0229, neutral 1/2N = 0.0100</pre><pre class="out">N =   500: simulated 0.0213, Kimura 0.0198, neutral 1/2N = 0.0010</pre><pre class="out">N =  5000: simulated 0.0225, Kimura 0.0198, neutral 1/2N = 0.0001</pre>
+<p>For N = 50 (4Ns = 2) the fixation probability is only modestly above the neutral value: drift dominates. For N = 500 and 5000 it approaches 2s = 0.02, far above neutral: selection dominates once $4Ns \gg 1$. This is why small populations, including the small founding populations of cells that seed a metastasis, can carry harmful mutations to high frequency by chance.</p>
+</details>
+    <nav class="pager">
+      <a class="prev" href="../07-cell-cycle/index.html"><small>Previous</small>P7 · The cell cycle, division and death</a>
+      <a class="next" href="../09-signalling-metabolism/index.html"><small>Next</small>P9 · Signalling and metabolism</a>
+    </nav>
+  </main>
+</div>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.js"></script>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/contrib/auto-render.min.js"></script>
+<script defer src="../../assets/guide.js"></script>
+</body>
+</html>

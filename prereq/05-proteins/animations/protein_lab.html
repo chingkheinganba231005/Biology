@@ -1,0 +1,138 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Protein Lab</title><link rel="stylesheet" href="../../../assets/pg.css">
+<style>
+.aas{display:grid;grid-template-columns:repeat(auto-fill,minmax(118px,1fr));gap:6px}
+.aas button{border-radius:10px;text-align:left;padding:6px 9px;line-height:1.25}
+.aas button b{font-size:16px;margin-right:6px}
+.aas button small{display:block;color:var(--muted);font-size:11.5px}
+.aas button.hy{border-left:5px solid var(--c)}.aas button.po{border-left:5px solid var(--g)}.aas button.ne{border-left:5px solid var(--t)}.aas button.pos{border-left:5px solid var(--a)}.aas button.sp{border-left:5px solid var(--muted)}
+.leg span{display:inline-flex;align-items:center;gap:5px;margin-right:12px;font-size:12.5px}.leg i{width:12px;height:12px;border-radius:3px;display:inline-block}
+</style></head><body>
+<div class="tabs"><button class="on" data-t="fold" type="button">Fold a chain</button><button data-t="enz" type="button">Enzyme speed and inhibitors</button><button data-t="aa" type="button">The 20 amino acids</button></div>
+<section class="pane on" id="fold">
+  <div class="row"><select id="preset" aria-label="sequence">
+    <option value="HPHPPHHPHPPHPHHPPHPH">20 residues (classic test sequence)</option>
+    <option value="HHPPHPPHPPHPPHPPHPPHPPHH">24 residues</option>
+    <option value="PPHPPHHPPPPHHPPPPHHPPPPHH">25 residues</option>
+    <option value="PPPPPPPPPPPPPPPPPPPP">20 polar only (never folds)</option></select>
+    <button class="pri" type="button" id="frun">Run</button><button type="button" id="frand">Unfold</button><span class="tx" id="fstat"></span></div>
+  <div class="ctl" id="fctl"></div>
+  <svg id="fsvg" viewBox="0 0 700 330" role="img" aria-label="A chain of hydrophobic and polar beads on a grid"></svg>
+  <div class="msg" id="fmsg"></div>
+</section>
+<section class="pane" id="enz">
+  <div class="ctl" id="ectl"></div>
+  <div class="row"><select id="itype" aria-label="inhibitor type"><option value="comp">competitive inhibitor (blocks the active site)</option><option value="non">non-competitive inhibitor (binds elsewhere)</option></select></div>
+  <svg id="esvg" viewBox="0 0 700 290" role="img" aria-label="Reaction speed against substrate concentration"></svg>
+  <div class="msg" id="emsg"></div>
+</section>
+<section class="pane" id="aa">
+  <div class="leg"><span><i style="background:var(--c)"></i>hydrophobic</span><span><i style="background:var(--g)"></i>polar</span><span><i style="background:var(--t)"></i>negative</span><span><i style="background:var(--a)"></i>positive</span><span><i style="background:var(--muted)"></i>special</span></div>
+  <div class="aas" id="aas" style="margin-top:8px"></div>
+  <div class="msg" id="amsg">Click an amino acid.</div>
+</section>
+<script src="../../../assets/pg.js"></script>
+<script>
+const {$, h, s, tabs, slider, plot, rng} = PG; tabs();
+// ---------------- HP lattice model: H-H contacts that are not chain neighbours give energy -1 each
+const r = rng(3);
+let seq = $("preset").value, pos = [], E = 0, best = 0, bestPos = [], steps = 0, timer = null, Elog = [];
+const T = slider("temperature (randomness)", 0.1, 2, 0.05, 0.5, (v) => v.toFixed(2), null);
+$("fctl").append(T.el);
+const key = (p) => p[0] + "," + p[1];
+function energy(P) {
+  const m = new Map(P.map((p, i) => [key(p), i])); let e = 0;
+  P.forEach((p, i) => { if (seq[i] !== "H") return; for (const [dx, dy] of [[1, 0], [0, 1]]) { const j = m.get((p[0] + dx) + "," + (p[1] + dy)); if (j != null && seq[j] === "H" && Math.abs(i - j) > 1) e--; } });
+  return e;
+}
+function unfold() { pos = seq.split("").map((_, i) => [i, 0]); E = energy(pos); best = E; bestPos = pos.map((p) => p.slice()); steps = 0; Elog = []; }
+const ROT = [(x, y) => [-y, x], (x, y) => [y, -x], (x, y) => [-x, -y]];
+function move() {
+  // pivot move: rotate the chain on one side of a random residue by 90°, -90° or 180°
+  const n = pos.length, k = 1 + Math.floor(r() * (n - 2)), rot = ROT[Math.floor(r() * 3)], tail = r() < 0.5;
+  const [cx, cy] = pos[k], nw = pos.map((p) => p.slice());
+  for (let i = 0; i < n; i++) if (tail ? i > k : i < k) { const [x, y] = rot(pos[i][0] - cx, pos[i][1] - cy); nw[i] = [cx + x, cy + y]; }
+  if (new Set(nw.map(key)).size < n) return;                       // chain may not cross itself
+  const e2 = energy(nw);
+  if (e2 <= E || r() < Math.exp(-(e2 - E) / T.value)) { pos = nw; E = e2; if (E < best) { best = E; bestPos = pos.map((p) => p.slice()); } }
+}
+function drawFold() {
+  const parts = [], xs = pos.map((p) => p[0]), ys = pos.map((p) => p[1]);
+  const mx = (Math.min(...xs) + Math.max(...xs)) / 2, my = (Math.min(...ys) + Math.max(...ys)) / 2;
+  const span = Math.max(Math.max(...xs) - Math.min(...xs), Math.max(...ys) - Math.min(...ys), 1);
+  const sc = Math.min(38, 270 / span), X = (x) => 235 + (x - mx) * sc, Y = (y) => 160 + (y - my) * sc;
+  const m = new Map(pos.map((p, i) => [key(p), i]));
+  pos.forEach((p, i) => { if (seq[i] !== "H") return; for (const [dx, dy] of [[1, 0], [0, 1]]) { const j = m.get((p[0] + dx) + "," + (p[1] + dy)); if (j != null && seq[j] === "H" && Math.abs(i - j) > 1) parts.push(s("line", {x1: X(p[0]), y1: Y(p[1]), x2: X(pos[j][0]), y2: Y(pos[j][1]), stroke: "var(--c)", "stroke-width": 3, "stroke-dasharray": "3 3"})); } });
+  parts.push(s("polyline", {points: pos.map((p) => X(p[0]) + "," + Y(p[1])).join(" "), fill: "none", stroke: "var(--muted)", "stroke-width": 3}));
+  pos.forEach((p, i) => parts.push(s("circle", {cx: X(p[0]), cy: Y(p[1]), r: Math.max(4, sc * 0.33), fill: seq[i] === "H" ? "var(--c)" : "var(--bg)", stroke: seq[i] === "H" ? "var(--c)" : "var(--g)", "stroke-width": 2})));
+  parts.push(s("text", {x: X(pos[0][0]), y: Y(pos[0][1]) - sc * 0.5, class: "tx", "text-anchor": "middle"}, "start"));
+  // energy trace
+  const gx = 490, gw = 200, gy = 40, gh = 230, emin = Math.min(-1, ...Elog, best) - 1;
+  parts.push(s("rect", {x: gx, y: gy, width: gw, height: gh, fill: "none", stroke: "var(--line)"}), s("text", {x: gx, y: gy - 8, class: "lb"}, "energy (lower = more folded)"));
+  if (Elog.length > 1) parts.push(s("polyline", {points: Elog.map((e, i) => (gx + gw * i / (Elog.length - 1)).toFixed(1) + "," + (gy + gh * e / emin).toFixed(1)).join(" "), fill: "none", stroke: "var(--accent)", "stroke-width": 1.5}));
+  parts.push(s("text", {x: gx + 4, y: gy + 14, class: "tx"}, "0"), s("text", {x: gx + 4, y: gy + gh - 4, class: "tx"}, String(emin)));
+  $("fsvg").replaceChildren(...parts);
+  const nH = [...seq].filter((c) => c === "H").length;
+  $("fstat").textContent = `moves tried ${steps.toLocaleString()} · energy ${E} · best so far ${best}`;
+  $("fmsg").innerHTML = `Orange beads are <b>hydrophobic</b> (H), white beads <b>polar</b> (P). Each dashed orange line is an H–H contact worth −1 unit of energy. The simulation tries random twists of the chain and keeps a twist if it lowers the energy, or sometimes even if it doesn't (more often at high temperature). ` +
+    (seq.includes("H") ? `Watch the ${nH} hydrophobic beads gather into a core with the polar ones outside, just as oily side chains hide from water in a real protein. At high temperature the chain stays floppy (unfolded); cool it down and it settles into a compact fold.` : `With no hydrophobic beads there is nothing to drive folding: the chain just wanders. Real proteins fold mainly because of the hydrophobic effect.`);
+}
+function tick() { for (let i = 0; i < 400; i++) { move(); steps++; } Elog.push(E); if (Elog.length > 300) Elog.shift(); drawFold(); }
+$("frun").onclick = () => { if (timer) { clearInterval(timer); timer = null; $("frun").textContent = "Run"; return; } timer = setInterval(tick, 60); $("frun").textContent = "Pause"; };
+$("frand").onclick = () => { unfold(); drawFold(); };
+$("preset").onchange = () => { seq = $("preset").value; unfold(); drawFold(); };
+window.addEventListener("tabchange", () => { if (timer && !$("fold").classList.contains("on")) { clearInterval(timer); timer = null; $("frun").textContent = "Run"; } });
+unfold(); drawFold();
+// ---------------- Michaelis-Menten with an inhibitor
+const fmt = (v) => v >= 1000 ? (v / 1000).toPrecision(3) + " mM" : v.toPrecision(3) + " µM";
+const Km = slider("Km (µM)", 0, 3, 0.05, 1.3, (v) => fmt(10 ** v), drawE);
+const Vm = slider("Vmax (relative)", 10, 100, 1, 100, (v) => v, drawE);
+const I = slider("inhibitor concentration (µM)", -1, 3, 0.05, -1, (v) => v <= -0.99 ? "none" : fmt(10 ** v), drawE);
+const Ki = slider("inhibitor Ki (µM)", -1, 3, 0.05, 1, (v) => fmt(10 ** v), drawE);
+$("ectl").append(Km.el, Vm.el, I.el, Ki.el);
+$("itype").onchange = drawE;
+function drawE() {
+  const km = 10 ** Km.value, vm = Vm.value, i = I.value <= -0.99 ? 0 : 10 ** I.value, ki = 10 ** Ki.value, a = 1 + i / ki, comp = $("itype").value === "comp";
+  const kmApp = comp ? km * a : km, vmApp = comp ? vm : vm / a;
+  const xs = []; for (let e = -1; e <= 4.001; e += 0.04) xs.push(10 ** e);
+  const ser = [{xs, ys: xs.map((x) => vm * x / (km + x)), color: "var(--accent)", label: "no inhibitor"}];
+  if (i > 0) ser.push({xs, ys: xs.map((x) => vmApp * x / (kmApp + x)), color: "var(--accent2)", label: "with inhibitor"});
+  const {X, Y} = plot($("esvg"), ser, {logx: true, xmin: 0.1, xmax: 1e4, ymin: 0, ymax: 105, R: 26, xlabel: "substrate concentration [S] (µM, log scale)", ylabel: "reaction speed v", xfmt: (v) => v >= 1000 ? v / 1000 + " mM" : v + " µM"});
+  const svg = $("esvg");
+  svg.append(s("line", {x1: X(km), x2: X(km), y1: Y(vm / 2), y2: Y(0), stroke: "var(--accent)", "stroke-dasharray": "3 3"}), s("text", {x: X(km) + 4, y: Y(vm / 2) - 5, class: "tx"}, "Km: half of Vmax"));
+  const s0 = 100, v0 = vm * s0 / (km + s0), v1 = vmApp * s0 / (kmApp + s0);
+  $("emsg").innerHTML = `Speed follows <b>v = Vmax·[S] / (Km + [S])</b>. At low substrate the enzyme is mostly idle and speed rises in proportion to [S]; at high substrate every enzyme is busy and speed levels off at <b>Vmax</b>. <b>Km</b> is the substrate concentration at half speed: a small Km means the enzyme grabs its substrate tightly. ` +
+    (i > 0 ? `With ${fmt(i)} of inhibitor (Ki ${fmt(ki)}), speed at 100 µM substrate drops from ${v0.toFixed(1)} to ${v1.toFixed(1)} (${(100 * (1 - v1 / v0)).toFixed(0)}% inhibition). ` + (comp ? `A <b>competitive</b> inhibitor fights the substrate for the active site, so it raises the apparent Km to ${fmt(kmApp)} but flooding with substrate still reaches the full Vmax. Most drugs that target enzymes, such as statins and many kinase inhibitors, work this way.` : `A <b>non-competitive</b> inhibitor binds elsewhere and disables a fraction of the enzyme, so it lowers Vmax to ${vmApp.toFixed(1)} and no amount of substrate can overcome it.`) : "Raise the inhibitor concentration to see how a drug changes the curve.");
+}
+drawE();
+// ---------------- amino acids: one-letter, three-letter, name, class, Kyte-Doolittle hydropathy, note
+const AA = [
+  ["A", "Ala", "alanine", "hy", 1.8, "Small and mildly hydrophobic. Very common in helices."],
+  ["V", "Val", "valine", "hy", 4.2, "Branched and oily; buried in protein cores. The sickle-cell mutation puts a valine where a glutamate should be."],
+  ["L", "Leu", "leucine", "hy", 3.8, "The most common amino acid in human proteins. Leucine zippers hold some transcription factors together."],
+  ["I", "Ile", "isoleucine", "hy", 4.5, "The most hydrophobic amino acid on the Kyte–Doolittle scale."],
+  ["M", "Met", "methionine", "hy", 1.9, "Contains sulfur. Every protein starts with it (codon ATG)."],
+  ["F", "Phe", "phenylalanine", "hy", 2.8, "A big aromatic ring; stacks with other rings, including drug rings in binding pockets."],
+  ["W", "Trp", "tryptophan", "hy", -0.9, "The largest amino acid. Its ring glows under UV light, which is used to follow protein folding."],
+  ["P", "Pro", "proline", "sp", -1.6, "Its side chain loops back onto the backbone, making a rigid kink. Breaks helices."],
+  ["G", "Gly", "glycine", "sp", -0.4, "No side chain at all (just H). Tiny and flexible; found in tight turns. Every third residue of collagen."],
+  ["C", "Cys", "cysteine", "sp", 2.5, "Contains a reactive SH group; two cysteines can link into a disulfide bridge. Some covalent cancer drugs (osimertinib, sotorasib) attach to a cysteine."],
+  ["S", "Ser", "serine", "po", -0.8, "Has an OH group. Kinases attach phosphate to serines to switch proteins on and off (chapter P9)."],
+  ["T", "Thr", "threonine", "po", -0.7, "Like serine with an extra carbon; also phosphorylated by kinases."],
+  ["Y", "Tyr", "tyrosine", "po", -1.3, "Aromatic with an OH. Tyrosine kinases such as EGFR and BCR-ABL phosphorylate it; many cancer drugs block them."],
+  ["N", "Asn", "asparagine", "po", -3.5, "Polar amide. Sugars are attached to asparagines on secreted proteins (glycosylation)."],
+  ["Q", "Gln", "glutamine", "po", -3.5, "Polar amide. Many cancer cells consume huge amounts of glutamine as fuel."],
+  ["D", "Asp", "aspartate", "ne", -3.5, "Often in active sites, holding metal ions or acting as an acid."],
+  ["E", "Glu", "glutamate", "ne", -3.5, "Likes the protein surface. Also a neurotransmitter."],
+  ["K", "Lys", "lysine", "pos", -3.9, "Histone lysines are tagged with acetyl and methyl groups that control gene activity (chapter P6)."],
+  ["R", "Arg", "arginine", "pos", -4.5, "The least hydrophobic amino acid. Grips the negative phosphates of DNA."],
+  ["H", "His", "histidine", "pos", -3.2, "Its charge flips near pH 6–7, so it is perfect for passing protons in enzyme active sites."],
+];
+const CL = {hy: "hydrophobic", po: "polar, uncharged", ne: "negatively charged", pos: "positively charged", sp: "special shape"};
+AA.forEach(([one, three, name, cl, kd, note]) => {
+  const b = h("button", {type: "button", class: cl}, h("b", null, one), three, h("small", null, name));
+  b.onclick = () => { $("amsg").innerHTML = `<b>${name} (${three}, ${one})</b>: ${CL[cl]}, hydropathy ${kd > 0 ? "+" : ""}${kd} on the Kyte–Doolittle scale (positive = oily, avoids water). ${note}`; };
+  $("aas").append(b);
+});
+</script></body></html>

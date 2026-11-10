@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Gene Switch Lab</title><link rel="stylesheet" href="../../../assets/pg.css">
+<style>.tg{display:flex;gap:8px;flex-wrap:wrap;margin:6px 0}.tg button.on{background:var(--accent);color:var(--bg);border-color:var(--accent)}</style></head><body>
+<div class="tabs"><button class="on" data-t="sw" type="button">Switch a gene on and off</button><button data-t="lac" type="button">The lac operon</button><button data-t="chrom" type="button">Chromatin and silencing</button></div>
+<section class="pane on" id="sw">
+  <div class="ctl" id="swctl"></div>
+  <svg id="swsvg" viewBox="0 0 700 280" role="img" aria-label="mRNA and protein levels over time after a gene is switched on and later off"></svg>
+  <svg id="hsvg" viewBox="0 0 700 200" role="img" aria-label="Gene activity against transcription factor concentration"></svg>
+  <div class="msg" id="swmsg"></div>
+</section>
+<section class="pane" id="lac">
+  <div class="tg"><button type="button" id="lacL">lactose: absent</button><button type="button" id="lacG" class="on">glucose: present</button></div>
+  <svg id="lsvg" viewBox="0 0 700 230" role="img" aria-label="The lac operon of E. coli"></svg>
+  <div class="msg" id="lmsg"></div>
+</section>
+<section class="pane" id="chrom">
+  <div class="tg" id="ctg"></div>
+  <svg id="csvg" viewBox="0 0 700 200" role="img" aria-label="Nucleosomes around a gene promoter"></svg>
+  <div class="msg" id="cmsg"></div>
+</section>
+<script src="../../../assets/pg.js"></script>
+<script>
+const {$, h, s, tabs, slider, plot} = PG; tabs();
+// ---------- switch: dm/dt = k*act - gm*m ; dp/dt = kp*m - gp*p ; act = TF^n/(K^n+TF^n)
+const mh = slider("mRNA half-life (min)", 5, 600, 5, 30, (v) => v + " min", drawSw);
+const ph = slider("protein half-life (min)", 10, 2000, 10, 600, (v) => v >= 120 ? (v / 60).toFixed(1) + " h" : v + " min", drawSw);
+const tf = slider("transcription factor level (relative to K)", 0, 3, 0.05, 2, (v) => v.toFixed(2) + "×K", drawSw);
+const nH = slider("Hill coefficient n (cooperativity)", 1, 6, 1, 2, (v) => v, drawSw);
+$("swctl").append(mh.el, ph.el, tf.el, nH.el);
+function drawSw() {
+  const gm = Math.LN2 / mh.value, gp = Math.LN2 / ph.value, n = nH.value, x = tf.value, act = x ** n / (1 + x ** n);
+  const Toff = 720, Tend = 1440, dt = 1, ts = [], ms = [], ps = [];
+  let m = 0, p = 0;
+  for (let t = 0; t <= Tend; t += dt) { ts.push(t / 60); const on = t < Toff ? act : 0; ms.push(m); ps.push(p); m += dt * (on * gm - gm * m); p += dt * (gp * m - gp * p); }
+  // normalised so the steady state at full activation = 1
+  plot($("swsvg"), [{xs: ts, ys: ms, color: "var(--accent)", label: "mRNA"}, {xs: ts, ys: ps, color: "var(--accent2)", label: "protein"}],
+    {ymin: 0, ymax: 1.05, xlabel: "time (hours): gene ON at 0 h, OFF at 12 h", ylabel: "level (max = 1)", H: 280, bands: [{x0: 0, x1: 12, color: "var(--g)", opacity: 0.08}]});
+  const xs = [], ys = []; for (let v = 0; v <= 3.001; v += 0.02) { xs.push(v); ys.push(v ** n / (1 + v ** n)); }
+  const {X, Y} = plot($("hsvg"), [{xs, ys, color: "var(--accent)"}], {H: 200, ymin: 0, ymax: 1, xlabel: "transcription factor level (× K)", ylabel: "activity", B: 34});
+  $("hsvg").append(s("circle", {cx: X(x), cy: Y(act), r: 5, fill: "var(--accent2)"}));
+  const t90m = Math.log(10) / gm / 60, t90p = Math.log(10) / gp / 60;
+  $("swmsg").innerHTML = `The transcription factor keeps the promoter <b>${(100 * act).toFixed(0)}%</b> active (lower plot). After the gene switches on, mRNA reaches 90% of its final level in about <b>${t90m.toFixed(1)} h</b> and protein in about <b>${t90p.toFixed(1)} h</b>: the time to settle is set by how fast each molecule is <i>destroyed</i>, not how fast it is made. ` +
+    `After switch-off, the protein lingers long after the mRNA has gone. Short-lived molecules give fast, precise control, which is why signalling proteins and regulators like p53 and MYC are destroyed within minutes. A larger Hill coefficient n makes the response more switch-like: below K almost nothing, above K almost fully on.`;
+}
+drawSw();
+// ---------- lac operon
+let lactose = false, glucose = true;
+function drawLac() {
+  const parts = [], y = 120, rep = !lactose, cap = !glucose, level = rep ? 0.02 : cap ? 1 : 0.1;
+  const box = (x, w, c, t, op = 0.9) => { parts.push(s("rect", {x, y, width: w, height: 26, rx: 3, fill: c, opacity: op})); parts.push(s("text", {x: x + w / 2, y: y + 17, class: "tx", "text-anchor": "middle", style: "fill:#fff;font-weight:600"}, t)); };
+  parts.push(s("line", {x1: 10, x2: 690, y1: y + 13, y2: y + 13, stroke: "var(--muted)", "stroke-width": 3}));
+  box(20, 70, "var(--muted)", "lacI");
+  box(120, 50, "var(--g)", "CAP site"); box(172, 60, "var(--accent)", "promoter"); box(234, 60, "var(--c)", "operator");
+  box(310, 150, "var(--accent2)", "lacZ"); box(462, 110, "var(--accent2)", "lacY", 0.75); box(574, 100, "var(--accent2)", "lacA", 0.6);
+  parts.push(s("text", {x: 55, y: y + 46, class: "tx", "text-anchor": "middle"}, "makes repressor"), s("text", {x: 492, y: y + 46, class: "tx", "text-anchor": "middle"}, "genes for using lactose"));
+  if (rep) { parts.push(s("ellipse", {cx: 264, cy: y - 14, rx: 34, ry: 18, fill: "var(--ink)"}), s("text", {x: 264, y: y - 10, class: "tx", "text-anchor": "middle", style: "fill:var(--bg);font-weight:600"}, "repressor")); }
+  else { parts.push(s("ellipse", {cx: 60, cy: 50, rx: 34, ry: 18, fill: "var(--ink)", opacity: 0.4}), s("text", {x: 60, y: 54, class: "tx", "text-anchor": "middle", style: "fill:var(--bg)"}, "repressor"), s("circle", {cx: 98, cy: 44, r: 8, fill: "var(--c)"}), s("text", {x: 112, y: 40, class: "tx"}, "allolactose holds it off the DNA")); }
+  if (cap) parts.push(s("circle", {cx: 145, cy: y - 16, r: 18, fill: "var(--g)"}), s("text", {x: 145, y: y - 12, class: "tx", "text-anchor": "middle", style: "fill:#fff;font-weight:600"}, "CAP"), s("text", {x: 145, y: y - 40, class: "tx", "text-anchor": "middle"}, "low glucose → CAP binds"));
+  // polymerase and mRNA output
+  if (!rep) { parts.push(s("rect", {x: 176, y: y - 34, width: 54, height: 30, rx: 12, fill: "var(--accent)", opacity: 0.85}), s("text", {x: 203, y: y - 15, class: "tx", "text-anchor": "middle", style: "fill:#fff"}, "RNA pol")); }
+  const nm = Math.round(level * 12);
+  for (let i = 0; i < nm; i++) parts.push(s("path", {d: `M${320 + i * 30} ${y + 70} q 8 -8 16 0 t 16 0`, fill: "none", stroke: "var(--accent2)", "stroke-width": 2.5}));
+  parts.push(s("text", {x: 310, y: y + 100, class: "lb"}, `lac mRNA output: ${level === 1 ? "HIGH" : level === 0.1 ? "low" : "almost none"}`));
+  $("lsvg").replaceChildren(...parts);
+  $("lacL").textContent = "lactose: " + (lactose ? "present" : "absent"); $("lacL").classList.toggle("on", lactose);
+  $("lacG").textContent = "glucose: " + (glucose ? "present" : "absent"); $("lacG").classList.toggle("on", glucose);
+  $("lmsg").innerHTML = (rep ? "No lactose: the <b>lac repressor</b> sits on the operator and blocks RNA polymerase. There is no point making lactose-digesting enzymes. " : "Lactose is present: a form of it (allolactose) binds the repressor and pulls it off the DNA. ") +
+    (!rep && glucose ? "But glucose, the better fuel, is also present, so the activator <b>CAP</b> is not bound and the genes are only weakly transcribed. " : "") +
+    (!rep && !glucose ? "Glucose is absent, so the activator <b>CAP</b> binds next to the promoter and recruits RNA polymerase strongly: the genes are switched fully ON. " : "") +
+    "The operon works like a logic gate: ON only if lactose AND NOT glucose. François Jacob and Jacques Monod worked this out in the 1960s; it was the first gene-regulation circuit ever understood, and synthetic biologists still use its parts.";
+}
+$("lacL").onclick = () => { lactose = !lactose; drawLac(); };
+$("lacG").onclick = () => { glucose = !glucose; drawLac(); };
+drawLac();
+// ---------- chromatin
+const MARKS = [
+  ["ac", "histone acetylation (H3K27ac)", true, "Acetyl groups neutralise the positive charge of histone lysines, so DNA (negative) is held less tightly. Marks active promoters and enhancers."],
+  ["k4", "H3K4me3 at the promoter", true, "Three methyl groups on lysine 4 of histone H3: the classic mark of an active promoter."],
+  ["k27", "H3K27me3 (Polycomb)", false, "Laid down by the Polycomb complex (EZH2); represses developmental genes. EZH2 is overactive in some lymphomas and the drug tazemetostat inhibits it."],
+  ["me", "DNA methylation of the CpG island", false, "Methyl groups on the C of CpG sites in the promoter attract proteins that compact chromatin and block transcription factors. Tumour suppressor genes such as MLH1 and CDKN2A are silenced this way in many cancers."],
+];
+const on = {ac: true, k4: true, k27: false, me: false};
+MARKS.forEach(([k, label]) => { const b = h("button", {type: "button"}, label); b.onclick = () => { on[k] = !on[k]; drawChrom(); }; b.dataset.k = k; $("ctg").append(b); });
+function drawChrom() {
+  document.querySelectorAll("#ctg button").forEach((b) => b.classList.toggle("on", on[b.dataset.k]));
+  const score = (on.ac ? 1 : 0) + (on.k4 ? 1 : 0) - (on.k27 ? 1.5 : 0) - (on.me ? 2 : 0), open = score >= 1, gap = open ? 70 : 38;
+  const parts = [], y = 90; let x = 30;
+  parts.push(s("line", {x1: 10, x2: 690, y1: y, y2: y, stroke: "var(--muted)", "stroke-width": 2}));
+  const nucs = [];
+  for (let i = 0; i < 9; i++) { nucs.push(x); x += gap + (i === 3 && open ? 70 : 0); }
+  const off = (700 - (x - gap + 40)) / 2;
+  nucs.forEach((nx, i) => {
+    const cx = nx + off + 20;
+    parts.push(s("circle", {cx, cy: y, r: 20, fill: "var(--soft)", stroke: "var(--accent)", "stroke-width": 2}));
+    if (on.ac) parts.push(s("circle", {cx: cx - 12, cy: y - 22, r: 5, fill: "var(--g)"}));
+    if (on.k4 && (i === 3 || i === 4)) parts.push(s("rect", {x: cx + 6, y: y - 30, width: 9, height: 9, fill: "var(--a)"}));
+    if (on.k27) parts.push(s("rect", {x: cx - 4, y: y + 20, width: 9, height: 9, fill: "var(--t)"}));
+  });
+  const px = nucs[3] + off + 40 + (open ? gap / 2 + 35 : gap / 2);
+  parts.push(s("text", {x: px, y: y + 50, class: "lb", "text-anchor": "middle"}, open ? "promoter: open" : "promoter: hidden"));
+  if (on.me) for (let k = -2; k <= 2; k++) parts.push(s("circle", {cx: px + k * 9, cy: y - 2, r: 3.5, fill: "var(--ink)"}));
+  if (open) parts.push(s("rect", {x: px - 24, y: y - 40, width: 48, height: 26, rx: 10, fill: "var(--accent)", opacity: 0.9}), s("text", {x: px, y: y - 23, class: "tx", "text-anchor": "middle", style: "fill:#fff"}, "TF + pol"));
+  parts.push(s("text", {x: 10, y: 180, class: "tx"}, "● green: acetylation  ■ blue: H3K4me3  ■ pink: H3K27me3  ● black dots: methylated CpGs"));
+  $("csvg").replaceChildren(...parts);
+  const last = MARKS.filter(([k]) => on[k]).map(([, l, , d]) => `<b>${l}</b>: ${d}`).join("<br>");
+  $("cmsg").innerHTML = `Gene is <b>${open ? "ON: nucleosomes slide apart, transcription factors and RNA polymerase can reach the promoter" : "OFF: nucleosomes are packed tightly over the promoter"}</b>. Toggle the marks above.` + (last ? "<br>" + last : "") + "<br>These marks are copied when cells divide, so a cell's identity is remembered. That inheritance of state without changing the DNA sequence is <b>epigenetics</b>.";
+}
+drawChrom();
+</script></body></html>
