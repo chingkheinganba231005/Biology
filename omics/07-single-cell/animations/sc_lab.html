@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Single-cell Lab</title><link rel="stylesheet" href="../../../assets/pg.css">
+<style>.leg{display:flex;flex-wrap:wrap;gap:4px 12px;font-size:12px;margin-top:4px}.leg span{display:inline-flex;align-items:center;gap:4px}.leg i{width:11px;height:11px;border-radius:50%;display:inline-block}</style></head><body>
+<div class="tabs"><button class="on" data-t="map" type="button">Explore 2,700 real blood cells</button></div>
+<section class="pane on" id="map">
+  <div class="row"><label>colour by <select id="mode"><option value="cluster">cluster</option><option value="marker">marker gene</option></select></label>
+    <label id="mkwrap" style="display:none">gene <select id="marker"></select></label></div>
+  <svg id="svg" viewBox="0 0 440 440" role="img" aria-label="t-SNE map of single cells" style="max-width:480px"></svg>
+  <div class="leg" id="leg"></div>
+  <div class="msg" id="msg"></div>
+</section>
+<script src="../../../assets/pg.js"></script>
+<script src="cells.js"></script>
+<script>
+const {$, h, s, tabs} = PG; tabs();
+const CL = ["#5b3a8c", "#c2416b", "#1f8a4c", "#d99a14", "#3a64c4", "#8a3fae", "#c23a6f", "#5e5869"];
+const MARK = { CD3D: "T cells", IL7R: "CD4 T cells", CD8A: "CD8 T cells", MS4A1: "B cells", CD79A: "B cells", CD14: "CD14 monocytes", LYZ: "monocytes", FCGR3A: "FCGR3A monocytes / NK", NKG7: "NK / cytotoxic", GNLY: "NK cells", PPBP: "platelets" };
+Object.keys(CELLS.markers).forEach((g) => $("marker").append(h("option", {value: g}, g + " (" + MARK[g] + ")")));
+function draw() {
+  const mode = $("mode").value, n = CELLS.x.length, parts = [];
+  const X = (v) => 20 + v * 400, Y = (v) => 420 - v * 400;
+  let mvals = null, mx = 1;
+  if (mode === "marker") { mvals = CELLS.markers[$("marker").value]; mx = Math.max(...mvals) || 1; }
+  for (let i = 0; i < n; i++) {
+    let fill;
+    if (mode === "cluster") fill = CL[CELLS.cluster[i]];
+    else { const t = mvals[i] / mx; fill = t < 0.05 ? "var(--line)" : `rgba(91,58,140,${0.2 + 0.8 * t})`; }
+    parts.push(s("circle", {cx: X(CELLS.x[i]), cy: Y(CELLS.y[i]), r: 2, fill, opacity: mode === "marker" && mvals[i] < 0.05 ? 0.3 : 0.75}));
+  }
+  $("svg").replaceChildren(...parts);
+  if (mode === "cluster") {
+    $("leg").replaceChildren(...Object.keys(CELLS.labels).map((c) => h("span", null, h("i", {style: `background:${CL[c]}`}), CELLS.labels[c] + " (" + c + ")")));
+    $("msg").innerHTML = `Each dot is one of <b>${n.toLocaleString()}</b> real white blood cells, placed by a 2-D embedding (t-SNE) of its whole expression profile so that similar cells sit together. Cells cluster into distinct blobs: these are <b>cell types</b>, found with no prior labels, just from which genes each cell expresses. Switch to "marker gene" and pick a gene to see which cluster it marks. The labels come from known marker genes (below).`;
+  } else {
+    const g = $("marker").value;
+    $("leg").replaceChildren(h("span", null, "low"), h("i", {style: "background:var(--line)"}), h("i", {style: "background:rgba(91,58,140,0.6)"}), h("i", {style: "background:rgba(91,58,140,1)"}), h("span", null, "high " + g));
+    $("msg").innerHTML = `Colouring by <b>${g}</b> (a marker of ${MARK[g]}): the gene lights up one region of the map, which is how clusters are assigned to cell types. ` +
+      `Real single-cell pipelines annotate each cluster by its top marker genes exactly this way. Try <b>CD3D</b> (all T cells), <b>MS4A1</b> (B cells), <b>CD14</b> vs <b>FCGR3A</b> (two monocyte types), <b>GNLY</b> (NK cells) and <b>PPBP</b> (the tiny platelet cluster).`;
+  }
+}
+$("mode").onchange = () => { $("mkwrap").style.display = $("mode").value === "marker" ? "" : "none"; draw(); };
+$("marker").onchange = draw;
+draw();
+</script></body></html>

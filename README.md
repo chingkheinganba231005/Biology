@@ -43,7 +43,7 @@ Measuring thousands of genes at once and learning from it: RNA-seq, single-cell 
 | # | Chapter | What you learn |
 |---|---|---|
 | 6 | [Transcriptomics and differential expression](omics/06-rnaseq/) | RNA-seq counts, normalisation, statistical testing with false-discovery control, on real tumour data. |
-| 7 | Single-cell RNA-seq *(coming)* | Quality control, PCA, neighbourhood graphs, clustering and cell-type annotation of 2,700 real blood cells. |
+| 7 | [Single-cell RNA-seq](omics/07-single-cell/) | Quality control, PCA, neighbourhood graphs, clustering and cell-type annotation of 2,700 real blood cells. |
 | 8 | Machine learning for cancer genomics *(coming)* | Classifying tumours from gene expression honestly: high dimensions, feature selection, leakage and interpretation. |
 | 9 | Deep learning on DNA *(coming)* | One-hot sequences, convolutional networks that learn binding motifs, and how to read what they learned. |
 | 10 | Protein machine learning and AlphaFold *(coming)* | Sequence embeddings, coevolution, contact prediction and how AlphaFold and protein language models work. |

@@ -172,7 +172,7 @@
           "n": "7",
           "title": "Single-cell RNA-seq",
           "path": "omics/07-single-cell/",
-          "ready": false,
+          "ready": true,
           "kind": "Project",
           "desc": "Quality control, PCA, neighbourhood graphs, clustering and cell-type annotation of 2,700 real blood cells."
         },
