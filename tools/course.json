@@ -218,7 +218,7 @@
           "n": "12",
           "title": "Molecular dynamics from scratch",
           "path": "drug-discovery/12-molecular-dynamics/",
-          "ready": false,
+          "ready": true,
           "kind": "Project",
           "desc": "Force fields, Verlet integration, temperature, and a toy protein that folds on a lattice."
         },

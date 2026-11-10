@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>MD Lab</title><link rel="stylesheet" href="../../../assets/pg.css"></head><body>
+<div class="tabs"><button class="on" data-t="sim" type="button">Run a molecular dynamics simulation</button></div>
+<section class="pane on" id="sim">
+  <div class="ctl" id="ctl"></div>
+  <div class="row"><button class="pri" type="button" id="run">Run</button><button type="button" id="reset">Reset</button><span class="tx" id="stat"></span></div>
+  <div style="display:flex;gap:14px;flex-wrap:wrap"><svg id="box" viewBox="0 0 320 320" role="img" aria-label="Particles in a box" style="flex:1;min-width:260px;max-width:340px"></svg>
+  <svg id="plot" viewBox="0 0 340 320" role="img" aria-label="Energy over time" style="flex:1;min-width:260px"></svg></div>
+  <div class="msg" id="msg"></div>
+</section>
+<script src="../../../assets/pg.js"></script>
+<script>
+const {$, h, s, tabs, slider, plot} = PG; tabs();
+const N = 49, L = 9.0;
+const Tset = slider("temperature (thermostat target)", 0.1, 3, 0.1, 0.6, (v) => v.toFixed(1), null);
+const thermo = slider("thermostat strength (0 = energy-conserving)", 0, 1, 0.05, 0, (v) => v.toFixed(2), null);
+$("ctl").append(Tset.el, thermo.el);
+let pos, vel, F, timer = null, t = 0, Ehist = [], Thist = [];
+function lattice() {
+  const g = Math.ceil(Math.sqrt(N)), xs = [];
+  for (let i = 0; i < g; i++) xs.push(0.5 + i * (L - 1) / (g - 1));
+  pos = []; let k = 0;
+  for (const x of xs) for (const y of xs) { if (k++ < N) pos.push([x, y]); }
+  vel = pos.map(() => [rnd(), rnd()]);
+  const mv = vel.reduce((a, v) => [a[0] + v[0], a[1] + v[1]], [0, 0]).map((s) => s / N);
+  vel = vel.map((v) => [(v[0] - mv[0]) * 0.6, (v[1] - mv[1]) * 0.6]);
+  F = forces().F; t = 0; Ehist = []; Thist = [];
+}
+let seed = 12345; function rnd() { seed = (seed * 1103515245 + 12345) & 0x7fffffff; return (seed / 0x7fffffff - 0.5) * 2; }
+function forces() {
+  const Fr = pos.map(() => [0, 0]); let PE = 0;
+  for (let i = 0; i < N; i++) for (let j = i + 1; j < N; j++) {
+    let dx = pos[i][0] - pos[j][0], dy = pos[i][1] - pos[j][1];
+    dx -= L * Math.round(dx / L); dy -= L * Math.round(dy / L);
+    const r2 = dx * dx + dy * dy;
+    if (r2 < 9 && r2 > 0.01) {
+      const inv6 = 1 / (r2 * r2 * r2), inv12 = inv6 * inv6;
+      const fmag = (48 * inv12 - 24 * inv6) / r2;
+      Fr[i][0] += fmag * dx; Fr[i][1] += fmag * dy;
+      Fr[j][0] -= fmag * dx; Fr[j][1] -= fmag * dy;
+      PE += 4 * (inv12 - inv6);
+    }
+  }
+  return { F: Fr, PE };
+}
+function step() {
+  const dt = 0.004;
+  for (let i = 0; i < N; i++) { vel[i][0] += 0.5 * dt * F[i][0]; vel[i][1] += 0.5 * dt * F[i][1];
+    pos[i][0] = ((pos[i][0] + dt * vel[i][0]) % L + L) % L; pos[i][1] = ((pos[i][1] + dt * vel[i][1]) % L + L) % L; }
+  const r = forces(); F = r.F;
+  let KE = 0;
+  for (let i = 0; i < N; i++) { vel[i][0] += 0.5 * dt * F[i][0]; vel[i][1] += 0.5 * dt * F[i][1]; KE += 0.5 * (vel[i][0] ** 2 + vel[i][1] ** 2); }
+  const T = KE / N;
+  if (thermo.value > 0) { const lambda = Math.sqrt(1 + thermo.value * (Tset.value / (T + 1e-6) - 1)); for (let i = 0; i < N; i++) { vel[i][0] *= lambda; vel[i][1] *= lambda; } }
+  t += dt; Ehist.push(KE + r.PE); Thist.push(T); if (Ehist.length > 300) { Ehist.shift(); Thist.shift(); }
+  return { KE, PE: r.PE, T };
+}
+function draw(info) {
+  const sc = 300 / L, parts = [];
+  parts.push(s("rect", {x: 10, y: 10, width: 300, height: 300, fill: "none", stroke: "var(--line)"}));
+  pos.forEach((p, i) => { const sp = Math.sqrt(vel[i][0] ** 2 + vel[i][1] ** 2); parts.push(s("circle", {cx: 10 + p[0] * sc, cy: 10 + p[1] * sc, r: 7, fill: `hsl(${Math.max(0, 240 - sp * 120)} 70% 55%)`})); });
+  $("box").replaceChildren(...parts);
+  const xs = Ehist.map((_, i) => i);
+  // two stacked panels: energy (top) and temperature (bottom), each auto-scaled
+  const emin = Math.min(...Ehist), emax = Math.max(...Ehist), epad = (emax - emin) * 0.5 + 1;
+  const eparts = [];
+  const EX = (i) => 46 + 280 * i / Math.max(xs.length - 1, 1);
+  const EY = (v, lo, hi, y0, h0) => y0 + h0 * (hi - v) / (hi - lo || 1);
+  eparts.push(s("text", {x: 46, y: 14, class: "tx"}, "total energy (flat = conserved)"));
+  eparts.push(s("path", {d: Ehist.map((v, i) => (i ? "L" : "M") + EX(i).toFixed(1) + " " + EY(v, emin - epad, emax + epad, 24, 110).toFixed(1)).join(""), fill: "none", stroke: "var(--accent)", "stroke-width": 1.8}));
+  const tmin = Math.min(...Thist, 0), tmax = Math.max(...Thist, 0.1);
+  eparts.push(s("text", {x: 46, y: 170, class: "tx"}, "temperature (kinetic energy per particle)"));
+  eparts.push(s("path", {d: Thist.map((v, i) => (i ? "L" : "M") + EX(i).toFixed(1) + " " + EY(v, tmin, tmax, 180, 110).toFixed(1)).join(""), fill: "none", stroke: "var(--accent2)", "stroke-width": 1.8}));
+  eparts.push(s("text", {x: 180, y: 314, class: "tx", "text-anchor": "middle"}, "time step →"));
+  $("plot").replaceChildren(...eparts);
+  $("stat").textContent = `t=${t.toFixed(1)} · T=${info.T.toFixed(2)} · E=${(info.KE + info.PE).toFixed(1)}`;
+  const drift = Ehist.length > 50 ? std(Ehist) / Math.abs(mean(Ehist)) : 0;
+  $("msg").innerHTML = `${N} particles interact through the <b>Lennard-Jones</b> potential (attract at medium range, repel hard when too close), integrated with the <b>velocity Verlet</b> algorithm, exactly how real molecular dynamics works, just in 2-D with simple atoms. Particle colour shows speed (blue slow, red fast). ` +
+    (thermo.value === 0 ? `With the <b>thermostat off</b>, this is an isolated system and <b>total energy is conserved</b> (the purple line stays flat; drift here is ${(100 * drift).toFixed(2)}%). That conservation is the key test that the simulation is correct. Energy sloshes between kinetic (motion) and potential (arrangement), but the sum holds.` : `The <b>thermostat</b> is on, nudging the system toward temperature ${Tset.value.toFixed(1)}. Real simulations use one to model a molecule in a body-temperature bath. At low temperature the particles settle into an ordered lattice (a solid); raise the temperature and they break free and flow (a liquid, then gas).`);
+}
+function mean(a) { return a.reduce((x, y) => x + y, 0) / a.length; }
+function std(a) { const m = mean(a); return Math.sqrt(mean(a.map((x) => (x - m) ** 2))); }
+$("run").onclick = () => { if (timer) { clearInterval(timer); timer = null; $("run").textContent = "Run"; return; } $("run").textContent = "Pause"; timer = setInterval(() => { let info; for (let k = 0; k < 4; k++) info = step(); draw(info); }, 40); };
+$("reset").onclick = () => { lattice(); draw({ KE: 0, PE: 0, T: 0 }); };
+window.addEventListener("tabchange", () => { if (timer) { clearInterval(timer); timer = null; $("run").textContent = "Run"; } });
+lattice(); draw({ KE: 0, PE: 0, T: 0 });
+</script></body></html>
