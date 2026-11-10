@@ -54,7 +54,7 @@ Molecules in 3D, physics-based simulation and the computational side of finding 
 
 | # | Chapter | What you learn |
 |---|---|---|
-| 11 | Protein structure *(coming)* | PDB files, coordinates, contacts, RMSD and superposition, binding pockets and AlphaFold confidence. |
+| 11 | [Protein structure](drug-discovery/11-structure/) | PDB files, coordinates, contacts, RMSD and superposition, binding pockets and AlphaFold confidence. |
 | 12 | Molecular dynamics from scratch *(coming)* | Force fields, Verlet integration, temperature, and a toy protein that folds on a lattice. |
 | 13 | Cheminformatics *(coming)* | Molecules as graphs: SMILES, descriptors, fingerprints, drug-likeness and similarity search with RDKit. |
 | 14 | QSAR and virtual screening *(coming)* | Predicting activity against a cancer target from real ChEMBL data, with honest scaffold splits. |

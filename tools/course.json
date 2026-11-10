@@ -210,7 +210,7 @@
           "n": "11",
           "title": "Protein structure",
           "path": "drug-discovery/11-structure/",
-          "ready": false,
+          "ready": true,
           "kind": "Project",
           "desc": "PDB files, coordinates, contacts, RMSD and superposition, binding pockets and AlphaFold confidence."
         },

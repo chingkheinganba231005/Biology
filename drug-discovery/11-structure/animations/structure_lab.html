@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Structure Lab</title><link rel="stylesheet" href="../../../assets/pg.css"></head><body>
+<div class="tabs"><button class="on" data-t="view" type="button">A drug in its target (EGFR + erlotinib)</button></div>
+<section class="pane on" id="view">
+  <div class="ctl" id="vctl"></div>
+  <div class="row"><label><input type="checkbox" id="showss" checked> colour by secondary structure</label><label><input type="checkbox" id="showpocket" checked> highlight binding pocket</label></div>
+  <svg id="svg" viewBox="0 0 480 440" role="img" aria-label="Rotatable 3D backbone of EGFR with bound drug" style="max-width:500px"></svg>
+  <div class="msg" id="msg"></div>
+</section>
+<script src="../../../assets/pg.js"></script>
+<script src="structure.js"></script>
+<script>
+const {$, h, s, tabs, slider} = PG; tabs();
+const rotY = slider("rotate (horizontal)", 0, 360, 2, 30, (v) => v + "°", draw);
+const rotX = slider("tilt (vertical)", -90, 90, 2, 15, (v) => v + "°", draw);
+$("vctl").append(rotY.el, rotX.el);
+$("showss").onchange = draw; $("showpocket").onchange = draw;
+const SScol = { H: "#5b3a8c", E: "#d99a14", C: "#3aa6a0" };
+function project(p, ay, ax) {
+  let [x, y, z] = p;
+  let x1 = x * Math.cos(ay) - z * Math.sin(ay), z1 = x * Math.sin(ay) + z * Math.cos(ay);
+  let y2 = y * Math.cos(ax) - z1 * Math.sin(ax), z2 = y * Math.sin(ax) + z1 * Math.cos(ax);
+  return [x1, y2, z2];
+}
+function draw() {
+  const ay = rotY.value * Math.PI / 180, ax = rotX.value * Math.PI / 180;
+  const ca = STRUCT.ca.map((p) => project(p, ay, ax));
+  const lig = STRUCT.lig.map((p) => project(p, ay, ax));
+  const all = ca.concat(lig);
+  const xs = all.map((p) => p[0]), ys = all.map((p) => p[1]);
+  const mnx = Math.min(...xs), mxx = Math.max(...xs), mny = Math.min(...ys), mxy = Math.max(...ys);
+  const sc = Math.min(400 / (mxx - mnx), 400 / (mxy - mny));
+  const X = (p) => 40 + (p[0] - mnx) * sc, Y = (p) => 30 + (p[1] - mny) * sc;
+  const pocket = new Set(STRUCT.pocket);
+  // draw backbone as connected segments, depth-sorted by z
+  const segs = [];
+  for (let i = 0; i < ca.length - 1; i++) {
+    if (STRUCT.resnums[i + 1] - STRUCT.resnums[i] > 1) continue;
+    const z = (ca[i][2] + ca[i + 1][2]) / 2;
+    const col = $("showss").checked ? SScol[STRUCT.ss[i]] : "var(--accent)";
+    const inPocket = $("showpocket").checked && (pocket.has(i) || pocket.has(i + 1));
+    segs.push({z, a: ca[i], b: ca[i + 1], col, w: inPocket ? 4.5 : 2.3, pocket: inPocket});
+  }
+  const parts = [];
+  segs.sort((p, q) => p.z - q.z).forEach((g) => {
+    const shade = 0.4 + 0.6 * (g.a[2] - mny) / (mxy - mny || 1);
+    parts.push(s("line", {x1: X(g.a), y1: Y(g.a), x2: X(g.b), y2: Y(g.b), stroke: g.pocket ? "var(--accent2)" : g.col, "stroke-width": g.w, "stroke-linecap": "round", opacity: g.pocket ? 1 : 0.85}));
+  });
+  // ligand as spheres
+  lig.map((p, i) => [p, i]).sort((a, b) => a[0][2] - b[0][2]).forEach(([p]) => parts.push(s("circle", {cx: X(p), cy: Y(p), r: 3.5, fill: "var(--ink)", stroke: "#fff", "stroke-width": 0.5})));
+  $("svg").replaceChildren(...parts);
+  $("msg").innerHTML = `This is the real 3-D structure (PDB 1M17) of the <b>EGFR kinase domain</b>, the lung-cancer drug target (prerequisites P9, P12), with the drug <b>erlotinib</b> bound (black spheres). Drag the sliders to rotate it. ` +
+    ($("showss").checked ? `Colours show <b>secondary structure</b>: <span style="color:${SScol.H}">α-helices</span>, <span style="color:${SScol.E}">β-strands</span>, loops. The kinase has the classic two-lobe fold. ` : "") +
+    ($("showpocket").checked ? `The <b>pink</b> stretch is the <b>binding pocket</b>: the ${STRUCT.pocket.length} residues within 4.5 Å of the drug. Erlotinib sits in the ATP-binding cleft between the two lobes and blocks the kinase (prerequisite P13). Key contacts include the hinge residue Met769 and the gatekeeper Thr766. ` : "") +
+    `This pocket is what every structure-based drug-design method (chapters 14–15) tries to fit a molecule into.`;
+}
+draw();
+</script></body></html>
