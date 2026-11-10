@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Protein ML Lab</title><link rel="stylesheet" href="../../../assets/pg.css"></head><body>
+<div class="tabs"><button class="on" data-t="contact" type="button">Coevolution predicts contacts</button><button data-t="cons" type="button">Conservation maps function</button></div>
+<section class="pane on" id="contact">
+  <div class="ctl" id="cctl"></div>
+  <svg id="csvg" viewBox="0 0 440 440" role="img" aria-label="Contact map with predicted contacts" style="max-width:460px"></svg>
+  <div class="msg" id="cmsg"></div>
+</section>
+<section class="pane" id="cons">
+  <svg id="ssvg" viewBox="0 0 700 220" role="img" aria-label="Conservation along the ubiquitin sequence"></svg>
+  <div class="msg" id="smsg"></div>
+</section>
+<script src="../../../assets/pg.js"></script>
+<script src="coevo.js"></script>
+<script>
+const {$, h, s, tabs, slider} = PG; tabs();
+const ntop = slider("number of predicted contacts shown", 5, 60, 1, 25, (v) => v, drawContact);
+$("cctl").append(ntop.el);
+function drawContact() {
+  const R = COEVO.R, D = COEVO.dist, parts = [], pad = 20, sz = (420 - pad) / R;
+  const X = (i) => pad + i * sz;
+  // true contacts (grey) in upper triangle + lower triangle
+  for (let i = 0; i < R; i++) for (let j = 0; j < R; j++) {
+    if (Math.abs(i - j) > 4 && D[i][j] < 8) parts.push(s("rect", {x: X(j), y: X(i), width: sz, height: sz, fill: "var(--line)"}));
+  }
+  // predicted contacts (top N): green if correct (dist<8), pink if not. Show on both triangles.
+  const top = COEVO.top_pairs.slice(0, ntop.value);
+  let correct = 0;
+  top.forEach(([sc, i, j]) => {
+    const ok = D[i][j] < 8; if (ok) correct++;
+    const c = ok ? "var(--g)" : "var(--accent2)";
+    parts.push(s("rect", {x: X(j), y: X(i), width: sz, height: sz, fill: c}));
+    parts.push(s("rect", {x: X(i), y: X(j), width: sz, height: sz, fill: c}));
+  });
+  parts.push(s("line", {x1: pad, y1: pad, x2: X(R), y2: X(R), stroke: "var(--muted)", "stroke-width": 0.5}));
+  parts.push(s("text", {x: pad, y: 14, class: "tx"}, "residue j →"), s("text", {x: 4, y: pad + 10, class: "tx", transform: `rotate(-90 8 ${pad + 10})`}, "residue i →"));
+  $("csvg").replaceChildren(...parts);
+  $("cmsg").innerHTML = `This is the <b>contact map</b> of ubiquitin: grey squares mark residue pairs that are close together in the real 3D structure (under 8 Å). We never used the structure to predict them. Instead, from an alignment of <b>1,500 ubiquitin sequences</b> across species, we found pairs of positions that <b>mutate together</b> (coevolve), because when two residues touch, a change in one is compensated by a change in the other. ` +
+    `Showing the top <b>${ntop.value}</b> coevolving pairs: <b>${correct}</b> are real contacts (green), ${ntop.value - correct} are not (pink). <b>${(100 * correct / ntop.value).toFixed(0)}% precision</b> from sequence alone. Coevolution-derived contacts like these were the key input that let <b>AlphaFold</b> predict full 3D structures; a deep network turns this noisy signal into an accurate fold.`;
+}
+drawContact();
+// ---------- conservation
+function drawCons() {
+  const cons = COEVO.conservation, n = cons.length, parts = [], pad = 40, W = 640;
+  const bw = W / n, mx = Math.max(...cons);
+  cons.forEach((c, i) => { const hgt = 150 * c / mx; parts.push(s("rect", {x: pad + i * bw, y: 180 - hgt, width: Math.max(bw - 0.5, 1), height: hgt, fill: c > 0.7 * mx ? "var(--accent2)" : "var(--accent)"})); });
+  parts.push(s("line", {x1: pad, x2: pad + W, y1: 180, y2: 180, class: "ax"}));
+  parts.push(s("text", {x: pad, y: 200, class: "tx"}, "position in the ubiquitin domain"), s("text", {x: 12, y: 100, class: "tx", transform: "rotate(-90 12 100)"}, "conservation (bits)"));
+  parts.push(s("text", {x: pad, y: 20, class: "lb"}, "Conservation across 1,500 ubiquitin sequences"));
+  $("ssvg").replaceChildren(...parts);
+  $("smsg").innerHTML = `Each bar is one position in the ubiquitin protein; tall pink bars are the most <b>conserved</b> positions, nearly identical across all 1,500 species. Conservation marks what a protein cannot afford to change: residues <b>buried</b> in the core, in the <b>active site</b>, or at key contacts. ` +
+    `In ubiquitin the most conserved positions include the C-terminal <b>Gly-Gly</b> that attaches it to target proteins, the hydrophobic core, and the <b>Ile44 patch</b> that partner proteins recognise (prerequisite P5). Conservation is the oldest and still one of the most useful signals in computational biology: it points directly at the residues that matter, and is a core feature in variant-effect predictors like AlphaMissense.`;
+}
+drawCons();
+window.addEventListener("tabchange", () => { if ($("cons").classList.contains("on")) drawCons(); });
+</script></body></html>

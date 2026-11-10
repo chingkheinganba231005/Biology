@@ -196,7 +196,7 @@
           "n": "10",
           "title": "Protein machine learning and AlphaFold",
           "path": "omics/10-protein-ml/",
-          "ready": false,
+          "ready": true,
           "kind": "Project",
           "desc": "Sequence embeddings, coevolution, contact prediction and how AlphaFold and protein language models work."
         }
