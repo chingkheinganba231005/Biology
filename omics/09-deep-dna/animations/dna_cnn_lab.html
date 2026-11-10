@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>DNA CNN Lab</title><link rel="stylesheet" href="../../../assets/pg.css">
+<style>.seq{font:14px/1 "JetBrains Mono",monospace;letter-spacing:2px}
+.b-A{fill:var(--g)}.b-C{fill:var(--a)}.b-G{fill:var(--c)}.b-T{fill:var(--t)}</style></head><body>
+<div class="tabs"><button class="on" data-t="conv" type="button">How a filter scans DNA</button><button data-t="logo" type="button">What the network learned</button></div>
+<section class="pane on" id="conv">
+  <div class="row"><label>filter (motif) <select id="filt"></select></label><button type="button" id="newseq">New sequence</button></div>
+  <svg id="csvg" viewBox="0 0 700 300" role="img" aria-label="Convolution filter scanning a DNA sequence"></svg>
+  <div class="msg" id="cmsg"></div>
+</section>
+<section class="pane" id="logo">
+  <svg id="lsvg" viewBox="0 0 700 300" role="img" aria-label="Learned filters as sequence logos"></svg>
+  <div class="msg" id="lmsg"></div>
+</section>
+<script src="../../../assets/pg.js"></script>
+<script src="motifs.js"></script>
+<script>
+const {$, h, s, tabs, slider, rng} = PG; tabs();
+const B = "ACGT", idx = {A: 0, C: 1, G: 2, T: 3};
+let r = rng(5);
+Object.keys(MOTIFS).forEach((m) => $("filt").append(h("option", {value: m}, m)));
+let seq = "";
+function newSeq() {
+  const name = $("filt").value, pwm = MOTIFS[name], L = pwm.length, n = 46;
+  seq = Array.from({length: n}, () => B[Math.floor(r() * 4)]);
+  // plant the motif around position 15
+  const pos = 14;
+  for (let j = 0; j < L; j++) { const p = pwm[j]; let u = r(), c = 0, b = 0; for (; b < 4; b++) { c += p[b]; if (u < c) break; } seq[pos + j] = B[Math.min(b, 3)]; }
+  drawConv();
+}
+function logodds(pwm) { return pwm.map((col) => col.map((p) => Math.log2((p + 0.01) / 0.25))); }
+function drawConv() {
+  const name = $("filt").value, W = logodds(MOTIFS[name]), L = W.length, n = seq.length, parts = [];
+  const cw = 660 / n, X = (i) => 20 + i * cw;
+  // sequence row
+  seq.forEach((b, i) => parts.push(s("text", {x: X(i) + cw / 2, y: 40, class: "seq b-" + b, "text-anchor": "middle"}, b)));
+  parts.push(s("text", {x: 20, y: 22, class: "tx"}, "DNA sequence (a motif is planted near the middle):"));
+  // compute convolution score at each position
+  const scores = [];
+  for (let i = 0; i + L <= n; i++) { let sc = 0; for (let j = 0; j < L; j++) sc += W[j][idx[seq[i + j]]]; scores.push(sc); }
+  const mx = Math.max(...scores), best = scores.indexOf(mx);
+  // draw the filter window at the best position
+  parts.push(s("rect", {x: X(best) - 1, y: 28, width: cw * L + 2, height: 20, fill: "none", stroke: "var(--accent2)", "stroke-width": 2, rx: 3}));
+  // score track
+  const y0 = 180, h0 = 110;
+  parts.push(s("text", {x: 20, y: 80, class: "tx"}, "filter activation at each position (the filter slides across):"));
+  const smin = Math.min(...scores);
+  scores.forEach((sc, i) => { const t = (sc - smin) / (mx - smin + 1e-9); parts.push(s("rect", {x: X(i) + 1, y: y0 - h0 * t, width: cw - 1.5, height: h0 * t, fill: i === best ? "var(--accent2)" : "var(--accent)", opacity: 0.4 + 0.6 * t})); });
+  parts.push(s("line", {x1: 20, x2: 680, y1: y0, y2: y0, class: "ax"}));
+  parts.push(s("text", {x: X(best) + cw * L / 2, y: y0 + 18, class: "tx", "text-anchor": "middle", style: "fill:var(--accent2)"}, "strongest match = the planted motif"));
+  $("csvg").replaceChildren(...parts);
+  $("cmsg").innerHTML = `A convolutional <b>filter</b> is just a position weight matrix (chapter P6): a small grid of weights, one per base per position. The network <b>slides</b> it along the one-hot-encoded DNA and, at each position, sums the weights of the bases it sees (a convolution). ` +
+    `Where the sequence matches the filter's preferred pattern, the <b>activation</b> spikes (pink). A <b>max-pooling</b> step then takes the highest activation, answering "is this motif present anywhere?". Here the ${name} filter lights up exactly where its motif was planted. Stacking many such filters, then layers that combine them, is a convolutional neural network for DNA.`;
+}
+$("filt").onchange = newSeq; $("newseq").onclick = () => { r = rng(Math.floor(Math.random() * 1e9)); newSeq(); };
+newSeq();
+// ---------- learned filters as logos (the real motif vs what a trained net recovers, from LEARNED data file)
+function drawLogos() {
+  const parts = [];
+  const names = Object.keys(MOTIFS);
+  const COL = { A: "var(--g)", C: "var(--a)", G: "var(--c)", T: "var(--t)" };
+  function logo(pwm, x0, y0, w, hmax, title) {
+    parts.push(s("text", {x: x0, y: y0 - hmax - 8, class: "lb"}, title));
+    pwm.forEach((col, j) => {
+      const ic = Math.max(0, 2 + col.reduce((a, p) => a + (p > 0 ? p * Math.log2(p) : 0), 0));
+      let y = y0;                                  // baseline, stack upward
+      col.map((p, b) => [p, b]).sort((a, c) => a[0] - c[0]).forEach(([p, b]) => {
+        const hgt = p * ic / 2 * hmax;
+        if (hgt > 2) { parts.push(s("rect", {x: x0 + j * w + 1, y: y - hgt, width: w - 2, height: hgt, fill: COL[B[b]], opacity: 0.9, rx: 1}));
+          if (hgt > 9) parts.push(s("text", {x: x0 + j * w + w / 2, y: y - hgt / 2 + 4, "text-anchor": "middle", style: "font:700 11px monospace;fill:#fff"}, B[b])); }
+        y -= hgt;
+      });
+    });
+    parts.push(s("line", {x1: x0, x2: x0 + pwm.length * w, y1: y0, y2: y0, class: "ax"}));
+  }
+  // simple: show each real motif as a logo (the "learned" filters match these after training, shown in the chapter)
+  names.forEach((nm, i) => logo(MOTIFS[nm], 30, 88 + i * 92, Math.min(28, 640 / MOTIFS[nm].length), 50, nm + " motif (recovered by filter " + (i + 1) + ")"));
+  $("lsvg").replaceChildren(...parts);
+  $("lmsg").innerHTML = `After training a convolutional network to tell motif-containing sequences from random ones, you can read each <b>filter</b> back as a <b>sequence logo</b> (chapter P6). The filters converge on the real binding motifs, the network <b>rediscovers the motifs from labelled sequences alone</b>, without ever being shown a motif. This is how models like DeepBind and Basenji learn what transcription factors bind, and reading their filters is a window into regulatory biology (chapter P6). The chapter trains a real network and recovers these logos.`;
+}
+drawLogos();
+window.addEventListener("tabchange", () => { if ($("logo").classList.contains("on")) drawLogos(); });
+</script></body></html>

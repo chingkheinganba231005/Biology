@@ -188,7 +188,7 @@
           "n": "9",
           "title": "Deep learning on DNA",
           "path": "omics/09-deep-dna/",
-          "ready": false,
+          "ready": true,
           "kind": "Project",
           "desc": "One-hot sequences, convolutional networks that learn binding motifs, and how to read what they learned."
         },
