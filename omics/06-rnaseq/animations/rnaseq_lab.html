@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>RNA-seq Lab</title><link rel="stylesheet" href="../../../assets/pg.css"></head><body>
+<div class="tabs"><button class="on" data-t="norm" type="button">Why normalise counts</button><button data-t="vol" type="button">Volcano plot and FDR</button></div>
+<section class="pane on" id="norm">
+  <div class="ctl" id="nctl"></div>
+  <svg id="nsvg" viewBox="0 0 700 250" role="img" aria-label="Raw vs normalised counts for two samples"></svg>
+  <div class="msg" id="nmsg"></div>
+</section>
+<section class="pane" id="vol">
+  <div class="ctl" id="vctl"></div>
+  <svg id="vsvg" viewBox="0 0 700 300" role="img" aria-label="Volcano plot of differential expression"></svg>
+  <div class="msg" id="vmsg"></div>
+</section>
+<script src="../../../assets/pg.js"></script>
+<script>
+const {$, h, s, tabs, slider, plot, rng} = PG; tabs();
+const r = rng(14);
+// ---------- normalisation: two samples with different library sizes
+const lib = slider("sample B sequenced deeper by", 1, 5, 0.1, 2.5, (v) => v.toFixed(1) + "×", drawNorm);
+const deg = slider("fraction of genes truly changed", 0, 0.5, 0.02, 0.1, (v) => (100 * v).toFixed(0) + "%", drawNorm);
+$("nctl").append(lib.el, deg.el);
+let baseExpr = Array.from({length: 120}, () => Math.exp(2 + 3 * r()));
+function drawNorm() {
+  const n = baseExpr.length, changed = baseExpr.map((_, i) => i < n * deg.value);
+  const A = baseExpr.map((e) => Math.max(0, e * (0.85 + 0.3 * r())));
+  const B = baseExpr.map((e, i) => Math.max(0, e * (0.85 + 0.3 * r()) * lib.value * (changed[i] ? 4 : 1)));
+  const sizeA = A.reduce((a, b) => a + b, 0), sizeB = B.reduce((a, b) => a + b, 0);
+  // library-size normalise
+  const Bn = B.map((v) => v * sizeA / sizeB);
+  const parts = [], W = 320;
+  const panel = (xoff, xa, xb, title) => {
+    const mx = Math.max(...xa, ...xb);
+    parts.push(s("text", {x: xoff + W / 2, y: 20, class: "lb", "text-anchor": "middle"}, title));
+    parts.push(s("line", {x1: xoff + 40, y1: 40, x2: xoff + 40, y2: 220, class: "ax"}), s("line", {x1: xoff + 40, y1: 220, x2: xoff + W - 10, y2: 220, class: "ax"}));
+    parts.push(s("line", {x1: xoff + 40, y1: 220, x2: xoff + W - 10, y2: 40, stroke: "var(--muted)", "stroke-dasharray": "3 3"}));
+    xa.forEach((a, i) => { const X = xoff + 40 + (W - 50) * Math.log10(a + 1) / Math.log10(mx + 1), Y = 220 - 180 * Math.log10(xb[i] + 1) / Math.log10(mx + 1); parts.push(s("circle", {cx: X, cy: Y, r: 2.5, fill: changed[i] ? "var(--accent2)" : "var(--accent)", opacity: 0.6})); });
+    parts.push(s("text", {x: xoff + W / 2, y: 238, class: "tx", "text-anchor": "middle"}, "sample A (log)"));
+  };
+  panel(0, A, B, "raw counts"); panel(360, A, Bn, "after library-size normalisation");
+  $("nsvg").replaceChildren(...parts);
+  $("nmsg").innerHTML = `Each dot is a gene; axes are the two samples. Sample B was sequenced <b>${lib.value.toFixed(1)}× deeper</b>, so in <b>raw counts</b> (left) every gene looks higher in B, the whole cloud sits above the diagonal, even though only <b>${(100 * deg.value).toFixed(0)}%</b> of genes truly changed (pink). ` +
+    `You cannot compare counts between samples without correcting for how much each was sequenced (the <b>library size</b>). After <b>normalisation</b> (right) the unchanged genes fall on the diagonal and the truly changed genes stand out. Real methods (DESeq2's median-of-ratios, edgeR's TMM) do this more robustly so a few highly-expressed genes don't distort the scaling.`;
+}
+drawNorm();
+// ---------- volcano + FDR
+const nGenes = 300, effFrac = 0.12;
+const nrep = slider("replicates per group", 2, 20, 1, 4, (v) => v, drawVol);
+const alpha = slider("significance threshold (FDR)", 0.01, 0.3, 0.01, 0.05, (v) => v.toFixed(2), drawVol);
+$("vctl").append(nrep.el, alpha.el);
+function gammaln(x){const c=[76.18009172947146,-86.50532032941677,24.01409824083091,-1.231739572450155,0.1208650973866179e-2,-0.5395239384953e-5];let y=x,tmp=x+5.5;tmp-=(x+0.5)*Math.log(tmp);let ser=1.000000000190015;for(let j=0;j<6;j++){y++;ser+=c[j]/y;}return -tmp+Math.log(2.5066282746310005*ser/x);}
+function betacf(a,b,x){const MAXIT=200,EPS=3e-12,FPMIN=1e-30;let qab=a+b,qap=a+1,qam=a-1,cc=1,d=1-qab*x/qap;if(Math.abs(d)<FPMIN)d=FPMIN;d=1/d;let h=d;for(let m=1;m<=MAXIT;m++){const m2=2*m;let aa=m*(b-m)*x/((qam+m2)*(a+m2));d=1+aa*d;if(Math.abs(d)<FPMIN)d=FPMIN;cc=1+aa/cc;if(Math.abs(cc)<FPMIN)cc=FPMIN;d=1/d;h*=d*cc;aa=-(a+m)*(qab+m)*x/((a+m2)*(qap+m2));d=1+aa*d;if(Math.abs(d)<FPMIN)d=FPMIN;cc=1+aa/cc;if(Math.abs(cc)<FPMIN)cc=FPMIN;d=1/d;const del=d*cc;h*=del;if(Math.abs(del-1)<EPS)break;}return h;}
+function betai(a,b,x){if(x<=0)return 0;if(x>=1)return 1;const bt=Math.exp(gammaln(a+b)-gammaln(a)-gammaln(b)+a*Math.log(x)+b*Math.log(1-x));return x<(a+1)/(a+b+2)?bt*betacf(a,b,x)/a:1-bt*betacf(b,a,1-x)/b;}
+function tpval(tval,df){return betai(df/2,0.5,df/(df+tval*tval));}  // two-sided p for Student t
+function drawVol() {
+  const N = nrep.value, genes = [];
+  for (let g = 0; g < nGenes; g++) {
+    const trueLFC = g < nGenes * effFrac ? (r() < 0.5 ? -1 : 1) * (1 + 2 * r()) : 0;
+    const mean = 5 + 2 * r();
+    let a = [], b = [];
+    for (let i = 0; i < N; i++) { a.push(mean + r.normal() * 0.8); b.push(mean + trueLFC + r.normal() * 0.8); }
+    const ma = a.reduce((x, y) => x + y, 0) / N, mb = b.reduce((x, y) => x + y, 0) / N;
+    const va = a.reduce((x, y) => x + (y - ma) ** 2, 0) / (N - 1), vb = b.reduce((x, y) => x + (y - mb) ** 2, 0) / (N - 1);
+    const se = Math.sqrt((va + vb) / N) || 1e-6, t = (mb - ma) / se;
+    const df = 2 * N - 2;
+    const p = tpval(Math.abs(t), df);
+    genes.push({lfc: mb - ma, p: Math.max(p, 1e-12), real: trueLFC !== 0});
+  }
+  // Benjamini-Hochberg FDR
+  const sorted = [...genes].sort((x, y) => x.p - y.p);
+  sorted.forEach((g, i) => { g.q = Math.min(1, g.p * nGenes / (i + 1)); });
+  for (let i = sorted.length - 2; i >= 0; i--) sorted[i].q = Math.min(sorted[i].q, sorted[i + 1].q);
+  const {X, Y} = plot($("vsvg"), [{xs: genes.map((g) => g.lfc), ys: genes.map((g) => -Math.log10(g.p)), color: "var(--muted)", dots: true, r: 0}], {xmin: -4, xmax: 4, ymin: 0, ymax: 8, xlabel: "log2 fold change", ylabel: "−log10 p-value"});
+  const parts = [];
+  genes.forEach((g) => { const sig = g.q < alpha.value; parts.push(s("circle", {cx: X(g.lfc), cy: Y(-Math.log10(g.p)), r: 3, fill: sig ? (g.real ? "var(--g)" : "var(--accent2)") : "var(--muted)", opacity: sig ? 0.9 : 0.4})); });
+  $("vsvg").append(...parts);
+  const called = genes.filter((g) => g.q < alpha.value), tp = called.filter((g) => g.real).length, fp = called.length - tp;
+  const totalReal = genes.filter((g) => g.real).length;
+  $("vmsg").innerHTML = `A <b>volcano plot</b> shows every gene by its fold change (x) and significance (y); the interesting genes are top-left and top-right (big change AND significant). Green = truly changed and detected, pink = false positive, grey = not called. ` +
+    `With <b>${N} replicates</b> and FDR < ${alpha.value.toFixed(2)}: <b>${called.length}</b> genes called, of which <b>${tp}</b> real and <b>${fp}</b> false (${called.length ? (100 * fp / called.length).toFixed(0) : 0}% false, close to the ${(100 * alpha.value).toFixed(0)}% you allowed), out of ${totalReal} truly changed. ` +
+    `More replicates shrink the p-values of real genes (they rise up the plot) so you detect more of them. <b>FDR control</b> (Benjamini–Hochberg) keeps the false fraction near your threshold despite testing ${nGenes} genes at once, the right way to handle thousands of tests.`;
+}
+drawVol();
+</script></body></html>

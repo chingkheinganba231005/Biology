@@ -164,7 +164,7 @@
           "n": "6",
           "title": "Transcriptomics and differential expression",
           "path": "omics/06-rnaseq/",
-          "ready": false,
+          "ready": true,
           "kind": "Project",
           "desc": "RNA-seq counts, normalisation, statistical testing with false-discovery control, on real tumour data."
         },
