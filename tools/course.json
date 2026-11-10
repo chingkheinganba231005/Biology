@@ -118,7 +118,7 @@
           "n": "1",
           "title": "Sequences as data",
           "path": "bioinformatics/01-sequences/",
-          "ready": false,
+          "ready": true,
           "kind": "Project",
           "desc": "FASTA, GC content, k-mers, reading frames and gene finding in a real virus genome."
         },
@@ -126,7 +126,7 @@
           "n": "2",
           "title": "Sequence alignment from scratch",
           "path": "bioinformatics/02-alignment/",
-          "ready": false,
+          "ready": true,
           "kind": "Project",
           "desc": "Dynamic programming, Needleman–Wunsch and Smith–Waterman, substitution matrices, and how BLAST searches billions of letters."
         },

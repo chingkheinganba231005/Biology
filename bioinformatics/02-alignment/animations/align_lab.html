@@ -1,0 +1,104 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Alignment Lab</title><link rel="stylesheet" href="../../../assets/pg.css">
+<style>
+.grid{overflow-x:auto}
+table.dp{border-collapse:collapse;font:12px "JetBrains Mono",monospace}
+table.dp td{width:30px;height:28px;text-align:center;border:1px solid var(--line);position:relative;padding:0}
+table.dp td.hd{background:var(--soft);color:var(--accent);font-weight:700;border:none}
+table.dp td.path{background:color-mix(in srgb,var(--accent2) 30%,transparent);font-weight:700}
+.aln{font:15px/1.7 "JetBrains Mono",monospace;background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:8px 10px;white-space:pre;overflow-x:auto}
+.aln .m{color:var(--g);font-weight:700}.aln .x{color:var(--accent2)}.aln .g{color:var(--muted)}</style></head><body>
+<div class="tabs"><button class="on" data-t="dp" type="button">Dynamic programming, step by step</button><button data-t="dot" type="button">Dot plot</button></div>
+<section class="pane on" id="dp">
+  <div class="row"><label>A <input id="sa" type="text" value="GATTACA" maxlength="12" style="width:120px"></label><label>B <input id="sb" type="text" value="GCATGCA" maxlength="12" style="width:120px"></label></div>
+  <div class="ctl" id="dctl"></div>
+  <div class="row"><label>mode <select id="mode"><option value="global">global (Needleman–Wunsch)</option><option value="local">local (Smith–Waterman)</option></select></label></div>
+  <div class="grid" id="grid"></div>
+  <div class="aln" id="aln"></div>
+  <div class="msg" id="dmsg"></div>
+</section>
+<section class="pane" id="dot">
+  <div class="row"><label>A <input id="da" type="text" value="THEFATCATSATONTHEMATQUICKLY" style="width:46%"></label><label>B <input id="db" type="text" value="THEFASTCATSATONAMATQUACKLY" style="width:46%"></label></div>
+  <div class="ctl" id="dotctl"></div>
+  <svg id="dotsvg" viewBox="0 0 440 440" role="img" aria-label="Dot plot of two sequences" style="max-width:460px"></svg>
+  <div class="msg" id="dotmsg"></div>
+</section>
+<script src="../../../assets/pg.js"></script>
+<script>
+const {$, h, s, tabs, slider} = PG; tabs();
+const match = slider("match score", 0, 5, 1, 2, (v) => "+" + v, drawDP);
+const mis = slider("mismatch score", -5, 0, 1, -1, (v) => v, drawDP);
+const gap = slider("gap penalty", -5, 0, 1, -2, (v) => v, drawDP);
+$("dctl").append(match.el, mis.el, gap.el);
+function align(A, B, local) {
+  const n = A.length, m = B.length, H = [], tb = [];
+  for (let i = 0; i <= n; i++) { H.push(new Array(m + 1).fill(0)); tb.push(new Array(m + 1).fill("")); }
+  for (let i = 0; i <= n; i++) { H[i][0] = local ? 0 : i * gap.value; tb[i][0] = i && !local ? "U" : ""; }
+  for (let j = 0; j <= m; j++) { H[0][j] = local ? 0 : j * gap.value; tb[0][j] = j && !local ? "L" : ""; }
+  let best = {v: local ? 0 : H[n][m], i: n, j: m};
+  for (let i = 1; i <= n; i++) for (let j = 1; j <= m; j++) {
+    const d = H[i - 1][j - 1] + (A[i - 1] === B[j - 1] ? match.value : mis.value);
+    const u = H[i - 1][j] + gap.value, l = H[i][j - 1] + gap.value;
+    let v = Math.max(d, u, l), dir = v === d ? "D" : v === u ? "U" : "L";
+    if (local && v < 0) { v = 0; dir = ""; }
+    H[i][j] = v; tb[i][j] = dir;
+    if (local && v >= best.v) best = {v, i, j};
+  }
+  // traceback
+  let i = best.i, j = best.j, pa = "", pb = "", path = new Set();
+  if (!local) { i = n; j = m; }
+  while (i > 0 || j > 0) {
+    if (local && H[i][j] === 0) break;
+    path.add(i + "," + j);
+    const dir = tb[i][j];
+    if (dir === "D" || (i > 0 && j > 0 && dir === "")) { pa = A[i - 1] + pa; pb = B[j - 1] + pb; i--; j--; }
+    else if (dir === "U") { pa = A[i - 1] + pa; pb = "-" + pb; i--; }
+    else { pa = "-" + pa; pb = B[j - 1] + pb; j--; }
+    if (dir === "" && !local) { if (i > 0) { pa = A[i - 1] + pa; pb = "-" + pb; i--; } else { pa = "-" + pa; pb = B[j - 1] + pb; j--; } }
+  }
+  return {H, tb, pa, pb, path, score: best.v};
+}
+function drawDP() {
+  const A = $("sa").value.toUpperCase().replace(/[^A-Z]/g, "").slice(0, 12), B = $("sb").value.toUpperCase().replace(/[^A-Z]/g, "").slice(0, 12);
+  const local = $("mode").value === "local", res = align(A, B, local);
+  const tbl = h("table", {class: "dp"});
+  const head = h("tr", null, h("td", {class: "hd"}, ""), h("td", {class: "hd"}, "–"), ...[...B].map((b) => h("td", {class: "hd"}, b)));
+  tbl.append(head);
+  for (let i = 0; i <= A.length; i++) {
+    const tr = h("tr", null, h("td", {class: "hd"}, i ? A[i - 1] : "–"));
+    for (let j = 0; j <= B.length; j++) tr.append(h("td", {class: res.path.has(i + "," + j) ? "path" : ""}, res.H[i][j]));
+    tbl.append(tr);
+  }
+  $("grid").replaceChildren(tbl);
+  let mid = "";
+  for (let k = 0; k < res.pa.length; k++) mid += res.pa[k] === res.pb[k] ? "|" : (res.pa[k] === "-" || res.pb[k] === "-" ? " " : ".");
+  const col = (a, b) => a === "-" || b === "-" ? "g" : a === b ? "m" : "x";
+  const fmt = (p, q) => [...p].map((c, k) => `<span class="${col(c, q[k])}">${c}</span>`).join("");
+  $("aln").innerHTML = fmt(res.pa, res.pb) + "\n" + [...mid].map((c) => `<span class="${c === '|' ? 'm' : 'g'}">${c}</span>`).join("") + "\n" + fmt(res.pb, res.pa);
+  const idn = [...mid].filter((c) => c === "|").length;
+  $("dmsg").innerHTML = `Each cell holds the best score for aligning the first <i>i</i> letters of A with the first <i>j</i> of B, built from three neighbours: diagonal (match/mismatch), up or left (a gap). The best <b>score is ${res.score}</b>, and tracing the pink path back gives the alignment. ` +
+    `<b>${idn}/${res.pa.length}</b> columns match. <b>Global</b> alignment (Needleman–Wunsch) forces the ends to line up; <b>local</b> (Smith–Waterman) resets negatives to 0 and keeps only the best-scoring stretch, finding a shared region inside otherwise different sequences. Change the scores and watch the path move.`;
+}
+["sa", "sb"].forEach((id) => $(id).addEventListener("input", drawDP));
+$("mode").onchange = drawDP;
+drawDP();
+// ---------- dot plot
+const win = slider("window", 1, 6, 1, 3, (v) => v, drawDot);
+const strict = slider("matches required in window", 1, 6, 1, 3, (v) => v, drawDot);
+$("dotctl").append(win.el, strict.el);
+function drawDot() {
+  const A = $("da").value.toUpperCase().replace(/[^A-Z]/g, ""), B = $("db").value.toUpperCase().replace(/[^A-Z]/g, "");
+  const n = A.length, m = B.length, W = 420, off = 14, cell = Math.min((W - off) / n, (W - off) / m), parts = [];
+  const w = Math.min(win.value, n, m), need = Math.min(strict.value, w);
+  for (let i = 0; i + w <= n; i++) for (let j = 0; j + w <= m; j++) {
+    let s2 = 0; for (let k = 0; k < w; k++) if (A[i + k] === B[j + k]) s2++;
+    if (s2 >= need) parts.push(s("rect", {x: off + j * cell, y: off + i * cell, width: Math.max(cell, 2), height: Math.max(cell, 2), fill: "var(--accent)", opacity: s2 / w}));
+  }
+  parts.push(s("text", {x: off, y: 10, class: "tx"}, "B →"), s("text", {x: 2, y: off + 10, class: "tx", transform: `rotate(-90 8 ${off + 10})`}, "A →"));
+  $("dotsvg").replaceChildren(...parts);
+  $("dotmsg").innerHTML = `A <b>dot plot</b> marks every place where a window of ${w} letters in A matches B (needing ${need} of ${w} identical). A solid <b>diagonal</b> means the two sequences are similar there; a <b>broken or shifted</b> diagonal shows an insertion, deletion or rearrangement; <b>off-diagonal</b> streaks are repeats. It is the quickest way to eyeball the relationship between two sequences before aligning them. Edit the text to see insertions and repeats appear.`;
+}
+["da", "db"].forEach((id) => $(id).addEventListener("input", drawDot));
+drawDot();
+</script></body></html>

@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Sequence Lab</title><link rel="stylesheet" href="../../../assets/pg.css">
+<style>.frames text{font:11px "JetBrains Mono",monospace}
+.kmer{display:grid;grid-template-columns:repeat(auto-fill,minmax(64px,1fr));gap:3px;font:12px "JetBrains Mono",monospace}
+.kmer div{display:flex;justify-content:space-between;padding:2px 5px;border-radius:5px;background:var(--surface);border:1px solid var(--line)}</style></head><body>
+<div class="tabs"><button class="on" data-t="orf" type="button">Find genes (six-frame ORF map)</button><button data-t="comp" type="button">Composition, GC skew and k-mers</button></div>
+<section class="pane on" id="orf">
+  <div class="row"><select id="preset" aria-label="sequence"></select><button type="button" id="rand">random DNA of the same length</button></div>
+  <div class="ctl" id="octl"></div>
+  <svg id="osvg" viewBox="0 0 700 250" role="img" aria-label="Open reading frames on six reading frames"></svg>
+  <div class="msg" id="omsg"></div>
+</section>
+<section class="pane" id="comp">
+  <div class="row"><select id="preset2" aria-label="sequence"></select><label>k <select id="k"><option>1</option><option>2</option><option selected>3</option><option>4</option></select></label></div>
+  <svg id="gsvg" viewBox="0 0 700 180" role="img" aria-label="GC content and cumulative GC skew"></svg>
+  <div class="kmer" id="kmer" style="margin-top:8px"></div>
+  <div class="msg" id="cmsg"></div>
+</section>
+<script src="../../../assets/pg.js"></script>
+<script src="presets.js"></script>
+<script>
+const {$, h, s, tabs, slider, plot, rng} = PG; tabs();
+const COMP = {A: "T", T: "A", G: "C", C: "G"};
+const rc = (x) => [...x].reverse().map((b) => COMP[b] || "N").join("");
+const B = "TCAG", AAS = "FFLLSSSSYY**CC*WLLLLPPPPHHQQRRRRIIIMTTTTNNKKSSRRVVVVAAAADDEEGGGG";
+const CODE = {}; for (let i = 0; i < 64; i++) CODE[B[i >> 4] + B[(i >> 2) & 3] + B[i & 3]] = AAS[i];
+let keys = Object.keys(PRESETS);
+keys.forEach((k) => { $("preset").append(h("option", {value: k}, k)); $("preset2").append(h("option", {value: k}, k)); });
+let seq = PRESETS[keys[0]];
+const minL = slider("minimum ORF length (codons)", 10, 150, 5, 40, (v) => v, drawORF);
+$("octl").append(minL.el);
+function orfs(s) {
+  const out = [];
+  [0, 1].forEach((strand) => {
+    const str = strand ? rc(s) : s;
+    for (let f = 0; f < 3; f++) {
+      let start = -1;
+      for (let i = f; i + 3 <= str.length; i += 3) {
+        const c = str.slice(i, i + 3);
+        if (start < 0 && c === "ATG") start = i;
+        else if (start >= 0 && CODE[c] === "*") { out.push({strand, frame: f, a: start, b: i + 3, len: (i + 3 - start) / 3}); start = -1; }
+      }
+    }
+  });
+  return out;
+}
+function drawORF() {
+  const L = seq.length, all = orfs(seq).filter((o) => o.len >= minL.value), parts = [];
+  const X = (p) => 30 + (640) * p / L, rowY = [40, 62, 84, 128, 150, 172];
+  const longest = all.reduce((m, o) => o.len > (m ? m.len : 0) ? o : m, null);
+  ["+1", "+2", "+3", "−1", "−2", "−3"].forEach((lab, i) => parts.push(s("text", {x: 4, y: rowY[i] + 11, class: "tx"}, lab)));
+  parts.push(s("line", {x1: 30, x2: 670, y1: 106, y2: 106, stroke: "var(--line)"}));
+  all.forEach((o) => {
+    const row = o.strand * 3 + o.frame, y = rowY[row];
+    const x1 = o.strand ? X(L - o.b) : X(o.a), x2 = o.strand ? X(L - o.a) : X(o.b);
+    parts.push(s("rect", {x: x1, y, width: Math.max(2, x2 - x1), height: 15, rx: 2, fill: o === longest ? "var(--accent2)" : "var(--accent)", opacity: o === longest ? 1 : 0.6}));
+  });
+  $("osvg").replaceChildren(...parts);
+  const exp = L / (64 / 3) / 3;
+  $("omsg").innerHTML = `A DNA sequence can be read in <b>six</b> frames (3 forward, 3 reverse-complement). An <b>open reading frame</b> runs from ATG to a stop codon with none in between. Showing ORFs of at least <b>${minL.value} codons</b>: found <b>${all.length}</b>. ` +
+    (longest ? `The longest (highlighted) is <b>${longest.len} codons = ${longest.len * 3} bases</b> on frame ${longest.strand ? "−" : "+"}${longest.frame + 1}. ` : "") +
+    `In random DNA a stop appears every ~21 codons, so a long ORF is a strong sign of a real gene. Lower the threshold to see the random short ORFs appear everywhere; raise it to isolate the true gene. Try the "random DNA" button: real genes vanish.`;
+}
+$("preset").onchange = () => { seq = PRESETS[$("preset").value]; drawORF(); };
+const r = rng(7);
+$("rand").onclick = () => { seq = Array.from({length: seq.length}, () => "ACGT"[Math.floor(r() * 4)]).join(""); drawORF(); };
+drawORF();
+// ---------- composition tab
+let seq2 = PRESETS[keys[0]];
+function drawComp() {
+  const sdna = seq2, L = sdna.length, w = Math.max(30, Math.floor(L / 60)), parts = [];
+  const gcPts = [], skew = []; let cum = 0;
+  for (let i = 0; i + w <= L; i += w) { const win = sdna.slice(i, i + w); const g = (win.match(/G/g) || []).length, c = (win.match(/C/g) || []).length; gcPts.push([i + w / 2, (g + c) / w]); }
+  for (let i = 0; i < L; i++) { if (sdna[i] === "G") cum++; else if (sdna[i] === "C") cum--; skew.push([i, cum]); }
+  const {X, Y} = plot($("gsvg"), [{xs: gcPts.map((p) => p[0]), ys: gcPts.map((p) => 100 * p[1]), color: "var(--accent)", label: "GC % (window)"}], {H: 180, ymin: 0, ymax: 100, xmin: 0, xmax: L, xlabel: "position (bases)", ylabel: "GC %", R: 60});
+  // overlay cumulative skew scaled
+  const mx = Math.max(...skew.map((p) => Math.abs(p[1]))) || 1;
+  $("gsvg").append(s("path", {d: skew.filter((_, i) => i % 5 === 0).map((p, i) => (i ? "L" : "M") + X(p[0]).toFixed(1) + " " + (90 - 70 * p[1] / mx).toFixed(1)).join(""), fill: "none", stroke: "var(--accent2)", "stroke-width": 1.5}));
+  $("gsvg").append(s("text", {x: 664, y: 174, class: "tx", "text-anchor": "end", style: "fill:var(--accent2)"}, "pink: cumulative GC skew"));
+  const k = +$("k").value, counts = {};
+  for (let i = 0; i + k <= L; i++) { const w2 = sdna.slice(i, i + k); if (/^[ACGT]+$/.test(w2)) counts[w2] = (counts[w2] || 0) + 1; }
+  const tot = Object.values(counts).reduce((a, b) => a + b, 0), exp = tot / 4 ** k;
+  const sorted = Object.entries(counts).sort((a, b) => b[1] - a[1]);
+  $("kmer").replaceChildren(...sorted.slice(0, 32).map(([w2, n]) => { const d = h("div", null, h("span", {class: "mono"}, w2), h("b", null, n)); const ratio = n / exp; d.style.background = ratio > 1.5 ? "color-mix(in srgb,var(--g) 25%,transparent)" : ratio < 0.5 ? "color-mix(in srgb,var(--accent2) 22%,transparent)" : ""; return d; }));
+  const gc = (sdna.match(/[GC]/g) || []).length / L;
+  $("cmsg").innerHTML = `GC content: <b>${(100 * gc).toFixed(1)}%</b>, varying along the sequence (purple). The <b>cumulative GC skew</b> (pink) adds +1 for every G and −1 for every C; on a whole bacterial chromosome it makes a V whose minimum marks the <b>origin of replication</b>, because the two strands are copied differently. ` +
+    `Below: the ${4 ** k} possible <b>${k}-mers</b> ranked by count. Green = more than 1.5× expected, pink = less than half. Over- and under-represented words reveal codon usage (k=3 in genes), restriction-site avoidance and more. ${k === 3 ? "At k=3, stop-codon-containing words are often rare in coding sequence." : ""}`;
+}
+$("preset2").onchange = () => { seq2 = PRESETS[$("preset2").value]; drawComp(); };
+$("k").onchange = drawComp;
+drawComp();
+</script></body></html>
