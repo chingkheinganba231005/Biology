@@ -1,0 +1,401 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Cancer biology · Cells to Code</title>
+<meta name="description" content="What cancer is, how normal cells become tumours one mutation at a time, the difference between oncogenes and tumour suppressors, the hallmarks of cancer, and how it is treated. Analysed with real mutation data from thousands of tumours in The Cancer Genome Atlas.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,600;1,6..72,400&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.css">
+<link rel="stylesheet" href="../../assets/guide.css">
+<script>try{var t=localStorage.getItem('c2c-theme');if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
+</head>
+<body>
+<header class="topbar">
+  <a class="brand" href="../../index.html"><span class="logo" aria-hidden="true"></span>Cells to Code</a>
+  <span class="crumb">Biology from zero · Chapter P12</span>
+  <button class="tocbtn" type="button" aria-controls="toc" aria-expanded="false">Contents</button>
+  <button class="themebtn" type="button" aria-label="Switch light or dark theme">Theme</button>
+  <span class="progress" aria-hidden="true"></span>
+</header>
+<div class="layout">
+  <nav class="toc" id="toc" aria-label="On this page">
+    <p class="toc-h">On this page</p>
+    <ol><li><a href="#what-makes-a-tumour">What makes a tumour</a></li>
+<li><a href="#oncogenes-and-tumour-suppressors">Oncogenes and tumour suppressors</a></li>
+<li><a href="#cancer-develops-in-steps">Cancer develops in steps</a></li>
+<li><a href="#the-hallmarks-of-cancer">The hallmarks of cancer</a></li>
+<li><a href="#where-the-mutations-come-from">Where the mutations come from</a></li>
+<li><a href="#how-cancer-is-treated">How cancer is treated</a></li>
+<li><a href="#summary">Summary</a></li></ol>
+    <p class="toc-nb"><a href="cancer_biology.ipynb" download>Download the notebook ↓</a></p>
+  </nav>
+  <main class="content">
+    <p class="eyebrow">Biology from zero · Chapter P12</p>
+    <h1>Cancer biology</h1>
+    <p class="lede">What cancer is, how normal cells become tumours one mutation at a time, the difference between oncogenes and tumour suppressors, the hallmarks of cancer, and how it is treated. Analysed with real mutation data from thousands of tumours in The Cancer Genome Atlas.</p>
+    <p class="meta">About 2 hours · Chapters P7–P10</p>
+<p>Cancer is not one disease but hundreds, united by one feature: cells that keep dividing when they shouldn't, invade where they don't belong, and eventually disrupt the body. Every chapter so far has prepared for this one. Cancer is a disease of DNA (P3) whose mutations change proteins (P4, P5) that regulate genes (P6), control the cell cycle and death (P7), pass growth signals (P9) and hide tumours from immunity (P10). And it develops by mutation and selection among the body's own cells, which is evolution (P8).</p>
+<div class="box eli5">
+<p class="lab">Like you’re five</p>
+<p>Your body is a well-run society of cells. Each cell divides only when told to, stays in its place, and kills itself if it becomes damaged. Cancer starts when one cell picks up a series of typos in its instruction book: one typo jams the accelerator, another cuts the brakes, another disables the self-destruct button. Each typo gives that cell's family a small advantage, so the family grows, and the bigger it gets, the more likely one member picks up the next typo. After enough typos the family ignores all the rules. That family is a tumour.</p>
+</div>
+<h2 id="what-makes-a-tumour">What makes a tumour</h2>
+<p>A <strong>tumour</strong> (or neoplasm) is an abnormal mass of cells. It is <strong>benign</strong> if it stays in place (most moles, fibroids) and <strong>malignant</strong>, a cancer, if it invades surrounding tissue and can spread through blood or lymph to form <strong>metastases</strong> in other organs. Metastasis causes most cancer deaths.</p>
+<p>Cancers are named by the cell type they arise from:</p>
+<table>
+<thead>
+<tr>
+<th>Type</th>
+<th>Origin</th>
+<th>Examples</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Carcinoma</strong></td>
+<td>epithelial cells (linings and glands); about 85% of cancers</td>
+<td>breast, lung, colorectal, prostate, pancreatic</td>
+</tr>
+<tr>
+<td><strong>Sarcoma</strong></td>
+<td>connective tissue</td>
+<td>bone, muscle, fat</td>
+</tr>
+<tr>
+<td><strong>Leukaemia, lymphoma, myeloma</strong></td>
+<td>blood and immune cells</td>
+<td>CML, AML, Hodgkin lymphoma</td>
+</tr>
+<tr>
+<td><strong>Glioma</strong></td>
+<td>glial cells of the brain</td>
+<td>glioblastoma</td>
+</tr>
+<tr>
+<td><strong>Melanoma</strong></td>
+<td>pigment cells</td>
+<td>skin melanoma</td>
+</tr>
+</tbody>
+</table>
+<h2 id="oncogenes-and-tumour-suppressors">Oncogenes and tumour suppressors</h2>
+<p>Cancer genes come in two kinds, and the car analogy is standard:</p>
+<ul>
+<li><strong>Oncogenes</strong> are accelerators stuck down. The normal version (a <strong>proto-oncogene</strong>) promotes growth when told to; a mutation makes it active all the time. One mutated copy is enough (dominant). Examples: <em>KRAS</em>, <em>BRAF</em>, <em>EGFR</em>, <em>PIK3CA</em>, <em>MYC</em>.</li>
+<li><strong>Tumour suppressors</strong> are brakes. They stop division or trigger repair and death. Both copies must be lost (recessive at the cell level). Examples: <em>TP53</em>, <em>RB1</em>, <em>APC</em>, <em>PTEN</em>, <em>BRCA1/2</em>.</li>
+</ul>
+<p>Alfred Knudson explained the "two hits" needed for tumour suppressors in 1971 by studying <strong>retinoblastoma</strong>, an eye cancer of children. Children who inherit one broken <em>RB1</em> copy in every cell need only one more hit in any retinal cell, so they often get tumours in both eyes, early. In sporadic cases, one cell must lose both copies by chance, so tumours are single and later.</p>
+<h3 id="the-two-patterns-in-real-tumours">The two patterns in real tumours</h3>
+<p>The two kinds of gene leave different fingerprints. An oncogene must be <em>activated</em>, and only specific changes do that, so its mutations pile up at a few <strong>hotspot</strong> positions. A tumour suppressor only has to be <em>broken</em>, and almost any damaging change works, so its mutations are spread out and often truncate the protein (nonsense mutations and frameshifts, chapter P4).</p>
+<p>Let's see this in real data. We downloaded every mutation in eight well-known cancer genes from eight cancer types in <strong>The Cancer Genome Atlas</strong> (TCGA, about 4,200 tumours) through the cBioPortal web service.</p>
+<pre class="code"><code><span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">matplotlib.pyplot</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">plt</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">matplotlib</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">mpl</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pathlib</span><span class="w"> </span><span class="kn">import</span> <span class="n">Path</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">json</span>
+
+<span class="n">mpl</span><span class="o">.</span><span class="n">rc</span><span class="p">(</span><span class="s2">"figure"</span><span class="p">,</span> <span class="n">dpi</span><span class="o">=</span><span class="mi">110</span><span class="p">);</span> <span class="n">mpl</span><span class="o">.</span><span class="n">rc</span><span class="p">(</span><span class="s2">"axes"</span><span class="p">,</span> <span class="n">labelsize</span><span class="o">=</span><span class="mi">12</span><span class="p">,</span> <span class="n">titlesize</span><span class="o">=</span><span class="mi">13</span><span class="p">)</span>
+<span class="n">IMAGES</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="s2">"images"</span><span class="p">);</span> <span class="n">IMAGES</span><span class="o">.</span><span class="n">mkdir</span><span class="p">(</span><span class="n">exist_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">save_fig</span><span class="p">(</span><span class="n">name</span><span class="p">):</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">tight_layout</span><span class="p">();</span> <span class="n">plt</span><span class="o">.</span><span class="n">savefig</span><span class="p">(</span><span class="n">IMAGES</span> <span class="o">/</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">.png"</span><span class="p">,</span> <span class="n">dpi</span><span class="o">=</span><span class="mi">150</span><span class="p">,</span> <span class="n">bbox_inches</span><span class="o">=</span><span class="s2">"tight"</span><span class="p">)</span>
+<span class="n">R</span> <span class="o">=</span> <span class="p">{}</span>
+
+<span class="n">muts</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="s2">"datasets/tcga_driver_mutations.csv"</span><span class="p">)</span>
+<span class="n">n_samples</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="nb">open</span><span class="p">(</span><span class="s2">"datasets/tcga_sample_counts.json"</span><span class="p">))</span>
+<span class="n">names</span> <span class="o">=</span> <span class="p">{</span><span class="s2">"coadread"</span><span class="p">:</span> <span class="s2">"colorectal"</span><span class="p">,</span> <span class="s2">"brca"</span><span class="p">:</span> <span class="s2">"breast"</span><span class="p">,</span> <span class="s2">"luad"</span><span class="p">:</span> <span class="s2">"lung adeno."</span><span class="p">,</span> <span class="s2">"paad"</span><span class="p">:</span> <span class="s2">"pancreatic"</span><span class="p">,</span> <span class="s2">"skcm"</span><span class="p">:</span> <span class="s2">"melanoma"</span><span class="p">,</span>
+         <span class="s2">"gbm"</span><span class="p">:</span> <span class="s2">"glioblastoma"</span><span class="p">,</span> <span class="s2">"ucec"</span><span class="p">:</span> <span class="s2">"endometrial"</span><span class="p">,</span> <span class="s2">"lgg"</span><span class="p">:</span> <span class="s2">"lower-grade glioma"</span><span class="p">}</span>
+<span class="n">muts</span><span class="p">[</span><span class="s2">"cancer"</span><span class="p">]</span> <span class="o">=</span> <span class="n">muts</span><span class="p">[</span><span class="s2">"study"</span><span class="p">]</span><span class="o">.</span><span class="n">str</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">"_"</span><span class="p">)</span><span class="o">.</span><span class="n">str</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">map</span><span class="p">(</span><span class="n">names</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">muts</span><span class="p">)</span><span class="si">:</span><span class="s2">,</span><span class="si">}</span><span class="s2"> mutations in </span><span class="si">{</span><span class="n">muts</span><span class="p">[</span><span class="s1">'sample'</span><span class="p">]</span><span class="o">.</span><span class="n">nunique</span><span class="p">()</span><span class="si">:</span><span class="s2">,</span><span class="si">}</span><span class="s2"> tumours, from </span><span class="si">{</span><span class="nb">sum</span><span class="p">(</span><span class="n">n_samples</span><span class="o">.</span><span class="n">values</span><span class="p">())</span><span class="si">:</span><span class="s2">,</span><span class="si">}</span><span class="s2"> sequenced tumours"</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">muts</span><span class="p">[</span><span class="s2">"mutation_type"</span><span class="p">]</span><span class="o">.</span><span class="n">value_counts</span><span class="p">()</span><span class="o">.</span><span class="n">head</span><span class="p">(</span><span class="mi">6</span><span class="p">)</span><span class="o">.</span><span class="n">to_string</span><span class="p">())</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">muts</span><span class="o">.</span><span class="n">head</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span><span class="o">.</span><span class="n">to_string</span><span class="p">(</span><span class="n">index</span><span class="o">=</span><span class="kc">False</span><span class="p">))</span>
+</code></pre>
+<pre class="out">6,796 mutations in 3,267 tumours, from 4,213 sequenced tumours
+mutation_type
+Missense_Mutation    4854
+Nonsense_Mutation     871
+Frame_Shift_Del       491
+Frame_Shift_Ins       212
+Splice_Site           191
+In_Frame_Del          122
+                           study          sample gene protein_change     mutation_type  position     cancer
+coadread_tcga_pan_can_atlas_2018 TCGA-3L-AA1B-01  APC         R1450* Nonsense_Mutation      1450 colorectal
+coadread_tcga_pan_can_atlas_2018 TCGA-3L-AA1B-01  APC          R876* Nonsense_Mutation       876 colorectal
+coadread_tcga_pan_can_atlas_2018 TCGA-3L-AA1B-01 BRAF          L597V Missense_Mutation       597 colorectal</pre>
+<p>First, how often is each gene mutated in each cancer type?</p>
+<pre class="code"><code><span class="n">freq</span> <span class="o">=</span> <span class="n">muts</span><span class="o">.</span><span class="n">groupby</span><span class="p">([</span><span class="s2">"study"</span><span class="p">,</span> <span class="s2">"gene"</span><span class="p">])[</span><span class="s2">"sample"</span><span class="p">]</span><span class="o">.</span><span class="n">nunique</span><span class="p">()</span><span class="o">.</span><span class="n">unstack</span><span class="p">(</span><span class="n">fill_value</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+<span class="n">freq</span> <span class="o">=</span> <span class="mi">100</span> <span class="o">*</span> <span class="n">freq</span><span class="o">.</span><span class="n">div</span><span class="p">(</span><span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">(</span><span class="n">n_samples</span><span class="p">),</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+<span class="n">freq</span><span class="o">.</span><span class="n">index</span> <span class="o">=</span> <span class="p">[</span><span class="n">names</span><span class="p">[</span><span class="n">i</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">"_"</span><span class="p">)[</span><span class="mi">0</span><span class="p">]]</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">freq</span><span class="o">.</span><span class="n">index</span><span class="p">]</span>
+<span class="n">genes</span> <span class="o">=</span> <span class="p">[</span><span class="s2">"TP53"</span><span class="p">,</span> <span class="s2">"KRAS"</span><span class="p">,</span> <span class="s2">"PIK3CA"</span><span class="p">,</span> <span class="s2">"APC"</span><span class="p">,</span> <span class="s2">"BRAF"</span><span class="p">,</span> <span class="s2">"PTEN"</span><span class="p">,</span> <span class="s2">"EGFR"</span><span class="p">,</span> <span class="s2">"IDH1"</span><span class="p">]</span>
+<span class="n">freq</span> <span class="o">=</span> <span class="n">freq</span><span class="p">[</span><span class="n">genes</span><span class="p">]</span>
+<span class="n">fig</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">9</span><span class="p">,</span> <span class="mf">4.4</span><span class="p">))</span>
+<span class="n">im</span> <span class="o">=</span> <span class="n">ax</span><span class="o">.</span><span class="n">imshow</span><span class="p">(</span><span class="n">freq</span><span class="o">.</span><span class="n">values</span><span class="p">,</span> <span class="n">cmap</span><span class="o">=</span><span class="s2">"Purples"</span><span class="p">,</span> <span class="n">vmin</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">vmax</span><span class="o">=</span><span class="mi">80</span><span class="p">)</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">set_xticks</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">genes</span><span class="p">)),</span> <span class="n">genes</span><span class="p">);</span> <span class="n">ax</span><span class="o">.</span><span class="n">set_yticks</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">freq</span><span class="p">)),</span> <span class="n">freq</span><span class="o">.</span><span class="n">index</span><span class="p">)</span>
+<span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">freq</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]):</span>
+    <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">freq</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]):</span>
+        <span class="n">v</span> <span class="o">=</span> <span class="n">freq</span><span class="o">.</span><span class="n">values</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">]</span>
+        <span class="n">ax</span><span class="o">.</span><span class="n">text</span><span class="p">(</span><span class="n">j</span><span class="p">,</span> <span class="n">i</span><span class="p">,</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">v</span><span class="si">:</span><span class="s2">.0f</span><span class="si">}</span><span class="s2">"</span><span class="p">,</span> <span class="n">ha</span><span class="o">=</span><span class="s2">"center"</span><span class="p">,</span> <span class="n">va</span><span class="o">=</span><span class="s2">"center"</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">9</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s2">"white"</span> <span class="k">if</span> <span class="n">v</span> <span class="o">&gt;</span> <span class="mi">45</span> <span class="k">else</span> <span class="s2">"0.2"</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">colorbar</span><span class="p">(</span><span class="n">im</span><span class="p">,</span> <span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s2">"</span><span class="si">% o</span><span class="s2">f tumours with a mutation"</span><span class="p">);</span> <span class="n">ax</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="s2">"Driver mutation frequencies across cancer types (TCGA)"</span><span class="p">)</span>
+<span class="n">save_fig</span><span class="p">(</span><span class="s2">"driver_heatmap"</span><span class="p">);</span> <span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+<span class="n">R</span><span class="p">[</span><span class="s2">"kras_paad"</span><span class="p">]</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">freq</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="s1">'pancreatic'</span><span class="p">,</span><span class="w"> </span><span class="s1">'KRAS'</span><span class="p">]</span><span class="si">:</span><span class="s2">.0f</span><span class="si">}</span><span class="s2">"</span><span class="p">;</span> <span class="n">R</span><span class="p">[</span><span class="s2">"braf_skcm"</span><span class="p">]</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">freq</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="s1">'melanoma'</span><span class="p">,</span><span class="w"> </span><span class="s1">'BRAF'</span><span class="p">]</span><span class="si">:</span><span class="s2">.0f</span><span class="si">}</span><span class="s2">"</span>
+<span class="n">R</span><span class="p">[</span><span class="s2">"idh_lgg"</span><span class="p">]</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">freq</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="s1">'lower-grade glioma'</span><span class="p">,</span><span class="w"> </span><span class="s1">'IDH1'</span><span class="p">]</span><span class="si">:</span><span class="s2">.0f</span><span class="si">}</span><span class="s2">"</span><span class="p">;</span> <span class="n">R</span><span class="p">[</span><span class="s2">"apc_crc"</span><span class="p">]</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">freq</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="s1">'colorectal'</span><span class="p">,</span><span class="w"> </span><span class="s1">'APC'</span><span class="p">]</span><span class="si">:</span><span class="s2">.0f</span><span class="si">}</span><span class="s2">"</span>
+<span class="n">R</span><span class="p">[</span><span class="s2">"tp53_max"</span><span class="p">]</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">freq</span><span class="p">[</span><span class="s1">'TP53'</span><span class="p">]</span><span class="o">.</span><span class="n">max</span><span class="p">()</span><span class="si">:</span><span class="s2">.0f</span><span class="si">}</span><span class="s2">"</span>
+</code></pre>
+
+<figure><img src="images/driver_heatmap.png" alt="Figure P12-1. Percentage of tumours carrying a mutation in each gene, for eight cancer types from The Cancer Genome Atlas. Each cancer type has its own signature set of drivers; TP53 is common almost everywhere." loading="lazy"><figcaption><b>Figure P12-1.</b> Figure P12-1. Percentage of tumours carrying a mutation in each gene, for eight cancer types from The Cancer Genome Atlas. Each cancer type has its own signature set of drivers; TP53 is common almost everywhere.</figcaption></figure>
+
+<p>Each cancer type has its own favourite drivers: <em>KRAS</em> in 65% of pancreatic cancers, <em>BRAF</em> in 53% of melanomas, <em>IDH1</em> in 77% of lower-grade gliomas, <em>APC</em> in 72% of colorectal cancers. <em>TP53</em> is mutated in many cancer types (up to 60% here). Endometrial cancer shows many genes mutated because some of these tumours have broken DNA repair and carry huge numbers of mutations.</p>
+<p>Now the fingerprints. Where along each protein do the mutations fall?</p>
+<pre class="code"><code><span class="n">lengths</span> <span class="o">=</span> <span class="p">{</span><span class="s2">"KRAS"</span><span class="p">:</span> <span class="mi">189</span><span class="p">,</span> <span class="s2">"PIK3CA"</span><span class="p">:</span> <span class="mi">1068</span><span class="p">,</span> <span class="s2">"TP53"</span><span class="p">:</span> <span class="mi">393</span><span class="p">,</span> <span class="s2">"APC"</span><span class="p">:</span> <span class="mi">2843</span><span class="p">}</span>
+<span class="n">truncating</span> <span class="o">=</span> <span class="p">{</span><span class="s2">"Nonsense_Mutation"</span><span class="p">,</span> <span class="s2">"Frame_Shift_Del"</span><span class="p">,</span> <span class="s2">"Frame_Shift_Ins"</span><span class="p">,</span> <span class="s2">"Splice_Site"</span><span class="p">}</span>
+<span class="n">fig</span><span class="p">,</span> <span class="n">axs</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="mi">4</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="mi">8</span><span class="p">))</span>
+<span class="n">stats</span> <span class="o">=</span> <span class="p">{}</span>
+<span class="k">for</span> <span class="n">ax</span><span class="p">,</span> <span class="n">g</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">axs</span><span class="p">,</span> <span class="n">lengths</span><span class="p">):</span>
+    <span class="n">d</span> <span class="o">=</span> <span class="n">muts</span><span class="p">[(</span><span class="n">muts</span><span class="o">.</span><span class="n">gene</span> <span class="o">==</span> <span class="n">g</span><span class="p">)</span> <span class="o">&amp;</span> <span class="n">muts</span><span class="o">.</span><span class="n">position</span><span class="o">.</span><span class="n">notna</span><span class="p">()]</span>
+    <span class="n">trunc</span> <span class="o">=</span> <span class="n">d</span><span class="o">.</span><span class="n">mutation_type</span><span class="o">.</span><span class="n">isin</span><span class="p">(</span><span class="n">truncating</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">mask</span><span class="p">,</span> <span class="n">c</span><span class="p">,</span> <span class="n">lab</span> <span class="ow">in</span> <span class="p">[(</span><span class="o">~</span><span class="n">trunc</span><span class="p">,</span> <span class="s2">"#5b3a8c"</span><span class="p">,</span> <span class="s2">"missense / in-frame"</span><span class="p">),</span> <span class="p">(</span><span class="n">trunc</span><span class="p">,</span> <span class="s2">"#c2416b"</span><span class="p">,</span> <span class="s2">"truncating"</span><span class="p">)]:</span>
+        <span class="n">counts</span> <span class="o">=</span> <span class="n">d</span><span class="p">[</span><span class="n">mask</span><span class="p">]</span><span class="o">.</span><span class="n">position</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">int</span><span class="p">)</span><span class="o">.</span><span class="n">value_counts</span><span class="p">()</span>
+        <span class="n">ax</span><span class="o">.</span><span class="n">vlines</span><span class="p">(</span><span class="n">counts</span><span class="o">.</span><span class="n">index</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">counts</span><span class="o">.</span><span class="n">values</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="n">c</span><span class="p">,</span> <span class="n">lw</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+        <span class="n">ax</span><span class="o">.</span><span class="n">scatter</span><span class="p">(</span><span class="n">counts</span><span class="o">.</span><span class="n">index</span><span class="p">,</span> <span class="n">counts</span><span class="o">.</span><span class="n">values</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="n">c</span><span class="p">,</span> <span class="n">s</span><span class="o">=</span><span class="mi">12</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="n">lab</span><span class="p">,</span> <span class="n">zorder</span><span class="o">=</span><span class="mi">3</span><span class="p">)</span>
+    <span class="n">top</span> <span class="o">=</span> <span class="n">d</span><span class="o">.</span><span class="n">protein_change</span><span class="o">.</span><span class="n">value_counts</span><span class="p">()</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">set_xlim</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">lengths</span><span class="p">[</span><span class="n">g</span><span class="p">]);</span> <span class="n">ax</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="s2">"tumours"</span><span class="p">)</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">g</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">d</span><span class="p">)</span><span class="si">}</span><span class="s2"> mutations, </span><span class="si">{</span><span class="n">trunc</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span><span class="si">:</span><span class="s2">.0%</span><span class="si">}</span><span class="s2"> truncating; most common </span><span class="si">{</span><span class="n">top</span><span class="o">.</span><span class="n">index</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="si">}</span><span class="s2"> (</span><span class="si">{</span><span class="n">top</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="si">}</span><span class="s2">)"</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">11</span><span class="p">,</span> <span class="n">loc</span><span class="o">=</span><span class="s2">"left"</span><span class="p">)</span>
+    <span class="n">stats</span><span class="p">[</span><span class="n">g</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">trunc</span><span class="o">.</span><span class="n">mean</span><span class="p">(),</span> <span class="n">top</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">/</span> <span class="nb">len</span><span class="p">(</span><span class="n">d</span><span class="p">),</span> <span class="n">top</span><span class="o">.</span><span class="n">index</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+<span class="n">axs</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">legend</span><span class="p">(</span><span class="n">fontsize</span><span class="o">=</span><span class="mi">9</span><span class="p">);</span> <span class="n">axs</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">set_xlabel</span><span class="p">(</span><span class="s2">"amino acid position"</span><span class="p">)</span>
+<span class="n">save_fig</span><span class="p">(</span><span class="s2">"lollipops"</span><span class="p">);</span> <span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+<span class="n">R</span><span class="p">[</span><span class="s2">"kras_top"</span><span class="p">]</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">stats</span><span class="p">[</span><span class="s1">'KRAS'</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span><span class="si">:</span><span class="s2">.0%</span><span class="si">}</span><span class="s2">"</span><span class="p">;</span> <span class="n">R</span><span class="p">[</span><span class="s2">"kras_top_name"</span><span class="p">]</span> <span class="o">=</span> <span class="n">stats</span><span class="p">[</span><span class="s2">"KRAS"</span><span class="p">][</span><span class="mi">2</span><span class="p">]</span>
+<span class="n">R</span><span class="p">[</span><span class="s2">"apc_trunc"</span><span class="p">]</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">stats</span><span class="p">[</span><span class="s1">'APC'</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span><span class="si">:</span><span class="s2">.0%</span><span class="si">}</span><span class="s2">"</span><span class="p">;</span> <span class="n">R</span><span class="p">[</span><span class="s2">"kras_trunc"</span><span class="p">]</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">stats</span><span class="p">[</span><span class="s1">'KRAS'</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span><span class="si">:</span><span class="s2">.0%</span><span class="si">}</span><span class="s2">"</span>
+<span class="n">R</span><span class="p">[</span><span class="s2">"tp53_trunc"</span><span class="p">]</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">stats</span><span class="p">[</span><span class="s1">'TP53'</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span><span class="si">:</span><span class="s2">.0%</span><span class="si">}</span><span class="s2">"</span>
+</code></pre>
+
+<figure><img src="images/lollipops.png" alt="Figure P12-2. Positions of mutations along four proteins in TCGA tumours (taller = more tumours). The oncogenes KRAS and PIK3CA are hit at a few hotspots, almost always by missense changes. APC is hit all along its first half, mostly by truncating mutations. TP53 is a special case: mostly missense, concentrated in its DNA-binding domain." loading="lazy"><figcaption><b>Figure P12-2.</b> Figure P12-2. Positions of mutations along four proteins in TCGA tumours (taller = more tumours). The oncogenes KRAS and PIK3CA are hit at a few hotspots, almost always by missense changes. APC is hit all along its first half, mostly by truncating mutations. TP53 is a special case: mostly missense, concentrated in its DNA-binding domain.</figcaption></figure>
+
+<p>The difference is striking. In <em>KRAS</em>, 26% of all mutations are a single change, G12D, and only 0% are truncating. In <em>APC</em>, 68% are truncating, scattered across the first half of the protein. <em>TP53</em> is mixed (29% truncating): it is a tumour suppressor, but its common missense mutations at arginines in the DNA-binding domain (R175, R248, R273) both destroy its function and interfere with the remaining normal copy. Bert Vogelstein and colleagues turned this pattern into a rule of thumb for classifying cancer genes (the "20/20 rule"), and chapter 20 builds a statistical driver-gene detector on the same idea.</p>
+<h3 id="mutual-exclusivity">Mutual exclusivity</h3>
+<p><em>KRAS</em> and <em>BRAF</em> sit one after the other in the same pathway (chapter P9). Once one is mutated, mutating the other adds little, so tumours rarely carry both. Let's test that in colorectal cancer:</p>
+<pre class="code"><code><span class="kn">from</span><span class="w"> </span><span class="nn">scipy.stats</span><span class="w"> </span><span class="kn">import</span> <span class="n">fisher_exact</span>
+<span class="n">crc</span> <span class="o">=</span> <span class="n">muts</span><span class="p">[</span><span class="n">muts</span><span class="o">.</span><span class="n">study</span> <span class="o">==</span> <span class="s2">"coadread_tcga_pan_can_atlas_2018"</span><span class="p">]</span>
+<span class="n">hot</span> <span class="o">=</span> <span class="n">crc</span><span class="p">[((</span><span class="n">crc</span><span class="o">.</span><span class="n">gene</span> <span class="o">==</span> <span class="s2">"KRAS"</span><span class="p">)</span> <span class="o">&amp;</span> <span class="n">crc</span><span class="o">.</span><span class="n">protein_change</span><span class="o">.</span><span class="n">str</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="sa">r</span><span class="s2">"G1[23]|Q61"</span><span class="p">,</span> <span class="n">na</span><span class="o">=</span><span class="kc">False</span><span class="p">))</span> <span class="o">|</span>
+          <span class="p">((</span><span class="n">crc</span><span class="o">.</span><span class="n">gene</span> <span class="o">==</span> <span class="s2">"BRAF"</span><span class="p">)</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">crc</span><span class="o">.</span><span class="n">protein_change</span> <span class="o">==</span> <span class="s2">"V600E"</span><span class="p">))]</span>
+<span class="n">n_crc</span> <span class="o">=</span> <span class="n">n_samples</span><span class="p">[</span><span class="s2">"coadread_tcga_pan_can_atlas_2018"</span><span class="p">]</span>
+<span class="n">k</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">hot</span><span class="p">[</span><span class="n">hot</span><span class="o">.</span><span class="n">gene</span> <span class="o">==</span> <span class="s2">"KRAS"</span><span class="p">][</span><span class="s2">"sample"</span><span class="p">]);</span> <span class="n">b</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">hot</span><span class="p">[</span><span class="n">hot</span><span class="o">.</span><span class="n">gene</span> <span class="o">==</span> <span class="s2">"BRAF"</span><span class="p">][</span><span class="s2">"sample"</span><span class="p">])</span>
+<span class="n">both</span><span class="p">,</span> <span class="n">k_only</span><span class="p">,</span> <span class="n">b_only</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">k</span> <span class="o">&amp;</span> <span class="n">b</span><span class="p">),</span> <span class="nb">len</span><span class="p">(</span><span class="n">k</span> <span class="o">-</span> <span class="n">b</span><span class="p">),</span> <span class="nb">len</span><span class="p">(</span><span class="n">b</span> <span class="o">-</span> <span class="n">k</span><span class="p">)</span>
+<span class="n">neither</span> <span class="o">=</span> <span class="n">n_crc</span> <span class="o">-</span> <span class="n">both</span> <span class="o">-</span> <span class="n">k_only</span> <span class="o">-</span> <span class="n">b_only</span>
+<span class="n">table</span> <span class="o">=</span> <span class="p">[[</span><span class="n">both</span><span class="p">,</span> <span class="n">b_only</span><span class="p">],</span> <span class="p">[</span><span class="n">k_only</span><span class="p">,</span> <span class="n">neither</span><span class="p">]]</span>
+<span class="n">odds</span><span class="p">,</span> <span class="n">p</span> <span class="o">=</span> <span class="n">fisher_exact</span><span class="p">(</span><span class="n">table</span><span class="p">)</span>
+<span class="n">expected</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">k</span><span class="p">)</span> <span class="o">*</span> <span class="nb">len</span><span class="p">(</span><span class="n">b</span><span class="p">)</span> <span class="o">/</span> <span class="n">n_crc</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"KRAS hotspot: </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">k</span><span class="p">)</span><span class="si">}</span><span class="s2">, BRAF V600E: </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">b</span><span class="p">)</span><span class="si">}</span><span class="s2">, both: </span><span class="si">{</span><span class="n">both</span><span class="si">}</span><span class="s2"> (expected if independent: </span><span class="si">{</span><span class="n">expected</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2">)"</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Fisher's exact test: odds ratio </span><span class="si">{</span><span class="n">odds</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2">, p = </span><span class="si">{</span><span class="n">p</span><span class="si">:</span><span class="s2">.1e</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+<span class="n">R</span><span class="p">[</span><span class="s2">"both"</span><span class="p">]</span> <span class="o">=</span> <span class="n">both</span><span class="p">;</span> <span class="n">R</span><span class="p">[</span><span class="s2">"exp_both"</span><span class="p">]</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">expected</span><span class="si">:</span><span class="s2">.0f</span><span class="si">}</span><span class="s2">"</span><span class="p">;</span> <span class="n">R</span><span class="p">[</span><span class="s2">"p_excl"</span><span class="p">]</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">p</span><span class="si">:</span><span class="s2">.0e</span><span class="si">}</span><span class="s2">"</span>
+</code></pre>
+<pre class="out">KRAS hotspot: 190, BRAF V600E: 48, both: 1 (expected if independent: 17.1)
+Fisher&#x27;s exact test: odds ratio 0.03, p = 1.2e-08</pre>
+<p>Under independence we would expect about 17 colorectal tumours with both a <em>KRAS</em> hotspot and <em>BRAF</em> V600E; there are 1 (p = 1e-08). <strong>Mutual exclusivity</strong> like this is used computationally to discover genes that act in the same pathway.</p>
+<h2 id="cancer-develops-in-steps">Cancer develops in steps</h2>
+<p>In 1990 Eric Fearon and Bert Vogelstein described colorectal cancer as a sequence: loss of <em>APC</em> starts a benign polyp, an activating <em>KRAS</em> mutation makes it grow larger, and loss of <em>TP53</em> (and other changes) turns it into an invasive carcinoma. The idea that several hits are needed explains why cancer incidence climbs so steeply with age. If a cell needs $k$ rare, independent hits, the chance of having all of them by age $t$ grows roughly as $t^k$, so the yearly incidence grows as $t^{k-1}$ (Armitage and Doll, 1954).</p>
+<pre class="code"><code><span class="n">rng</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">default_rng</span><span class="p">(</span><span class="mi">12</span><span class="p">)</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">onset_ages</span><span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="n">rate</span><span class="p">,</span> <span class="n">n_people</span><span class="o">=</span><span class="mi">200_000</span><span class="p">,</span> <span class="n">max_age</span><span class="o">=</span><span class="mi">100</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""Each person's first cell to collect k hits; hits arrive as a Poisson process in each of many cell lineages."""</span>
+    <span class="c1"># time to k-th hit in one lineage is Gamma(k, rate); the first of many lineages wins</span>
+    <span class="n">lineages</span> <span class="o">=</span> <span class="mi">50</span>
+    <span class="n">t</span> <span class="o">=</span> <span class="n">rng</span><span class="o">.</span><span class="n">gamma</span><span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="mi">1</span> <span class="o">/</span> <span class="n">rate</span><span class="p">,</span> <span class="p">(</span><span class="n">n_people</span><span class="p">,</span> <span class="n">lineages</span><span class="p">))</span><span class="o">.</span><span class="n">min</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">t</span><span class="p">[</span><span class="n">t</span> <span class="o">&lt;</span> <span class="n">max_age</span><span class="p">]</span>
+
+<span class="n">fig</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">8</span><span class="p">,</span> <span class="mi">4</span><span class="p">))</span>
+<span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">rate</span><span class="p">,</span> <span class="n">c</span> <span class="ow">in</span> <span class="p">[(</span><span class="mi">2</span><span class="p">,</span> <span class="mf">0.0013</span><span class="p">,</span> <span class="s2">"#9d7cc9"</span><span class="p">),</span> <span class="p">(</span><span class="mi">4</span><span class="p">,</span> <span class="mf">0.0065</span><span class="p">,</span> <span class="s2">"#5b3a8c"</span><span class="p">),</span> <span class="p">(</span><span class="mi">6</span><span class="p">,</span> <span class="mf">0.013</span><span class="p">,</span> <span class="s2">"#c2416b"</span><span class="p">)]:</span>
+    <span class="n">ages</span> <span class="o">=</span> <span class="n">onset_ages</span><span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="n">rate</span><span class="p">)</span>
+    <span class="n">hist</span><span class="p">,</span> <span class="n">edges</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">histogram</span><span class="p">(</span><span class="n">ages</span><span class="p">,</span> <span class="n">bins</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">20</span><span class="p">,</span> <span class="mi">91</span><span class="p">,</span> <span class="mi">5</span><span class="p">))</span>
+    <span class="n">mid</span> <span class="o">=</span> <span class="p">(</span><span class="n">edges</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="n">edges</span><span class="p">[</span><span class="mi">1</span><span class="p">:])</span> <span class="o">/</span> <span class="mi">2</span>
+    <span class="n">ok</span> <span class="o">=</span> <span class="n">hist</span> <span class="o">&gt;</span> <span class="mi">0</span>
+    <span class="n">slope</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">polyfit</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">mid</span><span class="p">[</span><span class="n">ok</span><span class="p">]),</span> <span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">hist</span><span class="p">[</span><span class="n">ok</span><span class="p">]),</span> <span class="mi">1</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">loglog</span><span class="p">(</span><span class="n">mid</span><span class="p">[</span><span class="n">ok</span><span class="p">],</span> <span class="n">hist</span><span class="p">[</span><span class="n">ok</span><span class="p">]</span> <span class="o">/</span> <span class="mi">200_000</span> <span class="o">*</span> <span class="mf">1e5</span> <span class="o">/</span> <span class="mi">5</span><span class="p">,</span> <span class="s2">"o-"</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="n">c</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">k</span><span class="si">}</span><span class="s2"> hits needed: slope </span><span class="si">{</span><span class="n">slope</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">set_xlabel</span><span class="p">(</span><span class="s2">"age (log scale)"</span><span class="p">);</span> <span class="n">ax</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="s2">"new cases per 100,000 per year"</span><span class="p">)</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="s2">"More required hits = steeper rise of cancer with age"</span><span class="p">);</span> <span class="n">ax</span><span class="o">.</span><span class="n">legend</span><span class="p">()</span>
+<span class="n">save_fig</span><span class="p">(</span><span class="s2">"age_incidence"</span><span class="p">);</span> <span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+</code></pre>
+
+<figure><img src="images/age_incidence.png" alt="Figure P12-3. Simulated cancer incidence against age, on log–log axes, when a cell must accumulate 2, 4 or 6 independent hits. The slope is a little below k − 1 (it flattens at older ages as the first cases use up the most susceptible people). Many real adult cancers rise with a slope of about 4–6." loading="lazy"><figcaption><b>Figure P12-3.</b> Figure P12-3. Simulated cancer incidence against age, on log–log axes, when a cell must accumulate 2, 4 or 6 independent hits. The slope is a little below k − 1 (it flattens at older ages as the first cases use up the most susceptible people). Many real adult cancers rise with a slope of about 4–6.</figcaption></figure>
+
+<p>Real incidence curves for many adult carcinomas have log–log slopes of roughly 4–6, consistent with several rate-limiting steps. The model ignores the clonal expansions between hits, which in reality speed things up, as the first tab of the playground shows: each driver lets a clone grow, and a bigger clone is a bigger target for the next hit. Switch on an inherited first hit, as in familial adenomatous polyposis (an inherited <em>APC</em> mutation), and cancer arrives decades earlier.</p>
+<div class="playground"><div class="pg-bar"><span>Interactive playground</span><a href="animations/cancer_lab.html" target="_blank" rel="noopener">open full screen ↗</a></div><iframe src="animations/cancer_lab.html" loading="lazy" style="height:640px" title="Interactive playground"></iframe></div>
+
+<h2 id="the-hallmarks-of-cancer">The hallmarks of cancer</h2>
+<p>In 2000, and again in 2011 and 2022, Douglas Hanahan and Robert Weinberg organised the bewildering diversity of cancer into a short list of capabilities every cancer acquires. Click through them in the playground's second tab. In brief: <strong>sustained growth signalling</strong> (P9), <strong>evading growth suppressors</strong> and <strong>resisting cell death</strong> (P7), <strong>unlimited replication</strong> via telomerase (P7), <strong>inducing blood vessels</strong> (P1's diffusion limit), <strong>invasion and metastasis</strong>, <strong>reprogrammed metabolism</strong> (P9), and <strong>avoiding immune destruction</strong> (P10), enabled by <strong>genome instability</strong> and <strong>tumour-promoting inflammation</strong>, with <strong>phenotypic plasticity</strong> and <strong>epigenetic reprogramming</strong> (P6) among the latest additions. Each hallmark is also a family of drug targets.</p>
+<h2 id="where-the-mutations-come-from">Where the mutations come from</h2>
+<table>
+<thead>
+<tr>
+<th>Source</th>
+<th>Signature in the DNA</th>
+<th>Example cancers</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Ageing</strong>: spontaneous loss of methylated C (chapter P6)</td>
+<td>C→T at CpG sites, accumulating like a clock</td>
+<td>all tissues</td>
+</tr>
+<tr>
+<td><strong>Tobacco smoke</strong></td>
+<td>C→A changes</td>
+<td>lung</td>
+</tr>
+<tr>
+<td><strong>Ultraviolet light</strong></td>
+<td>C→T at neighbouring pyrimidines (CC→TT)</td>
+<td>skin melanoma</td>
+</tr>
+<tr>
+<td><strong>APOBEC enzymes</strong> (antiviral, chapter P3)</td>
+<td>C→T and C→G in a TCW context</td>
+<td>breast, bladder, cervix</td>
+</tr>
+<tr>
+<td><strong>Defective mismatch repair</strong></td>
+<td>huge numbers of small indels in repeats</td>
+<td>some colorectal and endometrial</td>
+</tr>
+<tr>
+<td><strong>Defective BRCA1/2 (homologous recombination)</strong></td>
+<td>deletions with short matching sequences at the edges; many rearrangements</td>
+<td>breast, ovarian, prostate</td>
+</tr>
+</tbody>
+</table>
+<p>Each process leaves a characteristic <strong>mutational signature</strong>, a pattern of which base changes in which neighbouring context. Separating a tumour's mutations into a mix of signatures is a matrix-factorisation problem that you'll solve with real data in chapter 20. About 5–10% of cancers involve a strong inherited risk, such as <em>BRCA1/2</em> (breast, ovarian), mismatch-repair genes (Lynch syndrome) or <em>TP53</em> (Li–Fraumeni syndrome).</p>
+<h2 id="how-cancer-is-treated">How cancer is treated</h2>
+<table>
+<thead>
+<tr>
+<th>Approach</th>
+<th>How it works</th>
+<th>Example</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Surgery</strong></td>
+<td>remove the tumour; curative for many early cancers</td>
+<td></td>
+</tr>
+<tr>
+<td><strong>Radiotherapy</strong></td>
+<td>DNA damage kills dividing cells; hypoxic regions resist (chapter P1)</td>
+<td></td>
+</tr>
+<tr>
+<td><strong>Chemotherapy</strong></td>
+<td>poisons for dividing cells: DNA damage, blocked replication, frozen spindles (chapter P7)</td>
+<td>cisplatin, 5-FU, paclitaxel</td>
+</tr>
+<tr>
+<td><strong>Targeted therapy</strong></td>
+<td>drugs against the specific driver</td>
+<td>imatinib (BCR-ABL), osimertinib (EGFR), vemurafenib (BRAF V600E), sotorasib (KRAS G12C)</td>
+</tr>
+<tr>
+<td><strong>Synthetic lethality</strong></td>
+<td>exploit a weakness created by the tumour's own mutation</td>
+<td>PARP inhibitors in <em>BRCA</em>-mutant cancers</td>
+</tr>
+<tr>
+<td><strong>Hormone therapy</strong></td>
+<td>block the hormone signals some cancers need</td>
+<td>tamoxifen, enzalutamide</td>
+</tr>
+<tr>
+<td><strong>Immunotherapy</strong></td>
+<td>release or redirect the immune system (chapter P10)</td>
+<td>pembrolizumab, CAR-T</td>
+</tr>
+</tbody>
+</table>
+<p>The landmark of targeted therapy is <strong>imatinib</strong>. Chronic myeloid leukaemia is driven by the <strong>Philadelphia chromosome</strong>, a swap between chromosomes 9 and 22 that fuses two genes into <em>BCR-ABL</em>, a permanently active kinase. Imatinib, approved in 2001, blocks that kinase, and turned a fatal leukaemia into a condition most patients live with for a normal lifespan. The drawback of all targeted therapies is <strong>resistance</strong>: tumours are diverse, evolving populations, and cells with a resistance mutation survive and regrow (chapter P7's playground, chapter 19). That is why combinations, sequencing of tumour DNA in the blood to catch resistance early, and evolution-informed dosing are major research areas.</p>
+<div class="box idea">
+<p class="lab">The real idea</p>
+<p>Cancer genomics changed oncology from organ-based to molecule-based. Lung cancers are now routinely sequenced, and the treatment depends on whether the tumour carries an <em>EGFR</em>, <em>ALK</em>, <em>KRAS</em> G12C, <em>BRAF</em> or another targetable change. Part 5 of this course works with exactly the kind of data you used in this chapter.</p>
+</div>
+<h2 id="summary">Summary</h2>
+<table>
+<thead>
+<tr>
+<th>Idea</th>
+<th>One line</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Malignant tumour</td>
+<td>invades and can metastasise; most deaths are from metastasis</td>
+</tr>
+<tr>
+<td>Oncogene</td>
+<td>stuck accelerator; one copy; hotspot missense mutations</td>
+</tr>
+<tr>
+<td>Tumour suppressor</td>
+<td>broken brake; both copies; scattered truncating mutations</td>
+</tr>
+<tr>
+<td>Multistep</td>
+<td>several hits needed; incidence rises steeply with age</td>
+</tr>
+<tr>
+<td>Mutual exclusivity</td>
+<td>genes in the same pathway are rarely mutated together</td>
+</tr>
+<tr>
+<td>Hallmarks</td>
+<td>the capabilities every cancer acquires; each a drug-target family</td>
+</tr>
+<tr>
+<td>Treatment</td>
+<td>surgery, radiation, chemo, targeted, hormone, immunotherapy; resistance evolves</td>
+</tr>
+</tbody>
+</table>
+<div class="box check">
+<p class="lab">Check yourself</p>
+<ol>
+<li>Why are oncogene mutations concentrated at hotspots, but tumour-suppressor mutations spread out? <em>(Only specific changes activate a protein; almost any damaging change inactivates one.)</em></li>
+<li>Why do children with inherited retinoblastoma often get tumours in both eyes? <em>(Every cell already has one hit; only one more is needed.)</em></li>
+<li><em>KRAS</em> and <em>BRAF</em> mutations are rarely found in the same colorectal tumour. Why? <em>(They act in the same pathway, so a second one adds little advantage.)</em></li>
+<li>What is synthetic lethality? Give an example. <em>(Losing either of two genes is tolerated, but losing both kills; PARP inhibitors kill BRCA-deficient cells.)</em></li>
+<li>Why does cancer incidence rise steeply with age? <em>(Several independent hits must accumulate in one cell lineage.)</em></li>
+</ol>
+</div>
+<div class="box exercise">
+<p class="lab">Try it</p>
+<p>Using the TCGA table, compare <em>PIK3CA</em> mutations in breast and endometrial cancer. (a) What are the three most common protein changes in each? (b) What fraction of endometrial tumours with any <em>PIK3CA</em> mutation also have a <em>PTEN</em> mutation, compared with what you'd expect if they were independent? Both genes act in the PI3K pathway. Does the result fit the mutual-exclusivity idea? Suggest a reason.</p>
+</div>
+<details><summary>Solution</summary>
+<pre class="code"><code><span class="k">for</span> <span class="n">st</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">"brca_tcga_pan_can_atlas_2018"</span><span class="p">,</span> <span class="s2">"ucec_tcga_pan_can_atlas_2018"</span><span class="p">]:</span>
+    <span class="n">d</span> <span class="o">=</span> <span class="n">muts</span><span class="p">[(</span><span class="n">muts</span><span class="o">.</span><span class="n">study</span> <span class="o">==</span> <span class="n">st</span><span class="p">)</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">muts</span><span class="o">.</span><span class="n">gene</span> <span class="o">==</span> <span class="s2">"PIK3CA"</span><span class="p">)]</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">names</span><span class="p">[</span><span class="n">st</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">"_"</span><span class="p">)[</span><span class="mi">0</span><span class="p">]],</span> <span class="n">d</span><span class="o">.</span><span class="n">protein_change</span><span class="o">.</span><span class="n">value_counts</span><span class="p">()</span><span class="o">.</span><span class="n">head</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span><span class="o">.</span><span class="n">to_dict</span><span class="p">())</span>
+<span class="n">ucec</span> <span class="o">=</span> <span class="n">muts</span><span class="p">[</span><span class="n">muts</span><span class="o">.</span><span class="n">study</span> <span class="o">==</span> <span class="s2">"ucec_tcga_pan_can_atlas_2018"</span><span class="p">]</span>
+<span class="n">p_set</span><span class="p">,</span> <span class="n">t_set</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">ucec</span><span class="p">[</span><span class="n">ucec</span><span class="o">.</span><span class="n">gene</span> <span class="o">==</span> <span class="s2">"PIK3CA"</span><span class="p">][</span><span class="s2">"sample"</span><span class="p">]),</span> <span class="nb">set</span><span class="p">(</span><span class="n">ucec</span><span class="p">[</span><span class="n">ucec</span><span class="o">.</span><span class="n">gene</span> <span class="o">==</span> <span class="s2">"PTEN"</span><span class="p">][</span><span class="s2">"sample"</span><span class="p">])</span>
+<span class="n">n</span> <span class="o">=</span> <span class="n">n_samples</span><span class="p">[</span><span class="s2">"ucec_tcga_pan_can_atlas_2018"</span><span class="p">]</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"PIK3CA </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">p_set</span><span class="p">)</span><span class="si">}</span><span class="s2">, PTEN </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">t_set</span><span class="p">)</span><span class="si">}</span><span class="s2">, both </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">p_set</span><span class="w"> </span><span class="o">&amp;</span><span class="w"> </span><span class="n">t_set</span><span class="p">)</span><span class="si">}</span><span class="s2">, expected </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">p_set</span><span class="p">)</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="nb">len</span><span class="p">(</span><span class="n">t_set</span><span class="p">)</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="n">n</span><span class="si">:</span><span class="s2">.0f</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">fisher_exact</span><span class="p">([[</span><span class="nb">len</span><span class="p">(</span><span class="n">p_set</span> <span class="o">&amp;</span> <span class="n">t_set</span><span class="p">),</span> <span class="nb">len</span><span class="p">(</span><span class="n">p_set</span> <span class="o">-</span> <span class="n">t_set</span><span class="p">)],</span> <span class="p">[</span><span class="nb">len</span><span class="p">(</span><span class="n">t_set</span> <span class="o">-</span> <span class="n">p_set</span><span class="p">),</span> <span class="n">n</span> <span class="o">-</span> <span class="nb">len</span><span class="p">(</span><span class="n">p_set</span> <span class="o">|</span> <span class="n">t_set</span><span class="p">)]]))</span>
+</code></pre>
+<pre class="out">breast {&#x27;H1047R&#x27;: 129, &#x27;E545K&#x27;: 65, &#x27;E542K&#x27;: 43}
+endometrial {&#x27;R88Q&#x27;: 36, &#x27;H1047R&#x27;: 29, &#x27;E542K&#x27;: 17}
+PIK3CA 259, PTEN 337, both 191, expected 169
+SignificanceResult(statistic=np.float64(2.154713940370669), pvalue=np.float64(4.71933849971892e-05))</pre>
+<p>Breast cancer is dominated by H1047R (in the kinase domain) and E545K and E542K (in the helical domain). Endometrial cancer shares H1047R and E542K, but its single most common change is R88Q, in a different part of the protein: tissues can favour different ways of activating the same enzyme. In endometrial cancer, <em>PIK3CA</em> and <em>PTEN</em> mutations co-occur <em>more</em> often than expected, the opposite of mutual exclusivity, even though both act in the PI3K pathway. Two reasons are likely. Many endometrial tumours are hypermutated (broken mismatch repair or <em>POLE</em>), so they carry mutations in many genes at once and inflate every overlap. And partial pathway activation by each mutation may add up, so having both genuinely helps. Exclusivity is a useful clue, not a law, and real driver analysis must correct for each tumour's overall mutation burden (chapter 20).</p>
+</details>
+    <nav class="pager">
+      <a class="prev" href="../11-lab-toolkit/index.html"><small>Previous</small>P11 · The lab toolkit</a>
+      <a class="next" href="../13-pharmacology/index.html"><small>Next</small>P13 · How drugs work</a>
+    </nav>
+  </main>
+</div>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.js"></script>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/contrib/auto-render.min.js"></script>
+<script defer src="../../assets/guide.js"></script>
+</body>
+</html>

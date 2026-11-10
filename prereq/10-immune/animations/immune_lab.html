@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Immune Lab</title><link rel="stylesheet" href="../../../assets/pg.css"></head><body>
+<div class="tabs"><button class="on" data-t="resp" type="button">Infection, memory and vaccines</button><button data-t="herd" type="button">Herd immunity</button></div>
+<section class="pane on" id="resp">
+  <div class="row"><button class="pri" type="button" id="inf">Infect now</button><button type="button" id="vac">Vaccinate now</button><button type="button" id="rs">Reset</button><span class="tx">Time runs on its own; try infecting twice, or vaccinating before an infection.</span></div>
+  <svg id="rsvg" viewBox="0 0 700 290" role="img" aria-label="Pathogen and antibody levels over time"></svg>
+  <div class="msg" id="rmsg"></div>
+</section>
+<section class="pane" id="herd">
+  <div class="ctl" id="hctl"></div>
+  <svg id="hsvg" viewBox="0 0 700 280" role="img" aria-label="Epidemic curve"></svg>
+  <div class="msg" id="hmsg"></div>
+</section>
+<script src="../../../assets/pg.js"></script>
+<script>
+const {$, h, s, tabs, slider, plot} = PG; tabs();
+// ---------- response model: pathogen P grows, is killed by innate (fast, weak) and antibodies A; B = activated clone size; M = memory
+let st, hist, timer, events;
+function reset() { st = {t: 0, P: 0, B: 0, A: 0, M: 1, I: 0, V: 0}; hist = []; events = []; }
+function stepR(dt) {
+  const {P, B, A, M, V} = st, g = P + V;
+  const sN = g / (g + 1e3), sM = g / (g + 20);              // memory cells respond to far less antigen than naive ones
+  const dP = 0.9 * P * (1 - P / 1e6) - 0.4 * P * st.I - 0.002 * A * P;
+  const dB = 0.6 * sN * (B + 1) + 1.0 * sM * M - 0.15 * B;   // clonal expansion from 1 naive cell plus the memory pool
+  const dA = 0.8 * B - 0.05 * A;
+  const dI = 0.8 * (P / (P + 1e3)) - 0.3 * st.I;             // innate response: fast but limited
+  const dM = 0.05 * B * (M < 1000 ? 1 : 0);
+  const dV = -0.3 * V - 0.002 * A * V;                        // vaccine antigen: stimulates but cannot replicate
+  st.P = Math.max(0, P + dt * dP); if (st.P < 1) st.P = 0;
+  st.B = Math.max(0, B + dt * dB); st.A = Math.max(0, A + dt * dA); st.I = Math.max(0, st.I + dt * dI); st.M += dt * dM; st.V = Math.max(0, V + dt * dV);
+  st.t += dt;
+}
+function drawR() {
+  const xs = hist.map((x) => x[0]), lg = (v) => Math.log10(Math.max(v, 1));
+  const tmax = Math.max(60, Math.ceil(st.t / 20) * 20);
+  const ser = [{xs: xs.length ? xs : [0], ys: hist.map((x) => lg(x[1])), color: "var(--accent2)", label: "pathogen"}, {xs: xs.length ? xs : [0], ys: hist.map((x) => lg(x[2])), color: "var(--accent)", label: "antibody"}, {xs: xs.length ? xs : [0], ys: hist.map((x) => lg(x[3])), color: "var(--g)", label: "memory cells", dash: "4 3"}];
+  const {X, Y} = plot($("rsvg"), ser, {ymin: 0, ymax: 6.5, xmin: 0, xmax: tmax, xlabel: "days", ylabel: "amount (log10)", yfmt: (v) => "1e" + v});
+  events.forEach(([t, k]) => $("rsvg").append(s("line", {x1: X(t), x2: X(t), y1: 14, y2: 246, stroke: k === "inf" ? "var(--accent2)" : "var(--g)", "stroke-dasharray": "2 3"}), s("text", {x: X(t) + 3, y: 26, class: "tx"}, k === "inf" ? "infection" : "vaccine")));
+  const nInf = events.filter((e) => e[1] === "inf").length;
+  const peaks = []; let cur = null;
+  hist.forEach(([t, p]) => { const ev = events.filter((e) => e[1] === "inf" && e[0] <= t).length; if (ev !== cur) { cur = ev; peaks.push(0); } if (ev) peaks[peaks.length - 1] = Math.max(peaks[peaks.length - 1], p); });
+  const pk = peaks.filter((x) => x > 0);
+  $("rmsg").innerHTML = (nInf === 0 ? "No infection yet. " : "") +
+    "The first time a pathogen appears, only a few B and T cells happen to recognise it. They must be found, activated and multiplied (<b>clonal expansion</b>), so antibody takes about a week to rise, and the pathogen grows freely meanwhile. " +
+    "Some of the expanded cells stay behind as long-lived <b>memory cells</b>. The next encounter starts from a much bigger pool, so antibody rises sooner and higher, and the pathogen is cleared before it can cause illness. A <b>vaccine</b> creates that memory without the disease." +
+    (pk.length > 1 ? `<br>Peak pathogen load: first infection ${pk[0].toExponential(1)}, later infection ${pk[pk.length - 1].toExponential(1)}.` : "");
+}
+function tick() { for (let i = 0; i < 10; i++) { stepR(0.02); } hist.push([st.t, st.P, st.A, st.M]); if (hist.length > 3000) hist.shift(); drawR(); }
+$("inf").onclick = () => { st.P += 10; events.push([st.t, "inf"]); };
+$("vac").onclick = () => { st.V += 3e4; events.push([st.t, "vac"]); };
+$("rs").onclick = () => { reset(); drawR(); };
+function start() { if (!timer) timer = setInterval(tick, 40); }
+function stop() { clearInterval(timer); timer = null; }
+window.addEventListener("tabchange", () => { if ($("resp").classList.contains("on")) start(); else stop(); });
+reset(); drawR(); start();
+// ---------- SIR with vaccination
+const R0 = slider("R0 (people infected by one case, in a fully susceptible population)", 1, 18, 0.1, 3, (v) => v.toFixed(1), drawH);
+const V = slider("fraction vaccinated before the outbreak", 0, 1, 0.01, 0.3, (v) => (100 * v).toFixed(0) + "%", drawH);
+const EFF = slider("vaccine effectiveness against infection", 0.3, 1, 0.01, 0.9, (v) => (100 * v).toFixed(0) + "%", drawH);
+$("hctl").append(R0.el, V.el, EFF.el);
+function drawH() {
+  const gamma = 1 / 7, beta = R0.value * gamma, imm = V.value * EFF.value, dt = 0.1;
+  let S = 1 - imm - 1e-4, I = 1e-4, Rr = imm; const ts = [], is = [], ss = [];
+  for (let t = 0; t <= 365; t += dt) { const inf = beta * S * I; S -= dt * inf; I += dt * (inf - gamma * I); Rr += dt * gamma * I; if (Math.abs(t % 1) < dt / 2) { ts.push(t); is.push(100 * I); ss.push(100 * S); } }
+  plot($("hsvg"), [{xs: ts, ys: is, color: "var(--accent2)", label: "currently infected (%)"}, {xs: ts, ys: ss, color: "var(--accent)", label: "still susceptible (%)"}], {ymin: 0, ymax: 100, xlabel: "days", ylabel: "% of population"});
+  const total = 100 * (Rr - imm + I), herd = Math.max(0, 1 - 1 / R0.value);
+  $("hmsg").innerHTML = `Each case infects R0 × (fraction still susceptible) others. The epidemic can only grow while that number is above 1, so it stops spreading once a fraction <b>1 − 1/R0 = ${(100 * herd).toFixed(0)}%</b> is immune: the <b>herd immunity threshold</b>. Here ${(100 * imm).toFixed(0)}% start immune and <b>${total.toFixed(1)}%</b> of the population is eventually infected. ` +
+    (imm >= herd ? "Immunity is above the threshold: the outbreak fizzles out, protecting people who could not be vaccinated." : `To prevent the outbreak with this vaccine you would need to vaccinate ${herd / EFF.value > 1 ? "more than everyone (impossible with this vaccine)" : (100 * herd / EFF.value).toFixed(0) + "% of people"}.`) +
+    " Measles, with R0 of about 12–18, needs about 95% immunity, which is why small drops in vaccination bring it back.";
+}
+drawH();
+</script></body></html>

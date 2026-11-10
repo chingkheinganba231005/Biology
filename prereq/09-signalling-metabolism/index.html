@@ -1,0 +1,362 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Signalling and metabolism · Cells to Code</title>
+<meta name="description" content="How cells sense the outside world and pass messages inward through chains of kinases, and how they turn food into usable energy. These are the pathways that cancer mutations hijack and that most targeted cancer drugs block.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,600;1,6..72,400&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.css">
+<link rel="stylesheet" href="../../assets/guide.css">
+<script>try{var t=localStorage.getItem('c2c-theme');if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
+</head>
+<body>
+<header class="topbar">
+  <a class="brand" href="../../index.html"><span class="logo" aria-hidden="true"></span>Cells to Code</a>
+  <span class="crumb">Biology from zero · Chapter P9</span>
+  <button class="tocbtn" type="button" aria-controls="toc" aria-expanded="false">Contents</button>
+  <button class="themebtn" type="button" aria-label="Switch light or dark theme">Theme</button>
+  <span class="progress" aria-hidden="true"></span>
+</header>
+<div class="layout">
+  <nav class="toc" id="toc" aria-label="On this page">
+    <p class="toc-h">On this page</p>
+    <ol><li><a href="#signals-and-receptors">Signals and receptors</a></li>
+<li><a href="#kinase-cascades-passing-the-message">Kinase cascades: passing the message</a></li>
+<li><a href="#why-cascades-amplification-and-switches">Why cascades? Amplification and switches</a></li>
+<li><a href="#feedback-adaptation-and-drug-resistance">Feedback: adaptation and drug resistance</a></li>
+<li><a href="#metabolism-where-the-energy-comes-from">Metabolism: where the energy comes from</a></li>
+<li><a href="#signalling-meets-metabolism-mtor">Signalling meets metabolism: mTOR</a></li>
+<li><a href="#summary">Summary</a></li></ol>
+    <p class="toc-nb"><a href="signalling_metabolism.ipynb" download>Download the notebook ↓</a></p>
+  </nav>
+  <main class="content">
+    <p class="eyebrow">Biology from zero · Chapter P9</p>
+    <h1>Signalling and metabolism</h1>
+    <p class="lede">How cells sense the outside world and pass messages inward through chains of kinases, and how they turn food into usable energy. These are the pathways that cancer mutations hijack and that most targeted cancer drugs block.</p>
+    <p class="meta">About 1.5 hours · Chapters P2, P5 and P6</p>
+<p>A cell in your body almost never decides to divide on its own. It waits for permission from outside: a <strong>growth factor</strong> released by a neighbour, a hormone in the blood, contact with the right surface. This chapter follows how such signals cross the membrane and travel to the nucleus, and how the cell powers everything it does by burning sugar. Both topics are central to cancer: the most famous oncogenes (<em>EGFR</em>, <em>KRAS</em>, <em>BRAF</em>, <em>PIK3CA</em>) are signalling genes, and cancer cells rewire their metabolism to fuel constant growth.</p>
+<div class="box eli5">
+<p class="lab">Like you’re five</p>
+<p>A cell is like a house with a doorbell. A messenger molecule outside presses the button (a <strong>receptor</strong> on the membrane). Inside, a chain of people pass the message along, each one tapping the next on the shoulder (proteins switching each other on). The last one runs to the control room (the nucleus) and flips switches to turn on the "grow and divide" genes. In cancer, one of the people in the chain is stuck shouting "GROW!" even when nobody rang the bell. Many cancer drugs work by gagging that person.</p>
+</div>
+<h2 id="signals-and-receptors">Signals and receptors</h2>
+<p>Most signal molecules (growth factors, many hormones, cytokines) cannot cross the oily membrane, so they bind <strong>receptor</strong> proteins that span it: the outside part grabs the signal and the inside part changes shape and starts the relay. Small fat-soluble hormones (oestrogen, testosterone, cortisol) are the exception: they slip through and bind <strong>nuclear receptors</strong> inside, which act directly as transcription factors.</p>
+<table>
+<thead>
+<tr>
+<th>Receptor family</th>
+<th>How it works</th>
+<th>Examples</th>
+<th>Drugs</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Receptor tyrosine kinases</strong> (RTKs)</td>
+<td>signal brings two receptors together; their kinase domains phosphorylate each other's tyrosines</td>
+<td>EGFR, HER2, insulin receptor</td>
+<td>erlotinib, osimertinib (EGFR); trastuzumab (HER2)</td>
+</tr>
+<tr>
+<td><strong>G-protein-coupled receptors</strong> (GPCRs)</td>
+<td>seven membrane helices (chapter P5); activate G proteins and second messengers like cAMP and Ca²⁺</td>
+<td>adrenaline, opioid, histamine receptors</td>
+<td>about a third of all approved drugs</td>
+</tr>
+<tr>
+<td><strong>Nuclear receptors</strong></td>
+<td>bind hormone inside the cell, then bind DNA</td>
+<td>oestrogen receptor, androgen receptor</td>
+<td>tamoxifen, enzalutamide</td>
+</tr>
+<tr>
+<td><strong>Cytokine receptors</strong></td>
+<td>recruit JAK kinases, which activate STAT transcription factors</td>
+<td>interleukin and interferon receptors</td>
+<td>ruxolitinib (JAK)</td>
+</tr>
+</tbody>
+</table>
+<h2 id="kinase-cascades-passing-the-message">Kinase cascades: passing the message</h2>
+<p>Inside the cell, the commonest way to pass a message is <strong>phosphorylation</strong> (chapter P5): a <strong>kinase</strong> attaches a phosphate group to a target protein, changing its shape and activity, and a <strong>phosphatase</strong> removes it. Humans have about 500 kinases, and many work in chains. The best-known chain, and the most important in cancer, is the <strong>MAPK pathway</strong>:</p>
+<p><strong>growth factor (EGF) → EGFR → RAS → RAF → MEK → ERK → transcription factors (FOS, MYC) → cyclin D → cell division</strong></p>
+<ul>
+<li><strong>RAS</strong> is not a kinase but a molecular switch: ON when bound to GTP, OFF after it hydrolyses GTP to GDP. Helper proteins speed up both steps.</li>
+<li><strong>RAF, MEK and ERK</strong> are kinases, each activating the next.</li>
+<li>A second major branch, <strong>PI3K → AKT → mTOR</strong>, controls cell growth, survival and metabolism.</li>
+</ul>
+<p>Cancer mutations hit every level: activating mutations in <em>EGFR</em> (lung cancer), <em>KRAS</em> (pancreatic, colorectal, lung), <em>BRAF</em> (melanoma, with the V600E mutation in about half of cases) and <em>PIK3CA</em> (breast); loss of the brake <em>PTEN</em>. The commonest <em>KRAS</em> mutations (at codon 12) stop RAS from switching off, so the pathway runs without any signal. For 40 years RAS was called "undruggable", until sotorasib (approved 2021) was designed to bind covalently to the cysteine in the KRAS G12C mutant.</p>
+<p>Try the playground: switch on the KRAS mutation, then see which inhibitors still work.</p>
+<div class="playground"><div class="pg-bar"><span>Interactive playground</span><a href="animations/signal_lab.html" target="_blank" rel="noopener">open full screen ↗</a></div><iframe src="animations/signal_lab.html" loading="lazy" style="height:820px" title="Interactive playground"></iframe></div>
+
+<h2 id="why-cascades-amplification-and-switches">Why cascades? Amplification and switches</h2>
+<p>Why use five steps when one would do? One reason is <strong>amplification</strong>: one active receptor activates many RAS molecules, each activates many RAFs, and so on. Another is <strong>ultrasensitivity</strong>: each step responds in a switch-like (sigmoidal) way, and stacking switches makes the overall response even sharper. Let's quantify that with the Hill functions from chapter P6.</p>
+<div class="box math">
+<p class="lab">The maths, from scratch</p>
+<p>For a response $y = \dfrac{x^n}{K^n + x^n}$, the input needed to go from 10% to 90% of the maximum response rises by a factor $81^{1/n}$. Turning that around, the <strong>effective Hill coefficient</strong> of any sigmoid response is</p>
+<p>$$n_\text{eff} = \frac{\log 81}{\log(\text{EC}_{90}/\text{EC}_{10})}.$$</p>
+<p>$n_\text{eff} = 1$ is a gentle, hyperbolic response; large $n_\text{eff}$ is a switch.</p>
+</div>
+<pre class="code"><code><span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">matplotlib.pyplot</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">plt</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">matplotlib</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">mpl</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pathlib</span><span class="w"> </span><span class="kn">import</span> <span class="n">Path</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">scipy.integrate</span><span class="w"> </span><span class="kn">import</span> <span class="n">solve_ivp</span>
+
+<span class="n">mpl</span><span class="o">.</span><span class="n">rc</span><span class="p">(</span><span class="s2">"figure"</span><span class="p">,</span> <span class="n">dpi</span><span class="o">=</span><span class="mi">110</span><span class="p">);</span> <span class="n">mpl</span><span class="o">.</span><span class="n">rc</span><span class="p">(</span><span class="s2">"axes"</span><span class="p">,</span> <span class="n">labelsize</span><span class="o">=</span><span class="mi">12</span><span class="p">,</span> <span class="n">titlesize</span><span class="o">=</span><span class="mi">13</span><span class="p">)</span>
+<span class="n">IMAGES</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="s2">"images"</span><span class="p">);</span> <span class="n">IMAGES</span><span class="o">.</span><span class="n">mkdir</span><span class="p">(</span><span class="n">exist_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">save_fig</span><span class="p">(</span><span class="n">name</span><span class="p">):</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">tight_layout</span><span class="p">();</span> <span class="n">plt</span><span class="o">.</span><span class="n">savefig</span><span class="p">(</span><span class="n">IMAGES</span> <span class="o">/</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">.png"</span><span class="p">,</span> <span class="n">dpi</span><span class="o">=</span><span class="mi">150</span><span class="p">,</span> <span class="n">bbox_inches</span><span class="o">=</span><span class="s2">"tight"</span><span class="p">)</span>
+<span class="n">R</span> <span class="o">=</span> <span class="p">{}</span>
+
+<span class="n">hill</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">,</span> <span class="n">K</span><span class="p">,</span> <span class="n">n</span><span class="p">:</span> <span class="n">x</span> <span class="o">**</span> <span class="n">n</span> <span class="o">/</span> <span class="p">(</span><span class="n">K</span> <span class="o">**</span> <span class="n">n</span> <span class="o">+</span> <span class="n">x</span> <span class="o">**</span> <span class="n">n</span><span class="p">)</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">cascade</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">layers</span><span class="p">,</span> <span class="n">n</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">K</span><span class="o">=</span><span class="mf">0.3</span><span class="p">):</span>
+    <span class="n">y</span> <span class="o">=</span> <span class="n">x</span>
+    <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">layers</span><span class="p">):</span>
+        <span class="n">y</span> <span class="o">=</span> <span class="n">hill</span><span class="p">(</span><span class="n">y</span><span class="p">,</span> <span class="n">K</span><span class="p">,</span> <span class="n">n</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">y</span> <span class="o">/</span> <span class="n">hill</span><span class="p">(</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">K</span><span class="p">,</span> <span class="n">n</span><span class="p">)</span> <span class="k">if</span> <span class="n">layers</span> <span class="k">else</span> <span class="n">y</span>          <span class="c1"># scale so full input gives about full output</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">n_eff</span><span class="p">(</span><span class="n">xs</span><span class="p">,</span> <span class="n">ys</span><span class="p">):</span>
+    <span class="n">ys</span> <span class="o">=</span> <span class="n">ys</span> <span class="o">/</span> <span class="n">ys</span><span class="o">.</span><span class="n">max</span><span class="p">()</span>
+    <span class="n">ec10</span><span class="p">,</span> <span class="n">ec90</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">interp</span><span class="p">(</span><span class="mf">0.1</span><span class="p">,</span> <span class="n">ys</span><span class="p">,</span> <span class="n">xs</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">interp</span><span class="p">(</span><span class="mf">0.9</span><span class="p">,</span> <span class="n">ys</span><span class="p">,</span> <span class="n">xs</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="mi">81</span><span class="p">)</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">ec90</span> <span class="o">/</span> <span class="n">ec10</span><span class="p">)</span>
+
+<span class="n">xs</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">logspace</span><span class="p">(</span><span class="o">-</span><span class="mi">3</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">600</span><span class="p">)</span>
+<span class="n">fig</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">8</span><span class="p">,</span> <span class="mi">4</span><span class="p">))</span>
+<span class="n">neffs</span> <span class="o">=</span> <span class="p">{}</span>
+<span class="k">for</span> <span class="n">layers</span><span class="p">,</span> <span class="n">c</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">],</span> <span class="p">[</span><span class="s2">"#c9b8e3"</span><span class="p">,</span> <span class="s2">"#9d7cc9"</span><span class="p">,</span> <span class="s2">"#5b3a8c"</span><span class="p">,</span> <span class="s2">"#c2416b"</span><span class="p">]):</span>
+    <span class="n">ys</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">cascade</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">layers</span><span class="p">)</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">xs</span><span class="p">])</span>
+    <span class="n">neffs</span><span class="p">[</span><span class="n">layers</span><span class="p">]</span> <span class="o">=</span> <span class="n">n_eff</span><span class="p">(</span><span class="n">xs</span><span class="p">,</span> <span class="n">ys</span><span class="p">)</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">semilogx</span><span class="p">(</span><span class="n">xs</span><span class="p">,</span> <span class="n">ys</span> <span class="o">/</span> <span class="n">ys</span><span class="o">.</span><span class="n">max</span><span class="p">(),</span> <span class="n">color</span><span class="o">=</span><span class="n">c</span><span class="p">,</span> <span class="n">lw</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">layers</span><span class="si">}</span><span class="s2"> step</span><span class="si">{</span><span class="s1">'s'</span><span class="w"> </span><span class="k">if</span><span class="w"> </span><span class="n">layers</span><span class="w"> </span><span class="o">&gt;</span><span class="w"> </span><span class="mi">1</span><span class="w"> </span><span class="k">else</span><span class="w"> </span><span class="s1">''</span><span class="si">}</span><span class="s2">: effective n = </span><span class="si">{</span><span class="n">neffs</span><span class="p">[</span><span class="n">layers</span><span class="p">]</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">set_xlabel</span><span class="p">(</span><span class="s2">"input signal (log scale)"</span><span class="p">);</span> <span class="n">ax</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="s2">"output (fraction of max)"</span><span class="p">);</span> <span class="n">ax</span><span class="o">.</span><span class="n">legend</span><span class="p">(</span><span class="n">fontsize</span><span class="o">=</span><span class="mi">9</span><span class="p">)</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="s2">"Each extra step in a cascade makes the response more switch-like"</span><span class="p">)</span>
+<span class="n">save_fig</span><span class="p">(</span><span class="s2">"ultrasensitivity"</span><span class="p">);</span> <span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+<span class="n">R</span><span class="p">[</span><span class="s2">"n1"</span><span class="p">]</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">neffs</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2">"</span><span class="p">;</span> <span class="n">R</span><span class="p">[</span><span class="s2">"n4"</span><span class="p">]</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">neffs</span><span class="p">[</span><span class="mi">4</span><span class="p">]</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2">"</span>
+<span class="nb">print</span><span class="p">({</span><span class="n">k</span><span class="p">:</span> <span class="nb">round</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">neffs</span><span class="o">.</span><span class="n">items</span><span class="p">()})</span>
+</code></pre>
+<pre class="out">{1: np.float64(2.0), 2: np.float64(3.05), 3: np.float64(4.95), 4: np.float64(8.39)}</pre>
+<figure><img src="images/ultrasensitivity.png" alt="Figure P9-1. Output of a chain of switch-like steps (each a Hill function with n = 2) against input. More steps make the response steeper: a small change in input flips the output from off to on." loading="lazy"><figcaption><b>Figure P9-1.</b> Figure P9-1. Output of a chain of switch-like steps (each a Hill function with n = 2) against input. More steps make the response steeper: a small change in input flips the output from off to on.</figcaption></figure>
+
+<p>One step with $n = 2$ has an effective Hill coefficient of 2.0; four steps reach about 8.4. James Ferrell and colleagues measured exactly this kind of switch in the MAPK cascade of frog eggs in 1996. A switch is what a cell needs for an all-or-nothing decision such as "divide" or "don't".</p>
+<h2 id="feedback-adaptation-and-drug-resistance">Feedback: adaptation and drug resistance</h2>
+<p>Real pathways are full of <strong>feedback loops</strong>. ERK, for example, phosphorylates and inhibits proteins upstream of RAS, damping its own activation. Negative feedback makes the response <strong>adapt</strong> (peak, then settle lower) and makes the pathway robust: if something halves one step, the feedback partly compensates. That robustness becomes a problem when the "something" is a drug.</p>
+<p>Here is a small model of the pathway: receptor R, RAS, RAF, MEK and ERK, each relaxing towards a Hill function of the step above, with ERK inhibiting the activation of RAS.</p>
+<pre class="code"><code><span class="k">def</span><span class="w"> </span><span class="nf">pathway</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">ligand</span><span class="p">,</span> <span class="n">feedback</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">mek_block</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">kras_mut</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+    <span class="n">Rc</span><span class="p">,</span> <span class="n">ras</span><span class="p">,</span> <span class="n">raf</span><span class="p">,</span> <span class="n">mek</span><span class="p">,</span> <span class="n">erk</span> <span class="o">=</span> <span class="n">y</span>
+    <span class="n">lig</span> <span class="o">=</span> <span class="n">ligand</span><span class="p">(</span><span class="n">t</span><span class="p">)</span>
+    <span class="n">fb</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">/</span> <span class="p">(</span><span class="mi">1</span> <span class="o">+</span> <span class="n">erk</span> <span class="o">/</span> <span class="mf">0.15</span><span class="p">)</span> <span class="k">if</span> <span class="n">feedback</span> <span class="k">else</span> <span class="mf">1.0</span>
+    <span class="n">ras_drive</span> <span class="o">=</span> <span class="mf">1.0</span> <span class="k">if</span> <span class="n">kras_mut</span> <span class="k">else</span> <span class="n">Rc</span> <span class="o">*</span> <span class="n">fb</span>
+    <span class="k">return</span> <span class="p">[</span><span class="mf">0.3</span> <span class="o">*</span> <span class="p">(</span><span class="n">hill</span><span class="p">(</span><span class="n">lig</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span> <span class="o">-</span> <span class="n">Rc</span><span class="p">),</span>
+            <span class="mf">0.5</span> <span class="o">*</span> <span class="p">(</span><span class="n">hill</span><span class="p">(</span><span class="n">ras_drive</span><span class="p">,</span> <span class="mf">0.3</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span> <span class="o">-</span> <span class="n">ras</span><span class="p">),</span>
+            <span class="mf">0.6</span> <span class="o">*</span> <span class="p">(</span><span class="n">hill</span><span class="p">(</span><span class="n">ras</span><span class="p">,</span> <span class="mf">0.3</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span> <span class="o">-</span> <span class="n">raf</span><span class="p">),</span>
+            <span class="mf">0.6</span> <span class="o">*</span> <span class="p">(</span><span class="n">hill</span><span class="p">(</span><span class="n">raf</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">mek_block</span><span class="p">)</span> <span class="o">-</span> <span class="n">mek</span><span class="p">),</span>
+            <span class="mf">0.6</span> <span class="o">*</span> <span class="p">(</span><span class="n">hill</span><span class="p">(</span><span class="n">mek</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span> <span class="o">-</span> <span class="n">erk</span><span class="p">)]</span>
+
+<span class="n">t_eval</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">90</span><span class="p">,</span> <span class="mi">900</span><span class="p">)</span>
+<span class="n">step</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">t</span><span class="p">:</span> <span class="mf">0.6</span>
+<span class="n">fig</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">9</span><span class="p">,</span> <span class="mf">3.6</span><span class="p">))</span>
+<span class="k">for</span> <span class="n">fbk</span><span class="p">,</span> <span class="n">c</span><span class="p">,</span> <span class="n">lab</span> <span class="ow">in</span> <span class="p">[(</span><span class="kc">False</span><span class="p">,</span> <span class="s2">"#9d7cc9"</span><span class="p">,</span> <span class="s2">"no feedback"</span><span class="p">),</span> <span class="p">(</span><span class="kc">True</span><span class="p">,</span> <span class="s2">"#c2416b"</span><span class="p">,</span> <span class="s2">"with ERK negative feedback"</span><span class="p">)]:</span>
+    <span class="n">sol</span> <span class="o">=</span> <span class="n">solve_ivp</span><span class="p">(</span><span class="n">pathway</span><span class="p">,</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">90</span><span class="p">),</span> <span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">*</span> <span class="mi">5</span><span class="p">,</span> <span class="n">t_eval</span><span class="o">=</span><span class="n">t_eval</span><span class="p">,</span> <span class="n">args</span><span class="o">=</span><span class="p">(</span><span class="n">step</span><span class="p">,</span> <span class="n">fbk</span><span class="p">),</span> <span class="n">max_step</span><span class="o">=</span><span class="mf">0.2</span><span class="p">)</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">sol</span><span class="o">.</span><span class="n">t</span><span class="p">,</span> <span class="n">sol</span><span class="o">.</span><span class="n">y</span><span class="p">[</span><span class="mi">4</span><span class="p">],</span> <span class="n">color</span><span class="o">=</span><span class="n">c</span><span class="p">,</span> <span class="n">lw</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="n">lab</span><span class="p">)</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">set_xlabel</span><span class="p">(</span><span class="s2">"minutes after adding growth factor"</span><span class="p">);</span> <span class="n">ax</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="s2">"active ERK"</span><span class="p">);</span> <span class="n">ax</span><span class="o">.</span><span class="n">legend</span><span class="p">();</span> <span class="n">ax</span><span class="o">.</span><span class="n">set_ylim</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mf">1.05</span><span class="p">)</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="s2">"Negative feedback produces a peak, then adaptation"</span><span class="p">)</span>
+<span class="n">save_fig</span><span class="p">(</span><span class="s2">"feedback"</span><span class="p">);</span> <span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+</code></pre>
+
+<figure><img src="images/feedback.png" alt="Figure P9-2. Active ERK after growth factor is added at time 0. Without feedback, ERK rises and stays high; with ERK feedback on RAS activation, it overshoots, rings, and settles at a lower level." loading="lazy"><figcaption><b>Figure P9-2.</b> Figure P9-2. Active ERK after growth factor is added at time 0. Without feedback, ERK rises and stays high; with ERK feedback on RAS activation, it overshoots, rings, and settles at a lower level.</figcaption></figure>
+
+<p>The ringing is a hint of something real: make the feedback stronger or slower and the model oscillates indefinitely (try <code>(erk / 0.3) ** 4</code> in place of <code>erk / 0.15</code>). Single-cell imaging shows that ERK activity often comes in pulses, and cells appear to read the pulse frequency as part of the message.</p>
+<p>Now the consequence for drugs. Block MEK by increasing amounts and compare the steady ERK output with and without the feedback:</p>
+<pre class="code"><code><span class="k">def</span><span class="w"> </span><span class="nf">steady_erk</span><span class="p">(</span><span class="n">block</span><span class="p">,</span> <span class="n">feedback</span><span class="p">,</span> <span class="n">kras_mut</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+    <span class="n">sol</span> <span class="o">=</span> <span class="n">solve_ivp</span><span class="p">(</span><span class="n">pathway</span><span class="p">,</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">400</span><span class="p">),</span> <span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">*</span> <span class="mi">5</span><span class="p">,</span> <span class="n">args</span><span class="o">=</span><span class="p">(</span><span class="n">step</span><span class="p">,</span> <span class="n">feedback</span><span class="p">,</span> <span class="n">block</span><span class="p">,</span> <span class="n">kras_mut</span><span class="p">),</span> <span class="n">t_eval</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mi">300</span><span class="p">,</span> <span class="mi">400</span><span class="p">,</span> <span class="mi">101</span><span class="p">),</span> <span class="n">max_step</span><span class="o">=</span><span class="mf">0.5</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">sol</span><span class="o">.</span><span class="n">y</span><span class="p">[</span><span class="mi">4</span><span class="p">]</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span>                               <span class="c1"># average over the last 100 minutes</span>
+
+<span class="n">blocks</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mf">0.99</span><span class="p">,</span> <span class="mi">34</span><span class="p">)</span>
+<span class="n">fig</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">8</span><span class="p">,</span> <span class="mf">3.8</span><span class="p">))</span>
+<span class="n">res</span> <span class="o">=</span> <span class="p">{}</span>
+<span class="k">for</span> <span class="n">fbk</span><span class="p">,</span> <span class="n">c</span><span class="p">,</span> <span class="n">lab</span> <span class="ow">in</span> <span class="p">[(</span><span class="kc">False</span><span class="p">,</span> <span class="s2">"#9d7cc9"</span><span class="p">,</span> <span class="s2">"no feedback"</span><span class="p">),</span> <span class="p">(</span><span class="kc">True</span><span class="p">,</span> <span class="s2">"#c2416b"</span><span class="p">,</span> <span class="s2">"with feedback"</span><span class="p">)]:</span>
+    <span class="n">e</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">steady_erk</span><span class="p">(</span><span class="n">b</span><span class="p">,</span> <span class="n">fbk</span><span class="p">)</span> <span class="k">for</span> <span class="n">b</span> <span class="ow">in</span> <span class="n">blocks</span><span class="p">])</span>
+    <span class="n">res</span><span class="p">[</span><span class="n">fbk</span><span class="p">]</span> <span class="o">=</span> <span class="n">e</span> <span class="o">/</span> <span class="n">e</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="mi">100</span> <span class="o">*</span> <span class="n">blocks</span><span class="p">,</span> <span class="mi">100</span> <span class="o">*</span> <span class="n">e</span> <span class="o">/</span> <span class="n">e</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">color</span><span class="o">=</span><span class="n">c</span><span class="p">,</span> <span class="n">lw</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="n">lab</span><span class="p">)</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">axhline</span><span class="p">(</span><span class="mi">50</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s2">"0.6"</span><span class="p">,</span> <span class="n">ls</span><span class="o">=</span><span class="s2">":"</span><span class="p">)</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">set_xlabel</span><span class="p">(</span><span class="s2">"</span><span class="si">% o</span><span class="s2">f MEK activity blocked by the drug"</span><span class="p">);</span> <span class="n">ax</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="s2">"ERK output (</span><span class="si">% o</span><span class="s2">f untreated)"</span><span class="p">);</span> <span class="n">ax</span><span class="o">.</span><span class="n">legend</span><span class="p">()</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="s2">"Feedback buffers the pathway against a drug"</span><span class="p">)</span>
+<span class="n">save_fig</span><span class="p">(</span><span class="s2">"feedback_drug"</span><span class="p">);</span> <span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+<span class="n">half</span> <span class="o">=</span> <span class="p">{</span><span class="n">k</span><span class="p">:</span> <span class="mi">100</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">interp</span><span class="p">(</span><span class="mf">0.5</span><span class="p">,</span> <span class="n">v</span><span class="p">[::</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span> <span class="n">blocks</span><span class="p">[::</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">res</span><span class="o">.</span><span class="n">items</span><span class="p">()}</span>
+<span class="n">R</span><span class="p">[</span><span class="s2">"half_nofb"</span><span class="p">]</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">half</span><span class="p">[</span><span class="kc">False</span><span class="p">]</span><span class="si">:</span><span class="s2">.0f</span><span class="si">}</span><span class="s2">"</span><span class="p">;</span> <span class="n">R</span><span class="p">[</span><span class="s2">"half_fb"</span><span class="p">]</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">half</span><span class="p">[</span><span class="kc">True</span><span class="p">]</span><span class="si">:</span><span class="s2">.0f</span><span class="si">}</span><span class="s2">"</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"MEK block needed to halve ERK: </span><span class="si">{</span><span class="n">half</span><span class="p">[</span><span class="kc">False</span><span class="p">]</span><span class="si">:</span><span class="s2">.0f</span><span class="si">}</span><span class="s2">% without feedback, </span><span class="si">{</span><span class="n">half</span><span class="p">[</span><span class="kc">True</span><span class="p">]</span><span class="si">:</span><span class="s2">.0f</span><span class="si">}</span><span class="s2">% with feedback"</span><span class="p">)</span>
+</code></pre>
+<pre class="out">MEK block needed to halve ERK: 52% without feedback, 64% with feedback</pre>
+<figure><img src="images/feedback_drug.png" alt="Figure P9-3. Steady ERK activity as a MEK inhibitor blocks more and more MEK. With negative feedback, blocking MEK lowers ERK, which relieves the feedback and pushes more signal into the top of the pathway, so the drug has to work harder." loading="lazy"><figcaption><b>Figure P9-3.</b> Figure P9-3. Steady ERK activity as a MEK inhibitor blocks more and more MEK. With negative feedback, blocking MEK lowers ERK, which relieves the feedback and pushes more signal into the top of the pathway, so the drug has to work harder.</figcaption></figure>
+
+<p>Without feedback, blocking 52% of MEK halves ERK output. With feedback, it takes 64%. As the drug lowers ERK, the brake on RAS is released and more signal flows in from the top. This <strong>feedback reactivation</strong> is a real reason kinase inhibitors work less well than expected, and why combinations (for example BRAF plus MEK inhibitors in melanoma, or adding an EGFR antibody to a BRAF inhibitor in colorectal cancer) often beat single drugs. Chapter 17 builds larger network models of this kind.</p>
+<h2 id="metabolism-where-the-energy-comes-from">Metabolism: where the energy comes from</h2>
+<p>Every process in this course so far (copying DNA, making proteins, pumping ions, moving chromosomes) is paid for in <strong>ATP</strong>, the cell's energy currency (chapter P2). Cells make ATP mainly by breaking down glucose, in three stages:</p>
+<table>
+<thead>
+<tr>
+<th>Stage</th>
+<th>Where</th>
+<th>Needs oxygen?</th>
+<th>ATP per glucose</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Glycolysis</strong>: glucose (6 carbons) → 2 pyruvate (3 carbons)</td>
+<td>cytosol</td>
+<td>no</td>
+<td>2</td>
+</tr>
+<tr>
+<td><strong>Citric acid (TCA, Krebs) cycle</strong>: pyruvate → CO₂, loading electron carriers (NADH, FADH₂)</td>
+<td>mitochondria</td>
+<td>indirectly</td>
+<td>2</td>
+</tr>
+<tr>
+<td><strong>Oxidative phosphorylation</strong>: electrons flow to O₂ through the electron transport chain; the energy pumps protons; ATP synthase uses the proton flow</td>
+<td>inner mitochondrial membrane</td>
+<td>yes</td>
+<td>about 26</td>
+</tr>
+</tbody>
+</table>
+<p>So complete burning yields about <strong>30 ATP per glucose</strong>, while glycolysis alone gives only 2. Without oxygen (in hard-working muscle, or deep in a tumour, chapter P1), cells convert pyruvate to <strong>lactate</strong> to keep glycolysis running.</p>
+<p>How much ATP do you go through?</p>
+<pre class="code"><code><span class="n">kcal_per_day</span> <span class="o">=</span> <span class="mi">2000</span>
+<span class="n">kj</span> <span class="o">=</span> <span class="n">kcal_per_day</span> <span class="o">*</span> <span class="mf">4.184</span>
+<span class="n">efficiency</span> <span class="o">=</span> <span class="mf">0.4</span>                  <span class="c1"># fraction of food energy captured as ATP</span>
+<span class="n">dG_atp</span> <span class="o">=</span> <span class="mi">50</span>                       <span class="c1"># kJ released per mole of ATP hydrolysed in cells</span>
+<span class="n">mol_atp</span> <span class="o">=</span> <span class="n">kj</span> <span class="o">*</span> <span class="n">efficiency</span> <span class="o">/</span> <span class="n">dG_atp</span>
+<span class="n">mass_kg</span> <span class="o">=</span> <span class="n">mol_atp</span> <span class="o">*</span> <span class="mi">507</span> <span class="o">/</span> <span class="mi">1000</span>    <span class="c1"># ATP molar mass 507 g/mol</span>
+<span class="n">body_atp_g</span> <span class="o">=</span> <span class="mi">50</span>                   <span class="c1"># roughly how much ATP the body holds at any moment</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"ATP turned over per day: </span><span class="si">{</span><span class="n">mol_atp</span><span class="si">:</span><span class="s2">.0f</span><span class="si">}</span><span class="s2"> mol = </span><span class="si">{</span><span class="n">mass_kg</span><span class="si">:</span><span class="s2">.0f</span><span class="si">}</span><span class="s2"> kg"</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"each ATP molecule is recycled about </span><span class="si">{</span><span class="n">mass_kg</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="mi">1000</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="n">body_atp_g</span><span class="si">:</span><span class="s2">.0f</span><span class="si">}</span><span class="s2"> times a day"</span><span class="p">)</span>
+<span class="n">R</span><span class="p">[</span><span class="s2">"atp_kg"</span><span class="p">]</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">mass_kg</span><span class="si">:</span><span class="s2">.0f</span><span class="si">}</span><span class="s2">"</span><span class="p">;</span> <span class="n">R</span><span class="p">[</span><span class="s2">"recycle"</span><span class="p">]</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">mass_kg</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="mi">1000</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="n">body_atp_g</span><span class="si">:</span><span class="s2">,.0f</span><span class="si">}</span><span class="s2">"</span>
+</code></pre>
+<pre class="out">ATP turned over per day: 67 mol = 34 kg
+each ATP molecule is recycled about 679 times a day</pre>
+<p>You turn over roughly 34 kg of ATP a day, about half your body weight, yet you hold only about 50 g at any moment. Each ATP is recycled about 679 times a day.</p>
+<h3 id="the-warburg-effect">The Warburg effect</h3>
+<p>In the 1920s Otto Warburg noticed that tumours consume glucose voraciously and turn much of it into lactate <em>even when oxygen is available</em>, a seemingly wasteful choice (2 ATP instead of 30). One modern explanation: dividing cells need building materials as much as energy, and glycolysis intermediates feed the synthesis of nucleotides, amino acids and lipids. Another is that glycolysis makes ATP faster per unit of enzyme than mitochondria, so when the cell's protein budget is the limit, a fast but wasteful route wins (as in yeast fermenting sugar into alcohol).</p>
+<p><strong>Flux balance analysis</strong> (FBA) is a standard computational method for metabolism: write down each reaction's stoichiometry, demand that every internal metabolite is produced as fast as it is used (steady state), add limits on uptake and capacity, and find the flows (<strong>fluxes</strong>) that maximise an objective, such as ATP production, with linear programming. A three-reaction toy version already shows the Warburg switch:</p>
+<div class="box math">
+<p class="lab">The maths, from scratch</p>
+<p>Unknown fluxes: $v_1$ glycolysis (glucose → 2 pyruvate + 2 ATP), $v_2$ respiration (pyruvate + 3 O₂ → 14 ATP, so 28 per glucose), $v_3$ lactate export (pyruvate → lactate).</p>
+<p>Steady state for pyruvate: $2v_1 - v_2 - v_3 = 0$. Limits: $v_1 \le$ glucose uptake, $3v_2 \le$ oxygen supply, $v_2 \le$ mitochondrial capacity, all fluxes $\ge 0$.</p>
+<p>Maximise ATP $= 2v_1 + 14v_2$.</p>
+</div>
+<pre class="code"><code><span class="kn">from</span><span class="w"> </span><span class="nn">scipy.optimize</span><span class="w"> </span><span class="kn">import</span> <span class="n">linprog</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">fba</span><span class="p">(</span><span class="n">glucose_max</span><span class="p">,</span> <span class="n">o2_max</span><span class="p">,</span> <span class="n">mito_cap</span><span class="p">):</span>
+    <span class="n">c</span> <span class="o">=</span> <span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mi">2</span><span class="p">,</span> <span class="mi">14</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">])</span>                         <span class="c1"># linprog minimises, so negate the ATP objective</span>
+    <span class="n">A_eq</span><span class="p">,</span> <span class="n">b_eq</span> <span class="o">=</span> <span class="p">[[</span><span class="mi">2</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">]],</span> <span class="p">[</span><span class="mi">0</span><span class="p">]</span>                       <span class="c1"># pyruvate balance</span>
+    <span class="n">A_ub</span> <span class="o">=</span> <span class="p">[[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">]]</span>
+    <span class="n">b_ub</span> <span class="o">=</span> <span class="p">[</span><span class="n">glucose_max</span><span class="p">,</span> <span class="n">o2_max</span><span class="p">,</span> <span class="n">mito_cap</span><span class="p">]</span>
+    <span class="n">r</span> <span class="o">=</span> <span class="n">linprog</span><span class="p">(</span><span class="n">c</span><span class="p">,</span> <span class="n">A_ub</span><span class="o">=</span><span class="n">A_ub</span><span class="p">,</span> <span class="n">b_ub</span><span class="o">=</span><span class="n">b_ub</span><span class="p">,</span> <span class="n">A_eq</span><span class="o">=</span><span class="n">A_eq</span><span class="p">,</span> <span class="n">b_eq</span><span class="o">=</span><span class="n">b_eq</span><span class="p">,</span> <span class="n">bounds</span><span class="o">=</span><span class="p">[(</span><span class="mi">0</span><span class="p">,</span> <span class="kc">None</span><span class="p">)]</span> <span class="o">*</span> <span class="mi">3</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">r</span><span class="o">.</span><span class="n">x</span><span class="p">,</span> <span class="o">-</span><span class="n">r</span><span class="o">.</span><span class="n">fun</span>
+
+<span class="n">uptakes</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mf">0.5</span><span class="p">,</span> <span class="mi">10</span><span class="p">,</span> <span class="mi">40</span><span class="p">)</span>
+<span class="n">lact</span><span class="p">,</span> <span class="n">resp</span><span class="p">,</span> <span class="n">atp</span> <span class="o">=</span> <span class="p">[],</span> <span class="p">[],</span> <span class="p">[]</span>
+<span class="k">for</span> <span class="n">g</span> <span class="ow">in</span> <span class="n">uptakes</span><span class="p">:</span>
+    <span class="n">v</span><span class="p">,</span> <span class="n">a</span> <span class="o">=</span> <span class="n">fba</span><span class="p">(</span><span class="n">g</span><span class="p">,</span> <span class="n">o2_max</span><span class="o">=</span><span class="mi">30</span><span class="p">,</span> <span class="n">mito_cap</span><span class="o">=</span><span class="mi">4</span><span class="p">)</span>
+    <span class="n">resp</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">v</span><span class="p">[</span><span class="mi">1</span><span class="p">]);</span> <span class="n">lact</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">v</span><span class="p">[</span><span class="mi">2</span><span class="p">]);</span> <span class="n">atp</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">a</span><span class="p">)</span>
+<span class="n">fig</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">8</span><span class="p">,</span> <span class="mf">3.8</span><span class="p">))</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">uptakes</span><span class="p">,</span> <span class="n">resp</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s2">"#1f8a4c"</span><span class="p">,</span> <span class="n">lw</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s2">"pyruvate → mitochondria"</span><span class="p">)</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">uptakes</span><span class="p">,</span> <span class="n">lact</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s2">"#c2416b"</span><span class="p">,</span> <span class="n">lw</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s2">"pyruvate → lactate"</span><span class="p">)</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">set_xlabel</span><span class="p">(</span><span class="s2">"glucose uptake"</span><span class="p">);</span> <span class="n">ax</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="s2">"flux"</span><span class="p">);</span> <span class="n">ax</span><span class="o">.</span><span class="n">legend</span><span class="p">(</span><span class="n">loc</span><span class="o">=</span><span class="s2">"upper left"</span><span class="p">)</span>
+<span class="n">ax2</span> <span class="o">=</span> <span class="n">ax</span><span class="o">.</span><span class="n">twinx</span><span class="p">();</span> <span class="n">ax2</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">uptakes</span><span class="p">,</span> <span class="n">atp</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s2">"#5b3a8c"</span><span class="p">,</span> <span class="n">ls</span><span class="o">=</span><span class="s2">"--"</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s2">"ATP"</span><span class="p">);</span> <span class="n">ax2</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="s2">"ATP made"</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s2">"#5b3a8c"</span><span class="p">)</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="s2">"Flux balance: once mitochondria are saturated, extra glucose becomes lactate"</span><span class="p">)</span>
+<span class="n">save_fig</span><span class="p">(</span><span class="s2">"fba"</span><span class="p">);</span> <span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+<span class="n">g_switch</span> <span class="o">=</span> <span class="n">uptakes</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">argmax</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">lact</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mf">1e-6</span><span class="p">)]</span>
+<span class="n">R</span><span class="p">[</span><span class="s2">"switch"</span><span class="p">]</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">g_switch</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2">"</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"lactate appears once glucose uptake exceeds about </span><span class="si">{</span><span class="n">g_switch</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2"> (= mitochondrial capacity / 2)"</span><span class="p">)</span>
+</code></pre>
+<pre class="out">lactate appears once glucose uptake exceeds about 2.2 (= mitochondrial capacity / 2)</pre>
+<figure><img src="images/fba.png" alt="Figure P9-4. A toy flux balance model with plentiful oxygen but limited mitochondrial capacity. At low glucose uptake, all pyruvate is burned. Once the mitochondria are full, extra glucose still yields 2 ATP each through glycolysis, and the surplus pyruvate leaves as lactate: aerobic glycolysis." loading="lazy"><figcaption><b>Figure P9-4.</b> Figure P9-4. A toy flux balance model with plentiful oxygen but limited mitochondrial capacity. At low glucose uptake, all pyruvate is burned. Once the mitochondria are full, extra glucose still yields 2 ATP each through glycolysis, and the surplus pyruvate leaves as lactate: aerobic glycolysis.</figcaption></figure>
+
+<p>Even with plenty of oxygen, once glucose uptake passes about 2.2 the optimum is to keep the mitochondria full and push the excess through glycolysis to lactate, because each extra glucose still adds 2 ATP. Real genome-scale FBA models have thousands of reactions (the human model Recon3D has more than 13,000) and are used to predict essential genes and drug targets in cancer cells.</p>
+<div class="box bio">
+<p class="lab">Biology view</p>
+<p>Tumour metabolism is visible in the clinic. <strong>FDG-PET</strong> scans inject a radioactive glucose analogue, fluorodeoxyglucose, which cells take up and trap but cannot break down. Tumours, with their high glucose uptake, light up. Some cancers carry mutations in metabolic enzymes themselves: <em>IDH1</em> and <em>IDH2</em> mutations (in gliomas and leukaemia) make an abnormal metabolite, 2-hydroxyglutarate, that blocks DNA demethylation enzymes and so changes gene regulation (chapter P6). Ivosidenib and enasidenib inhibit the mutant enzymes.</p>
+</div>
+<h2 id="signalling-meets-metabolism-mtor">Signalling meets metabolism: mTOR</h2>
+<p>The two halves of this chapter meet at <strong>mTOR</strong>, a kinase that integrates growth-factor signals (through PI3K–AKT) with nutrient and energy status (amino acids; the energy sensor AMPK, which reads the ratio of AMP to ATP). When everything is favourable, mTOR switches on protein and lipid synthesis and cell growth; when energy or nutrients are short, it shuts them down and turns on <strong>autophagy</strong> (the cell digesting its own parts for fuel). The PI3K–AKT–mTOR pathway is one of the most frequently activated pathways in cancer, and mTOR inhibitors (everolimus) treat kidney cancer and some breast cancers.</p>
+<h2 id="summary">Summary</h2>
+<table>
+<thead>
+<tr>
+<th>Idea</th>
+<th>One line</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Receptors</td>
+<td>RTKs, GPCRs, nuclear receptors, cytokine receptors: the cell's sensors</td>
+</tr>
+<tr>
+<td>Kinase cascade</td>
+<td>EGFR → RAS → RAF → MEK → ERK; amplifies and sharpens signals</td>
+</tr>
+<tr>
+<td>Oncogenic signalling</td>
+<td>mutant KRAS/BRAF/EGFR switch the pathway on without a signal</td>
+</tr>
+<tr>
+<td>Feedback</td>
+<td>negative feedback gives adaptation and robustness, and blunts drugs</td>
+</tr>
+<tr>
+<td>Energy</td>
+<td>glycolysis 2 ATP, full respiration about 30 ATP per glucose</td>
+</tr>
+<tr>
+<td>Warburg effect</td>
+<td>cancers favour glycolysis to lactate even with oxygen; seen by FDG-PET</td>
+</tr>
+<tr>
+<td>FBA</td>
+<td>steady-state flux model solved by linear programming</td>
+</tr>
+</tbody>
+</table>
+<div class="box check">
+<p class="lab">Check yourself</p>
+<ol>
+<li>Why can a drug that blocks EGFR fail in a tumour with a <em>KRAS</em> mutation? <em>(KRAS is downstream of EGFR and is stuck on, so blocking the receptor doesn't stop the signal.)</em></li>
+<li>What does ultrasensitivity mean, and how do cascades produce it? <em>(A switch-like response; stacking several sigmoid steps sharpens the overall response.)</em></li>
+<li>How many ATP does a cell get from one glucose with and without oxygen? <em>(About 30 with full respiration; 2 from glycolysis alone.)</em></li>
+<li>Why does negative feedback make a kinase inhibitor less effective? <em>(Lowering downstream activity relieves the feedback, increasing upstream input, which partly restores the output.)</em></li>
+<li>What does an FDG-PET scan detect? <em>(High glucose uptake, typical of many tumours.)</em></li>
+</ol>
+</div>
+<div class="box exercise">
+<p class="lab">Try it</p>
+<p>In the pathway model, a tumour carries a <em>KRAS</em> mutation (set <code>kras_mut=True</code>). (a) Show that the growth factor no longer matters by comparing steady ERK with ligand 0 and 0.6. (b) Compare how much MEK must be blocked to halve ERK in the mutant. Is the feedback still buffering the drug? Explain why.</p>
+</div>
+<details><summary>Solution</summary>
+<pre class="code"><code><span class="k">for</span> <span class="n">lig</span> <span class="ow">in</span> <span class="p">[</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.6</span><span class="p">]:</span>
+    <span class="n">sol</span> <span class="o">=</span> <span class="n">solve_ivp</span><span class="p">(</span><span class="n">pathway</span><span class="p">,</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">400</span><span class="p">),</span> <span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">*</span> <span class="mi">5</span><span class="p">,</span> <span class="n">args</span><span class="o">=</span><span class="p">(</span><span class="k">lambda</span> <span class="n">t</span><span class="p">,</span> <span class="n">L</span><span class="o">=</span><span class="n">lig</span><span class="p">:</span> <span class="n">L</span><span class="p">,</span> <span class="kc">True</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="kc">True</span><span class="p">),</span> <span class="n">max_step</span><span class="o">=</span><span class="mf">0.5</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"KRAS mutant, ligand </span><span class="si">{</span><span class="n">lig</span><span class="si">}</span><span class="s2">: steady ERK = </span><span class="si">{</span><span class="n">sol</span><span class="o">.</span><span class="n">y</span><span class="p">[</span><span class="mi">4</span><span class="p">,</span><span class="w"> </span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+<span class="n">e_mut</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">steady_erk</span><span class="p">(</span><span class="n">b</span><span class="p">,</span> <span class="kc">True</span><span class="p">,</span> <span class="n">kras_mut</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span> <span class="k">for</span> <span class="n">b</span> <span class="ow">in</span> <span class="n">blocks</span><span class="p">])</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"MEK block needed to halve ERK in the KRAS mutant: </span><span class="si">{</span><span class="mi">100</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">np</span><span class="o">.</span><span class="n">interp</span><span class="p">(</span><span class="mf">0.5</span><span class="p">,</span><span class="w"> </span><span class="p">(</span><span class="n">e_mut</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="n">e_mut</span><span class="p">[</span><span class="mi">0</span><span class="p">])[::</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span><span class="w"> </span><span class="n">blocks</span><span class="p">[::</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span><span class="si">:</span><span class="s2">.0f</span><span class="si">}</span><span class="s2">%"</span><span class="p">)</span>
+</code></pre>
+<pre class="out">KRAS mutant, ligand 0.0: steady ERK = 0.70
+KRAS mutant, ligand 0.6: steady ERK = 0.70</pre><pre class="out">MEK block needed to halve ERK in the KRAS mutant: 52%</pre>
+<p>With mutant KRAS the pathway is fully on with or without growth factor. In this model the mutant ignores the feedback (the feedback acts on RAS <em>activation</em>, and mutant RAS is already locked on), so the drug only has to fight the cascade downstream, and the amount of MEK block needed to halve ERK is set by the shape of the MEK → ERK step alone. In real tumours the picture is more complicated: other feedbacks act on RAF and on receptors that feed wild-type RAS, which is why combinations are still often needed.</p>
+</details>
+    <nav class="pager">
+      <a class="prev" href="../08-genetics-evolution/index.html"><small>Previous</small>P8 · Genetics, mutation and evolution</a>
+      <a class="next" href="../10-immune/index.html"><small>Next</small>P10 · The immune system</a>
+    </nav>
+  </main>
+</div>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.js"></script>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/contrib/auto-render.min.js"></script>
+<script defer src="../../assets/guide.js"></script>
+</body>
+</html>

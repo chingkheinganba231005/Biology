@@ -1,0 +1,407 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>The immune system · Cells to Code</title>
+<meta name="description" content="How the body tells self from non-self, how a few random cells become an army against a new invader, how memory and vaccines work, and how immunotherapy turns the immune system against cancer. With models of clonal expansion, affinity maturation, epidemics and neoantigens.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,600;1,6..72,400&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.css">
+<link rel="stylesheet" href="../../assets/guide.css">
+<script>try{var t=localStorage.getItem('c2c-theme');if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
+</head>
+<body>
+<header class="topbar">
+  <a class="brand" href="../../index.html"><span class="logo" aria-hidden="true"></span>Cells to Code</a>
+  <span class="crumb">Biology from zero · Chapter P10</span>
+  <button class="tocbtn" type="button" aria-controls="toc" aria-expanded="false">Contents</button>
+  <button class="themebtn" type="button" aria-label="Switch light or dark theme">Theme</button>
+  <span class="progress" aria-hidden="true"></span>
+</header>
+<div class="layout">
+  <nav class="toc" id="toc" aria-label="On this page">
+    <p class="toc-h">On this page</p>
+    <ol><li><a href="#the-cast">The cast</a></li>
+<li><a href="#antibodies">Antibodies</a></li>
+<li><a href="#where-does-the-diversity-come-from">Where does the diversity come from?</a></li>
+<li><a href="#clonal-selection-from-a-few-cells-to-an-army">Clonal selection: from a few cells to an army</a></li>
+<li><a href="#t-cells-and-mhc-showing-the-inside-of-a-cell">T cells and MHC: showing the inside of a cell</a></li>
+<li><a href="#how-tumours-escape-and-immunotherapy">How tumours escape, and immunotherapy</a></li>
+<li><a href="#herd-immunity">Herd immunity</a></li>
+<li><a href="#summary">Summary</a></li></ol>
+    <p class="toc-nb"><a href="immune_system.ipynb" download>Download the notebook ↓</a></p>
+  </nav>
+  <main class="content">
+    <p class="eyebrow">Biology from zero · Chapter P10</p>
+    <h1>The immune system</h1>
+    <p class="lede">How the body tells self from non-self, how a few random cells become an army against a new invader, how memory and vaccines work, and how immunotherapy turns the immune system against cancer. With models of clonal expansion, affinity maturation, epidemics and neoantigens.</p>
+    <p class="meta">About 1.5 hours · Chapters P4, P5 and P8</p>
+<p>Your immune system must recognise an almost unlimited variety of invaders (viruses, bacteria, fungi, parasites, and your own cells when they turn cancerous) while leaving your healthy tissues alone. It does this with two layers: a fast, generic <strong>innate</strong> system, and a slow but extraordinarily specific <strong>adaptive</strong> system that learns and remembers. Over the last 15 years, learning to release the brakes on the adaptive system against tumours (<strong>immunotherapy</strong>) has changed cancer treatment more than anything since chemotherapy. Antibodies are also the fastest-growing class of drugs.</p>
+<div class="box eli5">
+<p class="lab">Like you’re five</p>
+<p>Your body has security guards. The first team (<strong>innate immunity</strong>) patrols everywhere and attacks anything that looks generally suspicious, like bacterial coats. The second team (<strong>adaptive immunity</strong>) is a giant library of specialists: millions of different cells, each able to recognise just one shape. When an invader appears, the few specialists that recognise it are woken up and copy themselves into an army. Afterwards some stay on as veterans (<strong>memory</strong>) so the next attack is crushed before you notice. A <strong>vaccine</strong> is a training exercise: it shows the specialists a harmless picture of the enemy.</p>
+</div>
+<h2 id="the-cast">The cast</h2>
+<table>
+<thead>
+<tr>
+<th>Cell</th>
+<th>Team</th>
+<th>Job</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Neutrophils</strong></td>
+<td>innate</td>
+<td>most numerous white cell; eat and kill bacteria; first to arrive</td>
+</tr>
+<tr>
+<td><strong>Macrophages</strong></td>
+<td>innate</td>
+<td>eat microbes and debris; raise the alarm with signalling proteins (<strong>cytokines</strong>)</td>
+</tr>
+<tr>
+<td><strong>Dendritic cells</strong></td>
+<td>link</td>
+<td>capture invaders' proteins and <em>show</em> them to T cells in lymph nodes</td>
+</tr>
+<tr>
+<td><strong>NK cells</strong></td>
+<td>innate</td>
+<td>kill cells that are stressed or have lost their identity markers (common in tumours and virus-infected cells)</td>
+</tr>
+<tr>
+<td><strong>B cells</strong></td>
+<td>adaptive</td>
+<td>make <strong>antibodies</strong>; mature into antibody factories (<strong>plasma cells</strong>)</td>
+</tr>
+<tr>
+<td><strong>CD4⁺ helper T cells</strong></td>
+<td>adaptive</td>
+<td>coordinate: help B cells and killer T cells; the cells HIV destroys</td>
+</tr>
+<tr>
+<td><strong>CD8⁺ killer (cytotoxic) T cells</strong></td>
+<td>adaptive</td>
+<td>kill infected and cancerous cells</td>
+</tr>
+<tr>
+<td><strong>Regulatory T cells</strong></td>
+<td>adaptive</td>
+<td>calm the response; prevent autoimmunity</td>
+</tr>
+</tbody>
+</table>
+<p>Innate cells recognise broad molecular patterns that mark microbes as foreign (bacterial cell-wall molecules, double-stranded RNA) using receptors such as the <strong>Toll-like receptors</strong>. Adaptive cells each carry a unique receptor that recognises one specific molecular shape, called an <strong>antigen</strong>.</p>
+<h2 id="antibodies">Antibodies</h2>
+<p>An <strong>antibody</strong> is a Y-shaped protein made of two identical <strong>heavy chains</strong> and two identical <strong>light chains</strong> (chapter P5's quaternary structure). The tips of the Y are <strong>variable</strong>: six loops there, the <strong>complementarity-determining regions</strong> (CDRs), form a binding surface unique to each B-cell lineage. The stem is <strong>constant</strong> and tells the rest of the immune system what to do with whatever the antibody grabs.</p>
+<p>Antibodies protect by <strong>neutralising</strong> (blocking a virus from entering cells), <strong>tagging</strong> invaders for destruction by phagocytes and complement proteins, and recruiting NK cells to kill antibody-coated cells. Because they can be designed to grab almost any target, <strong>monoclonal antibodies</strong> are now a huge drug class: trastuzumab (HER2, breast cancer), rituximab (CD20, lymphoma), pembrolizumab (PD-1, many cancers), adalimumab (TNF, arthritis).</p>
+<h2 id="where-does-the-diversity-come-from">Where does the diversity come from?</h2>
+<p>You have about 20,000 genes, yet you can make billions of different antibodies. The trick is <strong>V(D)J recombination</strong>. Each developing B cell builds its antibody genes by cutting and pasting: it picks one <strong>V</strong>, one <strong>D</strong> and one <strong>J</strong> gene segment from libraries of each and joins them, and the joins themselves are sloppy, with bases randomly added or removed. T-cell receptors are built the same way.</p>
+<pre class="code"><code><span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">matplotlib.pyplot</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">plt</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">matplotlib</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">mpl</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pathlib</span><span class="w"> </span><span class="kn">import</span> <span class="n">Path</span>
+
+<span class="n">mpl</span><span class="o">.</span><span class="n">rc</span><span class="p">(</span><span class="s2">"figure"</span><span class="p">,</span> <span class="n">dpi</span><span class="o">=</span><span class="mi">110</span><span class="p">);</span> <span class="n">mpl</span><span class="o">.</span><span class="n">rc</span><span class="p">(</span><span class="s2">"axes"</span><span class="p">,</span> <span class="n">labelsize</span><span class="o">=</span><span class="mi">12</span><span class="p">,</span> <span class="n">titlesize</span><span class="o">=</span><span class="mi">13</span><span class="p">)</span>
+<span class="n">IMAGES</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="s2">"images"</span><span class="p">);</span> <span class="n">IMAGES</span><span class="o">.</span><span class="n">mkdir</span><span class="p">(</span><span class="n">exist_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">save_fig</span><span class="p">(</span><span class="n">name</span><span class="p">):</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">tight_layout</span><span class="p">();</span> <span class="n">plt</span><span class="o">.</span><span class="n">savefig</span><span class="p">(</span><span class="n">IMAGES</span> <span class="o">/</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">.png"</span><span class="p">,</span> <span class="n">dpi</span><span class="o">=</span><span class="mi">150</span><span class="p">,</span> <span class="n">bbox_inches</span><span class="o">=</span><span class="s2">"tight"</span><span class="p">)</span>
+<span class="n">R</span> <span class="o">=</span> <span class="p">{}</span>
+<span class="n">rng</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">default_rng</span><span class="p">(</span><span class="mi">10</span><span class="p">)</span>
+
+<span class="c1"># approximate numbers of functional human gene segments</span>
+<span class="n">heavy</span> <span class="o">=</span> <span class="mi">40</span> <span class="o">*</span> <span class="mi">23</span> <span class="o">*</span> <span class="mi">6</span>                    <span class="c1"># V x D x J</span>
+<span class="n">kappa</span><span class="p">,</span> <span class="n">lam</span> <span class="o">=</span> <span class="mi">40</span> <span class="o">*</span> <span class="mi">5</span><span class="p">,</span> <span class="mi">30</span> <span class="o">*</span> <span class="mi">4</span>
+<span class="n">light</span> <span class="o">=</span> <span class="n">kappa</span> <span class="o">+</span> <span class="n">lam</span>
+<span class="n">combinatorial</span> <span class="o">=</span> <span class="n">heavy</span> <span class="o">*</span> <span class="n">light</span>
+<span class="n">junctional</span> <span class="o">=</span> <span class="mf">1e7</span>                       <span class="c1"># rough extra factor from random nucleotides added and removed at the joins</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"heavy chains from V(D)J choice: </span><span class="si">{</span><span class="n">heavy</span><span class="si">:</span><span class="s2">,</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"light chains: </span><span class="si">{</span><span class="n">light</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"heavy x light pairings: </span><span class="si">{</span><span class="n">combinatorial</span><span class="si">:</span><span class="s2">,.0f</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"including junctional diversity: about </span><span class="si">{</span><span class="n">combinatorial</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">junctional</span><span class="si">:</span><span class="s2">.0e</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+<span class="n">R</span><span class="p">[</span><span class="s2">"comb"</span><span class="p">]</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">combinatorial</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="mf">1e6</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2"> million"</span><span class="p">;</span> <span class="n">R</span><span class="p">[</span><span class="s2">"total"</span><span class="p">]</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"10^</span><span class="si">{</span><span class="n">np</span><span class="o">.</span><span class="n">log10</span><span class="p">(</span><span class="n">combinatorial</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">junctional</span><span class="p">)</span><span class="si">:</span><span class="s2">.0f</span><span class="si">}</span><span class="s2">"</span>
+</code></pre>
+<pre class="out">heavy chains from V(D)J choice: 5,520
+light chains: 320
+heavy x light pairings: 1,766,400
+including junctional diversity: about 2e+13</pre>
+<p>Choosing segments alone gives about 1.8 million combinations; the random additions and deletions at the joins raise the potential to about 10^13. That is far more than the roughly 10¹¹ B cells you have, so at any moment you carry only a sample of the possible repertoire, but a sample diverse enough that a few cells recognise almost anything. Cells whose receptors bind your <em>own</em> molecules are mostly eliminated during development (<strong>tolerance</strong>); when that fails, the result is <strong>autoimmune disease</strong>.</p>
+<div class="box data">
+<p class="lab">About the data</p>
+<p><strong>Immune repertoire sequencing</strong> (AIRR-seq) reads millions of antibody or T-cell receptor sequences from a blood sample. Expanded clones reveal what the immune system is fighting, and machine learning on repertoires is an active research area for diagnostics and antibody discovery.</p>
+</div>
+<h2 id="clonal-selection-from-a-few-cells-to-an-army">Clonal selection: from a few cells to an army</h2>
+<p>When an antigen arrives, the rare B and T cells whose receptors bind it are activated and divide rapidly: <strong>clonal expansion</strong>. One cell dividing every 8 hours for a week becomes about 2 million. Then most die off, leaving <strong>memory cells</strong> that respond faster and to smaller amounts of antigen next time. Here is the model behind the playground's first tab, run for a primary infection, a repeat infection, and a vaccine followed by infection:</p>
+<pre class="code"><code><span class="k">def</span><span class="w"> </span><span class="nf">immune</span><span class="p">(</span><span class="n">events</span><span class="p">,</span> <span class="n">T</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span> <span class="n">dt</span><span class="o">=</span><span class="mf">0.02</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""Pathogen P, activated B cells B, antibody A, innate response I, memory M, vaccine antigen V."""</span>
+    <span class="n">P</span> <span class="o">=</span> <span class="n">B</span> <span class="o">=</span> <span class="n">A</span> <span class="o">=</span> <span class="n">I</span> <span class="o">=</span> <span class="n">V</span> <span class="o">=</span> <span class="mf">0.0</span><span class="p">;</span> <span class="n">M</span> <span class="o">=</span> <span class="mf">1.0</span>
+    <span class="n">out</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">ev</span> <span class="o">=</span> <span class="p">{</span><span class="nb">round</span><span class="p">(</span><span class="n">t</span> <span class="o">/</span> <span class="n">dt</span><span class="p">):</span> <span class="n">k</span> <span class="k">for</span> <span class="n">t</span><span class="p">,</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">events</span><span class="p">}</span>
+    <span class="k">for</span> <span class="n">step</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">T</span> <span class="o">/</span> <span class="n">dt</span><span class="p">)):</span>
+        <span class="n">k</span> <span class="o">=</span> <span class="n">ev</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">step</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">k</span> <span class="o">==</span> <span class="s2">"infect"</span><span class="p">:</span> <span class="n">P</span> <span class="o">+=</span> <span class="mi">10</span>
+        <span class="k">if</span> <span class="n">k</span> <span class="o">==</span> <span class="s2">"vaccine"</span><span class="p">:</span> <span class="n">V</span> <span class="o">+=</span> <span class="mf">3e4</span>
+        <span class="n">g</span> <span class="o">=</span> <span class="n">P</span> <span class="o">+</span> <span class="n">V</span>
+        <span class="n">sN</span><span class="p">,</span> <span class="n">sM</span> <span class="o">=</span> <span class="n">g</span> <span class="o">/</span> <span class="p">(</span><span class="n">g</span> <span class="o">+</span> <span class="mf">1e3</span><span class="p">),</span> <span class="n">g</span> <span class="o">/</span> <span class="p">(</span><span class="n">g</span> <span class="o">+</span> <span class="mi">20</span><span class="p">)</span>                  <span class="c1"># memory cells need far less antigen</span>
+        <span class="n">dP</span> <span class="o">=</span> <span class="mf">0.9</span> <span class="o">*</span> <span class="n">P</span> <span class="o">*</span> <span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">P</span> <span class="o">/</span> <span class="mf">1e6</span><span class="p">)</span> <span class="o">-</span> <span class="mf">0.4</span> <span class="o">*</span> <span class="n">P</span> <span class="o">*</span> <span class="n">I</span> <span class="o">-</span> <span class="mf">0.002</span> <span class="o">*</span> <span class="n">A</span> <span class="o">*</span> <span class="n">P</span>
+        <span class="n">dB</span> <span class="o">=</span> <span class="mf">0.6</span> <span class="o">*</span> <span class="n">sN</span> <span class="o">*</span> <span class="p">(</span><span class="n">B</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span> <span class="o">+</span> <span class="mf">1.0</span> <span class="o">*</span> <span class="n">sM</span> <span class="o">*</span> <span class="n">M</span> <span class="o">-</span> <span class="mf">0.15</span> <span class="o">*</span> <span class="n">B</span>
+        <span class="n">dA</span> <span class="o">=</span> <span class="mf">0.8</span> <span class="o">*</span> <span class="n">B</span> <span class="o">-</span> <span class="mf">0.05</span> <span class="o">*</span> <span class="n">A</span>
+        <span class="n">dI</span> <span class="o">=</span> <span class="mf">0.8</span> <span class="o">*</span> <span class="n">P</span> <span class="o">/</span> <span class="p">(</span><span class="n">P</span> <span class="o">+</span> <span class="mf">1e3</span><span class="p">)</span> <span class="o">-</span> <span class="mf">0.3</span> <span class="o">*</span> <span class="n">I</span>
+        <span class="n">dM</span> <span class="o">=</span> <span class="mf">0.05</span> <span class="o">*</span> <span class="n">B</span> <span class="k">if</span> <span class="n">M</span> <span class="o">&lt;</span> <span class="mi">1000</span> <span class="k">else</span> <span class="mi">0</span>
+        <span class="n">dV</span> <span class="o">=</span> <span class="o">-</span><span class="mf">0.3</span> <span class="o">*</span> <span class="n">V</span> <span class="o">-</span> <span class="mf">0.002</span> <span class="o">*</span> <span class="n">A</span> <span class="o">*</span> <span class="n">V</span>
+        <span class="n">P</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">P</span> <span class="o">+</span> <span class="n">dt</span> <span class="o">*</span> <span class="n">dP</span><span class="p">,</span> <span class="mi">0</span><span class="p">);</span> <span class="n">P</span> <span class="o">=</span> <span class="mi">0</span> <span class="k">if</span> <span class="n">P</span> <span class="o">&lt;</span> <span class="mi">1</span> <span class="k">else</span> <span class="n">P</span>
+        <span class="n">B</span><span class="p">,</span> <span class="n">A</span><span class="p">,</span> <span class="n">I</span><span class="p">,</span> <span class="n">M</span><span class="p">,</span> <span class="n">V</span> <span class="o">=</span> <span class="n">B</span> <span class="o">+</span> <span class="n">dt</span> <span class="o">*</span> <span class="n">dB</span><span class="p">,</span> <span class="n">A</span> <span class="o">+</span> <span class="n">dt</span> <span class="o">*</span> <span class="n">dA</span><span class="p">,</span> <span class="n">I</span> <span class="o">+</span> <span class="n">dt</span> <span class="o">*</span> <span class="n">dI</span><span class="p">,</span> <span class="n">M</span> <span class="o">+</span> <span class="n">dt</span> <span class="o">*</span> <span class="n">dM</span><span class="p">,</span> <span class="nb">max</span><span class="p">(</span><span class="n">V</span> <span class="o">+</span> <span class="n">dt</span> <span class="o">*</span> <span class="n">dV</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+        <span class="n">out</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">step</span> <span class="o">*</span> <span class="n">dt</span><span class="p">,</span> <span class="n">P</span><span class="p">,</span> <span class="n">A</span><span class="p">))</span>
+    <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">out</span><span class="p">)</span>
+
+<span class="n">scenarios</span> <span class="o">=</span> <span class="p">{</span><span class="s2">"first infection (day 5)"</span><span class="p">:</span> <span class="p">[(</span><span class="mi">5</span><span class="p">,</span> <span class="s2">"infect"</span><span class="p">)],</span>
+             <span class="s2">"second infection (days 5 and 60)"</span><span class="p">:</span> <span class="p">[(</span><span class="mi">5</span><span class="p">,</span> <span class="s2">"infect"</span><span class="p">),</span> <span class="p">(</span><span class="mi">60</span><span class="p">,</span> <span class="s2">"infect"</span><span class="p">)],</span>
+             <span class="s2">"vaccine (day 5), infection (day 60)"</span><span class="p">:</span> <span class="p">[(</span><span class="mi">5</span><span class="p">,</span> <span class="s2">"vaccine"</span><span class="p">),</span> <span class="p">(</span><span class="mi">60</span><span class="p">,</span> <span class="s2">"infect"</span><span class="p">)]}</span>
+<span class="n">fig</span><span class="p">,</span> <span class="n">axs</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">11</span><span class="p">,</span> <span class="mf">3.4</span><span class="p">),</span> <span class="n">sharey</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="n">peaks</span> <span class="o">=</span> <span class="p">{}</span>
+<span class="k">for</span> <span class="n">ax</span><span class="p">,</span> <span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">ev</span><span class="p">)</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">axs</span><span class="p">,</span> <span class="n">scenarios</span><span class="o">.</span><span class="n">items</span><span class="p">()):</span>
+    <span class="n">d</span> <span class="o">=</span> <span class="n">immune</span><span class="p">(</span><span class="n">ev</span><span class="p">)</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">semilogy</span><span class="p">(</span><span class="n">d</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">],</span> <span class="n">np</span><span class="o">.</span><span class="n">maximum</span><span class="p">(</span><span class="n">d</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">],</span> <span class="mi">1</span><span class="p">),</span> <span class="n">color</span><span class="o">=</span><span class="s2">"#c2416b"</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s2">"pathogen"</span><span class="p">)</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">semilogy</span><span class="p">(</span><span class="n">d</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">],</span> <span class="n">np</span><span class="o">.</span><span class="n">maximum</span><span class="p">(</span><span class="n">d</span><span class="p">[:,</span> <span class="mi">2</span><span class="p">],</span> <span class="mi">1</span><span class="p">),</span> <span class="n">color</span><span class="o">=</span><span class="s2">"#5b3a8c"</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s2">"antibody"</span><span class="p">)</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">10</span><span class="p">);</span> <span class="n">ax</span><span class="o">.</span><span class="n">set_xlabel</span><span class="p">(</span><span class="s2">"day"</span><span class="p">);</span> <span class="n">ax</span><span class="o">.</span><span class="n">set_ylim</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mf">3e5</span><span class="p">)</span>
+    <span class="n">late</span> <span class="o">=</span> <span class="n">d</span><span class="p">[</span><span class="n">d</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">&gt;=</span> <span class="mi">60</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span>
+    <span class="n">peaks</span><span class="p">[</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">d</span><span class="p">[</span><span class="n">d</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">&lt;</span> <span class="mi">60</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">max</span><span class="p">(),</span> <span class="n">late</span><span class="o">.</span><span class="n">max</span><span class="p">()</span> <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">late</span><span class="p">)</span> <span class="k">else</span> <span class="mi">0</span><span class="p">)</span>
+<span class="n">axs</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="s2">"amount"</span><span class="p">);</span> <span class="n">axs</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">legend</span><span class="p">(</span><span class="n">fontsize</span><span class="o">=</span><span class="mi">9</span><span class="p">)</span>
+<span class="n">save_fig</span><span class="p">(</span><span class="s2">"immune_memory"</span><span class="p">);</span> <span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+<span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="p">(</span><span class="n">p1</span><span class="p">,</span> <span class="n">p2</span><span class="p">)</span> <span class="ow">in</span> <span class="n">peaks</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">k</span><span class="si">:</span><span class="s2">38s</span><span class="si">}</span><span class="s2"> peak pathogen before day 60: </span><span class="si">{</span><span class="n">p1</span><span class="si">:</span><span class="s2">9.0f</span><span class="si">}</span><span class="s2">   after day 60: </span><span class="si">{</span><span class="n">p2</span><span class="si">:</span><span class="s2">9.0f</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+<span class="n">R</span><span class="p">[</span><span class="s2">"peak1"</span><span class="p">]</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">peaks</span><span class="p">[</span><span class="s1">'first infection (day 5)'</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span><span class="si">:</span><span class="s2">,.0f</span><span class="si">}</span><span class="s2">"</span>
+<span class="n">R</span><span class="p">[</span><span class="s2">"peak2"</span><span class="p">]</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">peaks</span><span class="p">[</span><span class="s1">'second infection (days 5 and 60)'</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span><span class="si">:</span><span class="s2">,.0f</span><span class="si">}</span><span class="s2">"</span>
+<span class="n">R</span><span class="p">[</span><span class="s2">"peakv"</span><span class="p">]</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">peaks</span><span class="p">[</span><span class="s1">'vaccine (day 5), infection (day 60)'</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span><span class="si">:</span><span class="s2">,.0f</span><span class="si">}</span><span class="s2">"</span>
+</code></pre>
+<pre class="out">first infection (day 5)                peak pathogen before day 60:      6009   after day 60:         0
+second infection (days 5 and 60)       peak pathogen before day 60:      6009   after day 60:        10
+vaccine (day 5), infection (day 60)    peak pathogen before day 60:         0   after day 60:        27</pre>
+<figure><img src="images/immune_memory.png" alt="Figure P10-1. A simple model of clonal selection. In a first infection, the pathogen grows for about a week before antibody catches up. A second infection is stopped almost at once by memory cells. A vaccine creates the same memory without the first illness." loading="lazy"><figcaption><b>Figure P10-1.</b> Figure P10-1. A simple model of clonal selection. In a first infection, the pathogen grows for about a week before antibody catches up. A second infection is stopped almost at once by memory cells. A vaccine creates the same memory without the first illness.</figcaption></figure>
+
+<p>The first infection peaks at about 6,009 pathogen units. The same dose two months later peaks at only 10, and after vaccination at 27. The model is a cartoon (real responses involve dozens of cell types), but it captures the logic of immunological memory and of every vaccine.</p>
+<h3 id="affinity-maturation-evolution-inside-a-lymph-node">Affinity maturation: evolution inside a lymph node</h3>
+<p>Antibodies improve during a response. Activated B cells move into <strong>germinal centres</strong> in lymph nodes, where they mutate their antibody genes at about a million times the normal rate (<strong>somatic hypermutation</strong>) and then compete for antigen: cells whose mutated antibodies bind better get more help from T cells and survive. This is chapter P8's mutation-plus-selection loop, run over days instead of millennia.</p>
+<pre class="code"><code><span class="k">def</span><span class="w"> </span><span class="nf">germinal_centre</span><span class="p">(</span><span class="n">rounds</span><span class="o">=</span><span class="mi">12</span><span class="p">,</span> <span class="n">n</span><span class="o">=</span><span class="mi">2000</span><span class="p">,</span> <span class="n">keep</span><span class="o">=</span><span class="mf">0.5</span><span class="p">):</span>
+    <span class="n">log_kd</span> <span class="o">=</span> <span class="n">rng</span><span class="o">.</span><span class="n">normal</span><span class="p">(</span><span class="o">-</span><span class="mi">6</span><span class="p">,</span> <span class="mf">0.3</span><span class="p">,</span> <span class="n">n</span><span class="p">)</span>                        <span class="c1"># starting affinities around 1 µM (log10 M)</span>
+    <span class="n">history</span> <span class="o">=</span> <span class="p">[</span><span class="n">log_kd</span><span class="o">.</span><span class="n">copy</span><span class="p">()]</span>
+    <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">rounds</span><span class="p">):</span>
+        <span class="n">effect</span> <span class="o">=</span> <span class="n">rng</span><span class="o">.</span><span class="n">normal</span><span class="p">(</span><span class="mf">0.1</span><span class="p">,</span> <span class="mf">0.25</span><span class="p">,</span> <span class="n">n</span><span class="p">)</span>                   <span class="c1"># most mutations hurt binding a little; a few help</span>
+        <span class="n">mutated</span> <span class="o">=</span> <span class="n">log_kd</span> <span class="o">+</span> <span class="n">effect</span> <span class="o">*</span> <span class="p">(</span><span class="n">rng</span><span class="o">.</span><span class="n">random</span><span class="p">(</span><span class="n">n</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mf">0.3</span><span class="p">)</span>   <span class="c1"># about a third of the cells pick up a mutation per round</span>
+        <span class="n">survivors</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sort</span><span class="p">(</span><span class="n">mutated</span><span class="p">)[:</span> <span class="nb">int</span><span class="p">(</span><span class="n">keep</span> <span class="o">*</span> <span class="n">n</span><span class="p">)]</span>       <span class="c1"># the best binders (lowest Kd) win the competition</span>
+        <span class="n">log_kd</span> <span class="o">=</span> <span class="n">rng</span><span class="o">.</span><span class="n">choice</span><span class="p">(</span><span class="n">survivors</span><span class="p">,</span> <span class="n">n</span><span class="p">)</span>                   <span class="c1"># survivors divide to refill the germinal centre</span>
+        <span class="n">history</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">log_kd</span><span class="o">.</span><span class="n">copy</span><span class="p">())</span>
+    <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">history</span><span class="p">)</span>
+
+<span class="n">hist</span> <span class="o">=</span> <span class="n">germinal_centre</span><span class="p">()</span>
+<span class="n">fig</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">8</span><span class="p">,</span> <span class="mf">3.6</span><span class="p">))</span>
+<span class="n">med</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">median</span><span class="p">(</span><span class="n">hist</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">fill_between</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">hist</span><span class="p">)),</span> <span class="n">np</span><span class="o">.</span><span class="n">percentile</span><span class="p">(</span><span class="n">hist</span><span class="p">,</span> <span class="mi">10</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">percentile</span><span class="p">(</span><span class="n">hist</span><span class="p">,</span> <span class="mi">90</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span> <span class="n">color</span><span class="o">=</span><span class="s2">"#5b3a8c"</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.2</span><span class="p">)</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">med</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s2">"#5b3a8c"</span><span class="p">,</span> <span class="n">lw</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">set_xlabel</span><span class="p">(</span><span class="s2">"round of mutation and selection"</span><span class="p">);</span> <span class="n">ax</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="s2">"log10 Kd (M)</span><span class="se">\n</span><span class="s2">(lower = tighter binding)"</span><span class="p">)</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="s2">"Affinity maturation in a simulated germinal centre"</span><span class="p">)</span>
+<span class="n">save_fig</span><span class="p">(</span><span class="s2">"affinity"</span><span class="p">);</span> <span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+<span class="n">fold</span> <span class="o">=</span> <span class="mi">10</span> <span class="o">**</span> <span class="p">(</span><span class="n">med</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">-</span> <span class="n">med</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
+<span class="n">R</span><span class="p">[</span><span class="s2">"fold"</span><span class="p">]</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">fold</span><span class="si">:</span><span class="s2">,.0f</span><span class="si">}</span><span class="s2">"</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"median Kd from </span><span class="si">{</span><span class="mi">10</span><span class="w"> </span><span class="o">**</span><span class="w"> </span><span class="n">med</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="si">:</span><span class="s2">.1e</span><span class="si">}</span><span class="s2"> M to </span><span class="si">{</span><span class="mi">10</span><span class="w"> </span><span class="o">**</span><span class="w"> </span><span class="n">med</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="si">:</span><span class="s2">.1e</span><span class="si">}</span><span class="s2"> M: </span><span class="si">{</span><span class="n">fold</span><span class="si">:</span><span class="s2">,.0f</span><span class="si">}</span><span class="s2">-fold tighter"</span><span class="p">)</span>
+</code></pre>
+<pre class="out">median Kd from 9.7e-07 M to 1.6e-08 M: 61-fold tighter</pre>
+<figure><img src="images/affinity.png" alt="Figure P10-2. Median and 10–90% range of antibody affinity over rounds of hypermutation and selection. Even though most mutations make binding slightly worse, selection drives affinity up steadily." loading="lazy"><figcaption><b>Figure P10-2.</b> Figure P10-2. Median and 10–90% range of antibody affinity over rounds of hypermutation and selection. Even though most mutations make binding slightly worse, selection drives affinity up steadily.</figcaption></figure>
+
+<p>In 12 rounds the median antibody binds about 61 times more tightly, even though the average mutation is harmful. Real responses go from micromolar to nanomolar or better in a few weeks. Antibody engineers copy this process in the lab (with phage or yeast display), and machine-learning models now propose mutations directly (chapter 10).</p>
+<h2 id="t-cells-and-mhc-showing-the-inside-of-a-cell">T cells and MHC: showing the inside of a cell</h2>
+<p>Antibodies see molecules floating outside cells. But a virus hiding inside a cell, or a mutant protein in a cancer cell, is invisible to them. T cells solve this. Every cell constantly chops a sample of its own proteins into short <strong>peptides</strong> (8–11 amino acids) and displays them on its surface in the groove of <strong>MHC class I</strong> molecules (in humans called <strong>HLA</strong>). A killer T cell whose receptor recognises a foreign peptide in an MHC groove kills that cell. In effect, every cell is continuously showing a summary of its proteome to passing T cells.</p>
+<p>HLA genes are the most variable genes in the human genome (thousands of alleles), and each HLA variant binds peptides with particular <strong>anchor residues</strong> at particular positions. The most common in Europe, <strong>HLA-A*02:01</strong>, prefers leucine or methionine at position 2 and valine, leucine or isoleucine at the last position.</p>
+<h3 id="cancer-neoantigens">Cancer neoantigens</h3>
+<p>A somatic mutation in a tumour changes a protein, so peptides containing the mutation are new to the immune system: <strong>neoantigens</strong>. If one of them fits the patient's HLA, T cells can recognise the tumour. Predicting which mutant peptides will be presented is a central task in computational immunology (tools such as NetMHCpan are neural networks trained on hundreds of thousands of measured peptide–HLA pairs). Here is a toy version with a simple anchor-based score for HLA-A*02:01, applied to the KRAS G12V mutation (glycine to valine at position 12), which occurs in many pancreatic, colorectal and lung cancers.</p>
+<pre class="code"><code><span class="kn">from</span><span class="w"> </span><span class="nn">Bio</span><span class="w"> </span><span class="kn">import</span> <span class="n">SeqIO</span>
+<span class="n">kras</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">SeqIO</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="s2">"datasets/KRAS_P01116.fasta"</span><span class="p">,</span> <span class="s2">"fasta"</span><span class="p">)</span><span class="o">.</span><span class="n">seq</span><span class="p">)</span>
+<span class="n">pos</span> <span class="o">=</span> <span class="mi">12</span>                                                 <span class="c1"># 1-based position of the mutated residue</span>
+<span class="k">assert</span> <span class="n">kras</span><span class="p">[</span><span class="n">pos</span> <span class="o">-</span> <span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="s2">"G"</span>
+<span class="n">mutant</span> <span class="o">=</span> <span class="n">kras</span><span class="p">[:</span> <span class="n">pos</span> <span class="o">-</span> <span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="s2">"V"</span> <span class="o">+</span> <span class="n">kras</span><span class="p">[</span><span class="n">pos</span><span class="p">:]</span>
+
+<span class="n">P2</span> <span class="o">=</span> <span class="p">{</span><span class="s2">"L"</span><span class="p">:</span> <span class="mi">3</span><span class="p">,</span> <span class="s2">"M"</span><span class="p">:</span> <span class="mi">3</span><span class="p">,</span> <span class="s2">"I"</span><span class="p">:</span> <span class="mf">1.5</span><span class="p">,</span> <span class="s2">"V"</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span> <span class="s2">"A"</span><span class="p">:</span> <span class="mf">0.5</span><span class="p">,</span> <span class="s2">"T"</span><span class="p">:</span> <span class="mf">0.5</span><span class="p">}</span>     <span class="c1"># position-2 anchor preferences (simplified)</span>
+<span class="n">PC</span> <span class="o">=</span> <span class="p">{</span><span class="s2">"V"</span><span class="p">:</span> <span class="mi">3</span><span class="p">,</span> <span class="s2">"L"</span><span class="p">:</span> <span class="mi">3</span><span class="p">,</span> <span class="s2">"I"</span><span class="p">:</span> <span class="mf">2.5</span><span class="p">,</span> <span class="s2">"A"</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span> <span class="s2">"M"</span><span class="p">:</span> <span class="mi">1</span><span class="p">}</span>                  <span class="c1"># C-terminal anchor preferences</span>
+<span class="n">BAD</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="s2">"DEKRHP"</span><span class="p">)</span>                                              <span class="c1"># charged or proline: disfavoured in the middle</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">a2_score</span><span class="p">(</span><span class="n">pep</span><span class="p">):</span>
+    <span class="n">middle</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span><span class="o">-</span><span class="mf">0.5</span> <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="n">pep</span><span class="p">[</span><span class="mi">2</span><span class="p">:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="k">if</span> <span class="n">a</span> <span class="ow">in</span> <span class="n">BAD</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">P2</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">pep</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span> <span class="o">+</span> <span class="n">PC</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">pep</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span> <span class="o">+</span> <span class="n">middle</span>
+
+<span class="n">rows</span> <span class="o">=</span> <span class="p">[]</span>
+<span class="k">for</span> <span class="n">L</span> <span class="ow">in</span> <span class="p">(</span><span class="mi">9</span><span class="p">,</span> <span class="mi">10</span><span class="p">):</span>
+    <span class="k">for</span> <span class="n">start</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">pos</span> <span class="o">-</span> <span class="n">L</span><span class="p">,</span> <span class="n">pos</span><span class="p">):</span>                    <span class="c1"># every window that covers the mutation</span>
+        <span class="k">if</span> <span class="n">start</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">continue</span>
+        <span class="n">mut_pep</span><span class="p">,</span> <span class="n">wt_pep</span> <span class="o">=</span> <span class="n">mutant</span><span class="p">[</span><span class="n">start</span><span class="p">:</span><span class="n">start</span> <span class="o">+</span> <span class="n">L</span><span class="p">],</span> <span class="n">kras</span><span class="p">[</span><span class="n">start</span><span class="p">:</span><span class="n">start</span> <span class="o">+</span> <span class="n">L</span><span class="p">]</span>
+        <span class="n">rows</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">a2_score</span><span class="p">(</span><span class="n">mut_pep</span><span class="p">),</span> <span class="n">mut_pep</span><span class="p">,</span> <span class="n">wt_pep</span><span class="p">,</span> <span class="n">start</span> <span class="o">+</span> <span class="mi">1</span><span class="p">))</span>
+<span class="n">rows</span><span class="o">.</span><span class="n">sort</span><span class="p">(</span><span class="n">reverse</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">"score  mutant peptide   normal peptide   starts at"</span><span class="p">)</span>
+<span class="k">for</span> <span class="n">sc</span><span class="p">,</span> <span class="n">m</span><span class="p">,</span> <span class="n">w</span><span class="p">,</span> <span class="n">st</span> <span class="ow">in</span> <span class="n">rows</span><span class="p">[:</span><span class="mi">6</span><span class="p">]:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">sc</span><span class="si">:</span><span class="s2">5.1f</span><span class="si">}</span><span class="s2">  </span><span class="si">{</span><span class="n">m</span><span class="si">:</span><span class="s2">15s</span><span class="si">}</span><span class="s2">  </span><span class="si">{</span><span class="n">w</span><span class="si">:</span><span class="s2">15s</span><span class="si">}</span><span class="s2">  </span><span class="si">{</span><span class="n">st</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+<span class="n">R</span><span class="p">[</span><span class="s2">"top_pep"</span><span class="p">]</span> <span class="o">=</span> <span class="n">rows</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span>
+</code></pre>
+<pre class="out">score  mutant peptide   normal peptide   starts at
+  6.0  KLVVVGAVGV       KLVVVGAGGV       5
+  4.0  LVVVGAVGV        LVVVGAGGV        6
+  3.5  AVGVGKSAL        AGGVGKSAL        11
+  3.0  GAVGVGKSAL       GAGGVGKSAL       10
+  2.0  YKLVVVGAV        YKLVVVGAG        4
+  2.0  KLVVVGAVG        KLVVVGAGG        5</pre>
+<p>The top candidate, <code>KLVVVGAVGV</code> (KRAS residues 5–14 carrying G12V), has leucine at position 2 and valine at the end, a textbook HLA-A*02:01 shape. It has in fact been shown experimentally to be presented by HLA-A*02:01 and recognised by T cells, and T-cell receptors against KRAS mutant peptides are being tested as cancer therapies.</p>
+<p>But look at its normal counterpart: it has the same anchors and scores exactly the same. The mutation sits in the middle of the peptide, away from the anchors, so it doesn't decide <em>whether</em> the peptide is displayed; it changes <em>what the T-cell receptor sees</em> in the displayed peptide. A useful neoantigen therefore needs two things: the mutant peptide must be presented, and it must look different enough from the normal one that T cells can tell them apart. Real predictors use the full binding matrix for each HLA allele plus models of how proteins are chopped and transported, and predicting which presented peptides actually trigger T cells is still an open problem.</p>
+<h2 id="how-tumours-escape-and-immunotherapy">How tumours escape, and immunotherapy</h2>
+<p>The immune system does kill many nascent tumours, so the cancers that grow are the ones that escaped (chapter P8's selection again). Escape routes include losing HLA expression, hiding behind immunosuppressive cells, and exploiting <strong>immune checkpoints</strong>: brakes such as <strong>PD-1</strong> and <strong>CTLA-4</strong> on T cells that normally prevent autoimmunity. Many tumours display <strong>PD-L1</strong>, which engages PD-1 and switches off the T cells attacking them.</p>
+<table>
+<thead>
+<tr>
+<th>Approach</th>
+<th>How it works</th>
+<th>Examples</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Checkpoint inhibitors</strong></td>
+<td>antibodies that block PD-1, PD-L1 or CTLA-4, releasing the brakes</td>
+<td>pembrolizumab, nivolumab, ipilimumab (Nobel Prize 2018 for the discovery)</td>
+</tr>
+<tr>
+<td><strong>CAR-T cells</strong></td>
+<td>a patient's T cells engineered with a synthetic receptor (antibody tip + T-cell signalling) against a tumour protein</td>
+<td>CD19 CAR-T for leukaemia and lymphoma</td>
+</tr>
+<tr>
+<td><strong>Bispecific antibodies</strong></td>
+<td>one arm grabs a T cell, the other a tumour cell</td>
+<td>blinatumomab</td>
+</tr>
+<tr>
+<td><strong>Cancer vaccines</strong></td>
+<td>train T cells on the patient's own neoantigens</td>
+<td>personalised mRNA neoantigen vaccines in trials</td>
+</tr>
+</tbody>
+</table>
+<p>Checkpoint inhibitors work best in tumours with many mutations (high <strong>tumour mutational burden</strong>: melanoma, lung cancer in smokers, tumours with broken DNA mismatch repair), because more mutations mean more neoantigens for the released T cells to see. Predicting who will respond is a major open problem for computational biology.</p>
+<h2 id="herd-immunity">Herd immunity</h2>
+<p>Vaccines protect individuals and also populations. In the classic <strong>SIR</strong> epidemic model, people are Susceptible, Infected or Recovered. Each case infects $R_0$ others in a fully susceptible population; if a fraction $s$ is still susceptible, the effective number is $R_0 s$. The epidemic grows only while $R_0 s &gt; 1$.</p>
+<div class="box math">
+<p class="lab">The maths, from scratch</p>
+<p><strong>Herd immunity threshold:</strong> the epidemic cannot take off once the immune fraction exceeds $1 - 1/R_0$.</p>
+<p><strong>Final size:</strong> without intervention, the fraction $z$ eventually infected satisfies $z = 1 - e^{-R_0 z}$. If a fraction $v$ is immune beforehand, the infected fraction of the remaining population satisfies $z = 1 - e^{-R_0 (1 - v) z}$.</p>
+</div>
+<pre class="code"><code><span class="kn">from</span><span class="w"> </span><span class="nn">scipy.optimize</span><span class="w"> </span><span class="kn">import</span> <span class="n">brentq</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">final_size</span><span class="p">(</span><span class="n">R0</span><span class="p">,</span> <span class="n">v</span><span class="o">=</span><span class="mf">0.0</span><span class="p">):</span>
+    <span class="n">Re</span> <span class="o">=</span> <span class="n">R0</span> <span class="o">*</span> <span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">v</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">Re</span> <span class="o">&lt;=</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="k">return</span> <span class="mf">0.0</span>
+    <span class="k">return</span> <span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">v</span><span class="p">)</span> <span class="o">*</span> <span class="n">brentq</span><span class="p">(</span><span class="k">lambda</span> <span class="n">z</span><span class="p">:</span> <span class="n">z</span> <span class="o">-</span> <span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="n">Re</span> <span class="o">*</span> <span class="n">z</span><span class="p">)),</span> <span class="mf">1e-9</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+
+<span class="n">cover</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">101</span><span class="p">)</span>
+<span class="n">fig</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">8</span><span class="p">,</span> <span class="mf">3.8</span><span class="p">))</span>
+<span class="k">for</span> <span class="n">R0</span><span class="p">,</span> <span class="n">c</span><span class="p">,</span> <span class="n">name</span> <span class="ow">in</span> <span class="p">[(</span><span class="mf">1.5</span><span class="p">,</span> <span class="s2">"#9d7cc9"</span><span class="p">,</span> <span class="s2">"seasonal flu ≈ 1.5"</span><span class="p">),</span> <span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="s2">"#5b3a8c"</span><span class="p">,</span> <span class="s2">"early COVID-19 ≈ 3"</span><span class="p">),</span> <span class="p">(</span><span class="mi">15</span><span class="p">,</span> <span class="s2">"#c2416b"</span><span class="p">,</span> <span class="s2">"measles ≈ 15"</span><span class="p">)]:</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="mi">100</span> <span class="o">*</span> <span class="n">cover</span><span class="p">,</span> <span class="p">[</span><span class="mi">100</span> <span class="o">*</span> <span class="n">final_size</span><span class="p">(</span><span class="n">R0</span><span class="p">,</span> <span class="n">v</span><span class="p">)</span> <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">cover</span><span class="p">],</span> <span class="n">color</span><span class="o">=</span><span class="n">c</span><span class="p">,</span> <span class="n">lw</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="sa">f</span><span class="s2">"R0 </span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">axvline</span><span class="p">(</span><span class="mi">100</span> <span class="o">*</span> <span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="mi">1</span> <span class="o">/</span> <span class="n">R0</span><span class="p">),</span> <span class="n">color</span><span class="o">=</span><span class="n">c</span><span class="p">,</span> <span class="n">ls</span><span class="o">=</span><span class="s2">":"</span><span class="p">,</span> <span class="n">lw</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">set_xlabel</span><span class="p">(</span><span class="s2">"</span><span class="si">% i</span><span class="s2">mmune before the outbreak"</span><span class="p">);</span> <span class="n">ax</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="s2">"</span><span class="si">% o</span><span class="s2">f population infected"</span><span class="p">);</span> <span class="n">ax</span><span class="o">.</span><span class="n">legend</span><span class="p">()</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="s2">"Herd immunity: infections drop to zero at 1 − 1/R0 immune"</span><span class="p">)</span>
+<span class="n">save_fig</span><span class="p">(</span><span class="s2">"herd"</span><span class="p">);</span> <span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+<span class="n">R</span><span class="p">[</span><span class="s2">"fs3"</span><span class="p">]</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="mi">100</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">final_size</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span><span class="si">:</span><span class="s2">.0f</span><span class="si">}</span><span class="s2">"</span><span class="p">;</span> <span class="n">R</span><span class="p">[</span><span class="s2">"measles"</span><span class="p">]</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="mi">100</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="p">(</span><span class="mi">1</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="mi">1</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="mi">15</span><span class="p">)</span><span class="si">:</span><span class="s2">.0f</span><span class="si">}</span><span class="s2">"</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"R0 = 3 with no immunity: </span><span class="si">{</span><span class="mi">100</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">final_size</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span><span class="si">:</span><span class="s2">.0f</span><span class="si">}</span><span class="s2">% infected; measles threshold </span><span class="si">{</span><span class="mi">100</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="p">(</span><span class="mi">1</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="mi">1</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="mi">15</span><span class="p">)</span><span class="si">:</span><span class="s2">.0f</span><span class="si">}</span><span class="s2">%"</span><span class="p">)</span>
+</code></pre>
+<pre class="out">R0 = 3 with no immunity: 94% infected; measles threshold 93%</pre>
+<figure><img src="images/herd.png" alt="Figure P10-3. Final epidemic size against the fraction immune before the outbreak, from the SIR final-size equation. Dotted lines mark each herd immunity threshold, 1 − 1/R0." loading="lazy"><figcaption><b>Figure P10-3.</b> Figure P10-3. Final epidemic size against the fraction immune before the outbreak, from the SIR final-size equation. Dotted lines mark each herd immunity threshold, 1 − 1/R0.</figcaption></figure>
+
+<p>With $R_0 = 3$ and no immunity, about 94% of people are eventually infected; measles, with $R_0 \approx 15$, needs about 93% immunity to stop spreading. Try the second tab of the playground to see the epidemic curve itself. Epidemic modelling of this kind (with many more compartments, age structure and contact networks) guided public-health decisions throughout the COVID-19 pandemic.</p>
+<div class="box bio">
+<p class="lab">Biology view</p>
+<p><strong>Inflammation and cancer</strong> are linked both ways. Chronic inflammation (from hepatitis infection, inflammatory bowel disease, <em>H. pylori</em> in the stomach) raises cancer risk through constant tissue damage and repair. And tumours recruit immune cells, such as tumour-associated macrophages, that help them grow and suppress T cells. Single-cell RNA-seq of tumours (chapter 7) maps these immune populations in detail.</p>
+</div>
+<h2 id="summary">Summary</h2>
+<table>
+<thead>
+<tr>
+<th>Idea</th>
+<th>One line</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Innate vs adaptive</td>
+<td>fast generic patrol vs slow, specific, learning response</td>
+</tr>
+<tr>
+<td>Antibodies</td>
+<td>Y-shaped proteins with variable tips; neutralise and tag targets</td>
+</tr>
+<tr>
+<td>V(D)J recombination</td>
+<td>cut-and-paste of gene segments gives 10¹³ or more possible receptors</td>
+</tr>
+<tr>
+<td>Clonal selection</td>
+<td>rare matching cells expand; memory makes the next response fast</td>
+</tr>
+<tr>
+<td>Affinity maturation</td>
+<td>hypermutation plus selection improves antibodies within weeks</td>
+</tr>
+<tr>
+<td>MHC/HLA</td>
+<td>cells display peptides; killer T cells check them</td>
+</tr>
+<tr>
+<td>Neoantigens</td>
+<td>mutant peptides that let T cells recognise tumours</td>
+</tr>
+<tr>
+<td>Checkpoints</td>
+<td>PD-1/CTLA-4 brakes; blocking them is immunotherapy</td>
+</tr>
+<tr>
+<td>Herd immunity</td>
+<td>outbreaks stop once 1 − 1/R0 of people are immune</td>
+</tr>
+</tbody>
+</table>
+<div class="box check">
+<p class="lab">Check yourself</p>
+<ol>
+<li>Why can't antibodies alone deal with viruses hiding inside cells? <em>(Antibodies bind molecules outside cells; T cells see peptides from inside cells displayed on MHC.)</em></li>
+<li>Where does most antibody diversity come from? <em>(V(D)J recombination plus random additions and deletions at the joins.)</em></li>
+<li>Why is the second response to an infection faster? <em>(Memory cells are more numerous and respond to lower antigen levels.)</em></li>
+<li>What do PD-1 inhibitors do? <em>(Block a brake on T cells, letting them attack tumour cells that display PD-L1.)</em></li>
+<li>A disease has R0 = 4. What fraction must be immune for herd immunity? <em>(1 − 1/4 = 75%.)</em></li>
+</ol>
+</div>
+<div class="box exercise">
+<p class="lab">Try it</p>
+<p>Some mutations change an anchor position, making a peptide presentable <em>only</em> in the tumour. (a) For each of the common KRAS codon-12 mutations G12V, G12D and G12C, score every 9-mer and 10-mer covering the mutation, in mutant and normal form. (b) Find the peptide whose score is raised most by the mutation. Which mutation creates new anchor residues, and which don't?</p>
+</div>
+<details><summary>Solution</summary>
+<pre class="code"><code><span class="k">for</span> <span class="n">aa</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">"V"</span><span class="p">,</span> <span class="s2">"D"</span><span class="p">,</span> <span class="s2">"C"</span><span class="p">]:</span>
+    <span class="n">mut</span> <span class="o">=</span> <span class="n">kras</span><span class="p">[:</span> <span class="n">pos</span> <span class="o">-</span> <span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="n">aa</span> <span class="o">+</span> <span class="n">kras</span><span class="p">[</span><span class="n">pos</span><span class="p">:]</span>
+    <span class="n">cands</span> <span class="o">=</span> <span class="p">[(</span><span class="n">a2_score</span><span class="p">(</span><span class="n">mut</span><span class="p">[</span><span class="n">s</span><span class="p">:</span><span class="n">s</span> <span class="o">+</span> <span class="n">L</span><span class="p">])</span> <span class="o">-</span> <span class="n">a2_score</span><span class="p">(</span><span class="n">kras</span><span class="p">[</span><span class="n">s</span><span class="p">:</span><span class="n">s</span> <span class="o">+</span> <span class="n">L</span><span class="p">]),</span> <span class="n">mut</span><span class="p">[</span><span class="n">s</span><span class="p">:</span><span class="n">s</span> <span class="o">+</span> <span class="n">L</span><span class="p">],</span> <span class="n">a2_score</span><span class="p">(</span><span class="n">mut</span><span class="p">[</span><span class="n">s</span><span class="p">:</span><span class="n">s</span> <span class="o">+</span> <span class="n">L</span><span class="p">]),</span> <span class="n">a2_score</span><span class="p">(</span><span class="n">kras</span><span class="p">[</span><span class="n">s</span><span class="p">:</span><span class="n">s</span> <span class="o">+</span> <span class="n">L</span><span class="p">]))</span>
+             <span class="k">for</span> <span class="n">L</span> <span class="ow">in</span> <span class="p">(</span><span class="mi">9</span><span class="p">,</span> <span class="mi">10</span><span class="p">)</span> <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">max</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">pos</span> <span class="o">-</span> <span class="n">L</span><span class="p">),</span> <span class="n">pos</span><span class="p">)]</span>
+    <span class="n">gain</span><span class="p">,</span> <span class="n">pep</span><span class="p">,</span> <span class="n">ms</span><span class="p">,</span> <span class="n">ws</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">cands</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"G12</span><span class="si">{</span><span class="n">aa</span><span class="si">}</span><span class="s2">: biggest gain </span><span class="si">{</span><span class="n">gain</span><span class="si">:</span><span class="s2">+.1f</span><span class="si">}</span><span class="s2"> for </span><span class="si">{</span><span class="n">pep</span><span class="si">:</span><span class="s2">11s</span><span class="si">}</span><span class="s2"> (mutant </span><span class="si">{</span><span class="n">ms</span><span class="si">:</span><span class="s2">+.1f</span><span class="si">}</span><span class="s2">, normal </span><span class="si">{</span><span class="n">ws</span><span class="si">:</span><span class="s2">+.1f</span><span class="si">}</span><span class="s2">)"</span><span class="p">)</span>
+</code></pre>
+<pre class="out">G12V: biggest gain +4.0 for YKLVVVGAV   (mutant +2.0, normal -2.0)
+G12D: biggest gain +0.0 for YKLVVVGAD   (mutant -2.0, normal -2.0)
+G12C: biggest gain +0.0 for YKLVVVGACG  (mutant -2.0, normal -2.0)</pre>
+<p>G12V gains the most: valine is a good C-terminal anchor and an acceptable position-2 residue, so windows that put residue 12 at an anchor become presentable only in the tumour (for example the 9-mer ending at residue 12). Aspartate (G12D) is charged and cysteine (G12C) is not a preferred anchor for this HLA type, so they create no new HLA-A*02:01 anchors. Whether a mutation yields a usable neoantigen depends on the patient's HLA genotype: G12D peptides, for example, are presented by other HLA types such as HLA-C*08:02, and T cells against that combination have produced tumour responses in patients.</p>
+</details>
+    <nav class="pager">
+      <a class="prev" href="../09-signalling-metabolism/index.html"><small>Previous</small>P9 · Signalling and metabolism</a>
+      <a class="next" href="../11-lab-toolkit/index.html"><small>Next</small>P11 · The lab toolkit</a>
+    </nav>
+  </main>
+</div>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.js"></script>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/contrib/auto-render.min.js"></script>
+<script defer src="../../assets/guide.js"></script>
+</body>
+</html>

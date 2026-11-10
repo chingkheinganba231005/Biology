@@ -72,7 +72,7 @@
           "n": "P9",
           "title": "Signalling and metabolism",
           "path": "prereq/09-signalling-metabolism/",
-          "ready": false,
+          "ready": true,
           "kind": "Foundations",
           "desc": "How cells sense and respond (receptors, kinase cascades) and how they make and use energy."
         },
@@ -80,7 +80,7 @@
           "n": "P10",
           "title": "The immune system",
           "path": "prereq/10-immune/",
-          "ready": false,
+          "ready": true,
           "kind": "Foundations",
           "desc": "Innate and adaptive immunity, antibodies, T cells and the basis of vaccines and immunotherapy."
         },
@@ -88,7 +88,7 @@
           "n": "P11",
           "title": "The lab toolkit",
           "path": "prereq/11-lab-toolkit/",
-          "ready": false,
+          "ready": true,
           "kind": "Foundations",
           "desc": "PCR, gels, cloning, sequencing, CRISPR, microscopy and assays: where biological data comes from."
         },
@@ -96,7 +96,7 @@
           "n": "P12",
           "title": "Cancer biology",
           "path": "prereq/12-cancer/",
-          "ready": false,
+          "ready": true,
           "kind": "Foundations",
           "desc": "Oncogenes, tumour suppressors, the hallmarks of cancer, tumour evolution and how cancer is treated."
         },
@@ -104,7 +104,7 @@
           "n": "P13",
           "title": "How drugs work",
           "path": "prereq/13-pharmacology/",
-          "ready": false,
+          "ready": true,
           "kind": "Foundations",
           "desc": "Targets, binding, dose–response, potency and selectivity, ADME, and the drug-discovery pipeline."
         }

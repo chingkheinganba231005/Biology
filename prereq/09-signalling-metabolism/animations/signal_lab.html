@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Signalling Lab</title><link rel="stylesheet" href="../../../assets/pg.css">
+<style>.tg{display:flex;gap:8px;flex-wrap:wrap;margin:6px 0}.tg button.on{background:var(--accent);color:var(--bg);border-color:var(--accent)}</style></head><body>
+<div class="tabs"><button class="on" data-t="path" type="button">The EGFR → ERK pathway</button><button data-t="met" type="button">Burning glucose</button></div>
+<section class="pane on" id="path">
+  <div class="ctl" id="pctl"></div>
+  <div class="tg" id="ptg"></div>
+  <svg id="psvg" viewBox="0 0 700 250" role="img" aria-label="Signalling pathway with activity of each protein"></svg>
+  <svg id="tsvg" viewBox="0 0 700 220" role="img" aria-label="Activity over time"></svg>
+  <div class="msg" id="pmsg"></div>
+</section>
+<section class="pane" id="met">
+  <div class="ctl" id="mctl"></div>
+  <svg id="msvg" viewBox="0 0 700 250" role="img" aria-label="Glucose flowing into glycolysis and respiration"></svg>
+  <div class="msg" id="mmsg"></div>
+</section>
+<script src="../../../assets/pg.js"></script>
+<script>
+const {$, h, s, tabs, slider, plot} = PG; tabs();
+// ---------- pathway ODE: R (receptor), RAS, RAF, MEK, ERK; ERK feeds back on RAS activation (via SOS phosphorylation)
+const L = slider("growth factor (EGF) level", 0, 2, 0.05, 0.6, (v) => v.toFixed(2), drawP);
+$("pctl").append(L.el);
+const T = {kras: ["KRAS G12C mutation (stuck on)", false], egfri: ["EGFR inhibitor (osimertinib)", false], rafi: ["BRAF/RAF inhibitor", false], meki: ["MEK inhibitor (trametinib)", false], fb: ["ERK negative feedback", true], pulse: ["EGF as a 10-min pulse", false]};
+Object.entries(T).forEach(([k, [lab]]) => { const b = h("button", {type: "button"}, lab); b.dataset.k = k; b.onclick = () => { T[k][1] = !T[k][1]; drawP(); }; $("ptg").append(b); });
+const hill = (x, K, n) => x ** n / (K ** n + x ** n);
+function simulate() {
+  const dt = 0.05, nsteps = 2400; let R = 0, ras = 0, raf = 0, mek = 0, erk = 0; const out = {t: [], R: [], ras: [], raf: [], mek: [], erk: []};
+  for (let k = 0; k <= nsteps; k++) { const t = k * dt;
+    const lig = T.pulse[1] ? (t < 10 ? L.value : 0) : L.value;
+    const rIn = hill(lig, 0.5, 1) * (T.egfri[1] ? 0.05 : 1);
+    const fb = T.fb[1] ? 1 / (1 + (erk / 0.35) ** 2) : 1;
+    const dR = 0.3 * (rIn - R), dRas = 0.5 * (hill(T.kras[1] ? 1 : R * fb, 0.3, 2) * (T.kras[1] ? 0.95 : 1) - ras);
+    const dRaf = 0.6 * (hill(ras, 0.3, 2) * (T.rafi[1] ? 0.08 : 1) - raf), dMek = 0.6 * (hill(raf, 0.25, 2) * (T.meki[1] ? 0.06 : 1) - mek), dErk = 0.6 * (hill(mek, 0.2, 2) - erk);
+    R += dt * dR; ras += dt * dRas; raf += dt * dRaf; mek += dt * dMek; erk += dt * dErk;
+    if (k % 20 === 0) { out.t.push(t); out.R.push(R); out.ras.push(ras); out.raf.push(raf); out.mek.push(mek); out.erk.push(erk); }
+  }
+  return out;
+}
+function drawP() {
+  document.querySelectorAll("#ptg button").forEach((b) => b.classList.toggle("on", T[b.dataset.k][1]));
+  const o = simulate(), last = (a) => a[a.length - 1], peak = (a) => Math.max(...a);
+  const show = T.pulse[1] ? peak : last;
+  const nodes = [["EGFR", o.R, 70], ["RAS", o.ras, 200], ["RAF", o.raf, 330], ["MEK", o.mek, 460], ["ERK", o.erk, 590]];
+  const parts = [s("text", {x: 70, y: 30, class: "lb", "text-anchor": "middle"}, "membrane"), s("line", {x1: 10, x2: 140, y1: 40, y2: 40, stroke: "var(--c)", "stroke-width": 6})];
+  nodes.forEach(([n, a, x], i) => {
+    const v = Math.max(0, Math.min(1, show(a)));
+    if (i) parts.push(s("line", {x1: x - 90, x2: x - 42, y1: 110, y2: 110, stroke: "var(--muted)", "stroke-width": 2, "marker-end": "url(#ar)"}));
+    parts.push(s("circle", {cx: x, cy: 110, r: 38, fill: `color-mix(in srgb, var(--accent2) ${Math.round(v * 100)}%, var(--surface))`, stroke: "var(--accent)", "stroke-width": 2}));
+    parts.push(s("text", {x, y: 108, class: "lb", "text-anchor": "middle"}, n), s("text", {x, y: 126, class: "tx", "text-anchor": "middle"}, `${Math.round(v * 100)}%`));
+  });
+  parts.unshift(s("defs", null, s("marker", {id: "ar", viewBox: "0 0 10 10", refX: 9, refY: 5, markerWidth: 6, markerHeight: 6, orient: "auto"}, s("path", {d: "M0 0L10 5L0 10z", fill: "var(--muted)"}))));
+  parts.push(s("text", {x: 690, y: 170, class: "tx", "text-anchor": "end"}, "→ nucleus: growth genes (FOS, MYC, cyclin D)"));
+  if (T.fb[1]) parts.push(s("path", {d: "M590 150 C 560 225, 230 225, 200 150", fill: "none", stroke: "var(--g)", "stroke-dasharray": "5 4", "stroke-width": 2}), s("text", {x: 395, y: 222, class: "tx", "text-anchor": "middle"}, "negative feedback: ERK switches off upstream activation"));
+  $("psvg").replaceChildren(...parts);
+  plot($("tsvg"), [{xs: o.t, ys: o.ras, color: "var(--a)", label: "RAS"}, {xs: o.t, ys: o.mek, color: "var(--c)", label: "MEK"}, {xs: o.t, ys: o.erk, color: "var(--accent2)", label: "ERK"}], {H: 220, ymin: 0, ymax: 1, xlabel: "minutes", ylabel: "fraction active"});
+  const e = last(o.erk);
+  $("pmsg").innerHTML = `${T.pulse[1] ? "Peak" : "Steady"} ERK activity: <b>${Math.round(100 * show(o.erk))}%</b>. Each kinase activates the next by phosphorylation, and each step is switch-like, so the cascade turns a gradual change in growth factor into a sharp, amplified response. ` +
+    (T.kras[1] ? "<b>Mutant KRAS</b> can't switch itself off, so the pathway runs even with no growth factor" + (T.egfri[1] ? ", and blocking EGFR above it is useless" : "") + ". KRAS is mutated in about 90% of pancreatic and 40% of colorectal cancers. " : "") +
+    (T.rafi[1] || T.meki[1] ? "Blocking a kinase <i>downstream</i> of the mutation shuts the pathway even when KRAS is stuck on (BRAF-mutant melanoma is treated with BRAF plus MEK inhibitors). " : "") +
+    (T.fb[1] && !T.kras[1] ? "The <b>negative feedback</b> keeps ERK from staying fully on and makes the response adapt; drug-induced loss of this feedback is one way tumours rebound under treatment. " : "") +
+    (T.pulse[1] ? "With a brief pulse of EGF, ERK rises and falls: the cell can tell a transient signal from a sustained one, and the two can have different outcomes." : "");
+}
+drawP();
+// ---------- metabolism: per glucose, glycolysis gives 2 ATP + 2 pyruvate; respiration gives ~28 more per glucose but needs O2 and capacity
+const G = slider("glucose uptake (relative)", 1, 10, 0.5, 3, (v) => v.toFixed(1), drawM);
+const O = slider("oxygen supply", 0, 10, 0.5, 6, (v) => v.toFixed(1), drawM);
+const C = slider("mitochondrial capacity", 0, 10, 0.5, 4, (v) => v.toFixed(1), drawM);
+$("mctl").append(G.el, O.el, C.el);
+function drawM() {
+  const glu = G.value, resp = Math.min(glu, O.value / 6 * 1, C.value), lac = glu - resp, atp = 2 * glu + 28 * resp;
+  const parts = [], bar = (x, y, w, c, t) => { parts.push(s("rect", {x, y, width: Math.max(w, 1), height: 30, rx: 4, fill: c})); parts.push(s("text", {x: x + Math.max(w, 1) + 8, y: y + 20, class: "lb"}, t)); };
+  const sc = 34;
+  bar(20, 30, glu * sc, "var(--c)", `glucose in: ${glu.toFixed(1)}`);
+  bar(20, 90, resp * sc, "var(--g)", `→ mitochondria (respiration): ${resp.toFixed(1)}`);
+  bar(20, 150, lac * sc, "var(--accent2)", `→ lactate out (fermentation): ${lac.toFixed(1)}`);
+  bar(20, 210, Math.min(atp * sc / 30, 420), "var(--accent)", `ATP made: ${atp.toFixed(0)}`);
+  $("msvg").replaceChildren(...parts);
+  const frac = 2 * glu / atp;
+  $("mmsg").innerHTML = `Every glucose gives 2 ATP from <b>glycolysis</b> in the cytosol. If oxygen and mitochondrial capacity allow, its products are burned in the <b>mitochondria</b> for about 28 more (about 30 in total). Otherwise they are dumped as <b>lactate</b>. Here ${(100 * lac / glu).toFixed(0)}% of glucose ends as lactate and glycolysis supplies ${(100 * frac).toFixed(0)}% of the ATP. ` +
+    `Many cancer cells take up huge amounts of glucose and turn much of it into lactate even when oxygen is plentiful: the <b>Warburg effect</b>. Try high glucose with limited mitochondrial capacity. The extra glucose uptake is what <b>FDG-PET</b> scans see: they image a radioactive glucose analogue that piles up in tumours.`;
+}
+drawM();
+</script></body></html>

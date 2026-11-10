@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Pharmacology Lab</title><link rel="stylesheet" href="../../../assets/pg.css"></head><body>
+<div class="tabs"><button class="on" data-t="dr" type="button">Dose, response and therapeutic window</button><button data-t="pk" type="button">Dosing schedule (PK)</button></div>
+<section class="pane on" id="dr">
+  <div class="ctl" id="drctl"></div>
+  <svg id="drsvg" viewBox="0 0 700 290" role="img" aria-label="Dose-response curves for effect and toxicity"></svg>
+  <div class="msg" id="drmsg"></div>
+</section>
+<section class="pane" id="pk">
+  <div class="ctl" id="pkctl"></div>
+  <svg id="pksvg" viewBox="0 0 700 290" role="img" aria-label="Drug concentration over time with repeated doses"></svg>
+  <div class="msg" id="pkmsg"></div>
+</section>
+<script src="../../../assets/pg.js"></script>
+<script>
+const {$, h, s, tabs, slider, plot} = PG; tabs();
+// ---------- dose-response: effect and toxicity as Hill curves vs log dose
+const ic = slider("drug potency: IC50 for the target (nM)", 0, 4, 0.05, 1.7, (v) => fmt(10 ** v), drawDR);
+const tox = slider("toxic effect: TC50 off-target (nM)", 0, 5, 0.05, 3.5, (v) => fmt(10 ** v), drawDR);
+const nh = slider("steepness (Hill coefficient)", 1, 4, 0.1, 1, (v) => v.toFixed(1), drawDR);
+$("drctl").append(ic.el, tox.el, nh.el);
+function fmt(nm) { return nm >= 1e6 ? (nm / 1e6).toPrecision(3) + " mM" : nm >= 1e3 ? (nm / 1e3).toPrecision(3) + " µM" : nm.toPrecision(3) + " nM"; }
+function drawDR() {
+  const K = 10 ** ic.value, Kt = 10 ** tox.value, n = nh.value, xs = [];
+  for (let e = 0; e <= 6.001; e += 0.03) xs.push(10 ** e);
+  const eff = xs.map((x) => 100 * x ** n / (K ** n + x ** n)), tx = xs.map((x) => 100 * x ** n / (Kt ** n + x ** n));
+  const {X, Y} = plot($("drsvg"), [{xs, ys: eff, color: "var(--accent)", label: "wanted effect"}, {xs, ys: tx, color: "var(--accent2)", label: "toxic effect"}], {logx: true, xmin: 1, xmax: 1e6, ymin: 0, ymax: 100, xlabel: "drug concentration (nM, log scale)", ylabel: "% of maximum response", xfmt: (v) => fmt(v)});
+  [[K, "var(--accent)"], [Kt, "var(--accent2)"]].forEach(([k, c]) => $("drsvg").append(s("line", {x1: X(k), x2: X(k), y1: Y(50), y2: Y(0), stroke: c, "stroke-dasharray": "3 3"})));
+  const TI = Kt / K;
+  $("drmsg").innerHTML = `The <b>IC50/EC50</b> is the concentration giving half the maximum effect: a measure of <b>potency</b>. Here the wanted effect reaches half at ${fmt(K)} and toxicity at ${fmt(Kt)}. ` +
+    `The gap between them is the <b>therapeutic window</b>: the <b>therapeutic index</b> here is TC50/IC50 = <b>${TI.toPrecision(3)}×</b>. ` +
+    (TI > 30 ? "A wide window: easy to dose safely (like many antibiotics)." : TI > 5 ? "A moderate window: dosing needs some care." : "A narrow window: the effective and toxic doses are close, so the drug needs blood-level monitoring (like warfarin or many chemotherapies).") +
+    " A steeper Hill coefficient makes the drug switch from no effect to full effect over a narrower dose range.";
+}
+drawDR();
+// ---------- PK: one-compartment model with repeated oral doses. C' = (ka*F*D/V) absorption - ke*C
+const dose = slider("dose (mg)", 10, 500, 10, 100, (v) => v + " mg", drawPK);
+const interval = slider("hours between doses", 2, 48, 1, 12, (v) => v + " h", drawPK);
+const half = slider("elimination half-life (h)", 1, 48, 1, 8, (v) => v + " h", drawPK);
+$("pkctl").append(dose.el, interval.el, half.el);
+function drawPK() {
+  const ke = Math.LN2 / half.value, ka = 1.5, V = 40, F = 0.7, dt = 0.05, Tend = 96;
+  let gut = 0, C = 0; const ts = [], cs = [];
+  for (let t = 0; t <= Tend; t += dt) {
+    if (Math.abs(t % interval.value) < dt / 2 && t < Tend - 1) gut += dose.value * F;
+    const abs = ka * gut; gut -= dt * abs; C += dt * (abs / V - ke * C);
+    ts.push(t); cs.push(C);
+  }
+  const Css = dose.value * F / (V * ke * interval.value), minC = Math.min(...cs.slice(cs.length / 2));
+  const {X, Y} = plot($("pksvg"), [{xs: ts, ys: cs, color: "var(--accent)"}], {ymin: 0, xmin: 0, xmax: Tend, xlabel: "time (hours)", ylabel: "blood concentration (mg/L)"});
+  $("pksvg").append(s("line", {x1: X(0), x2: X(Tend), y1: Y(Css), y2: Y(Css), stroke: "var(--accent2)", "stroke-dasharray": "4 3"}), s("text", {x: X(2), y: Y(Css) - 5, class: "tx"}, "average steady state"));
+  $("pkmsg").innerHTML = `A drug is absorbed from the gut, spread through the body, and cleared (mostly by liver and kidney). With repeated doses it builds up to a <b>steady state</b> where each dose replaces what is cleared: it takes about <b>4–5 half-lives</b> (${(4.5 * half.value).toFixed(0)} h here) to get there. ` +
+    `The average steady-state level is dose × bioavailability / (clearance × interval). Dosing every <b>${interval.value} h</b> with a <b>${half.value} h</b> half-life gives peaks and troughs that ${interval.value > 2 * half.value ? "swing widely: the level falls a long way between doses" : "stay fairly steady"}. ` +
+    `A drug with a long half-life needs infrequent dosing but takes days to reach a steady level, which is why some treatments start with a larger <b>loading dose</b>.`;
+}
+drawPK();
+</script></body></html>

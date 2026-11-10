@@ -18,11 +18,11 @@ No biology assumed. From atoms and cells to DNA, proteins, genetics, the immune 
 | P6 | [Gene regulation and epigenetics](prereq/06-regulation/) | How a cell decides which genes to switch on: promoters, transcription factors, chromatin and cell identity. |
 | P7 | [The cell cycle, division and death](prereq/07-cell-cycle/) | Mitosis, meiosis, checkpoints, p53 and apoptosis: the machinery cancer breaks. |
 | P8 | [Genetics, mutation and evolution](prereq/08-genetics-evolution/) | Inheritance, alleles, mutations, populations, natural selection and the tree of life. |
-| P9 | Signalling and metabolism *(coming)* | How cells sense and respond (receptors, kinase cascades) and how they make and use energy. |
-| P10 | The immune system *(coming)* | Innate and adaptive immunity, antibodies, T cells and the basis of vaccines and immunotherapy. |
-| P11 | The lab toolkit *(coming)* | PCR, gels, cloning, sequencing, CRISPR, microscopy and assays: where biological data comes from. |
-| P12 | Cancer biology *(coming)* | Oncogenes, tumour suppressors, the hallmarks of cancer, tumour evolution and how cancer is treated. |
-| P13 | How drugs work *(coming)* | Targets, binding, dose–response, potency and selectivity, ADME, and the drug-discovery pipeline. |
+| P9 | [Signalling and metabolism](prereq/09-signalling-metabolism/) | How cells sense and respond (receptors, kinase cascades) and how they make and use energy. |
+| P10 | [The immune system](prereq/10-immune/) | Innate and adaptive immunity, antibodies, T cells and the basis of vaccines and immunotherapy. |
+| P11 | [The lab toolkit](prereq/11-lab-toolkit/) | PCR, gels, cloning, sequencing, CRISPR, microscopy and assays: where biological data comes from. |
+| P12 | [Cancer biology](prereq/12-cancer/) | Oncogenes, tumour suppressors, the hallmarks of cancer, tumour evolution and how cancer is treated. |
+| P13 | [How drugs work](prereq/13-pharmacology/) | Targets, binding, dose–response, potency and selectivity, ADME, and the drug-discovery pipeline. |
 
 ## Part 1 · Bioinformatics
 

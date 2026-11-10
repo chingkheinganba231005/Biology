@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Lab Bench</title><link rel="stylesheet" href="../../../assets/pg.css">
+<style>.tg{display:flex;gap:8px;flex-wrap:wrap;margin:6px 0}.tg button.on{background:var(--accent);color:var(--bg);border-color:var(--accent)}</style></head><body>
+<div class="tabs"><button class="on" data-t="qpcr" type="button">PCR and qPCR</button><button data-t="gel" type="button">Run a gel</button><button data-t="seq" type="button">Sequencing coverage</button></div>
+<section class="pane on" id="qpcr">
+  <div class="ctl" id="qctl"></div>
+  <svg id="qsvg" viewBox="0 0 700 290" role="img" aria-label="qPCR amplification curves"></svg>
+  <div class="msg" id="qmsg"></div>
+</section>
+<section class="pane" id="gel">
+  <div class="tg" id="enz"></div>
+  <div class="ctl" id="gctl"></div>
+  <svg id="gsvg" viewBox="0 0 700 330" role="img" aria-label="Agarose gel with DNA bands"></svg>
+  <div class="msg" id="gmsg"></div>
+</section>
+<section class="pane" id="seq">
+  <div class="ctl" id="sctl"></div>
+  <div class="row"><button type="button" id="sre">New random run</button></div>
+  <svg id="ssvg" viewBox="0 0 700 260" role="img" aria-label="Read depth along a genome"></svg>
+  <div class="msg" id="smsg"></div>
+</section>
+<script src="../../../assets/pg.js"></script>
+<script>
+const {$, h, s, tabs, slider, plot, rng} = PG; tabs();
+// ---------- qPCR: N_{k+1} = N_k (1 + E (1 - N/K)); Ct = cycle where the signal crosses a threshold
+const E = slider("efficiency per cycle", 0.6, 1, 0.01, 0.95, (v) => (100 * v).toFixed(0) + "%", drawQ);
+const N0 = slider("starting copies in sample X", 1, 7, 0.1, 3.5, (v) => Math.round(10 ** v).toLocaleString(), drawQ);
+$("qctl").append(E.el, N0.el);
+function curve(n0, eff) { const K = 1e11, ys = []; let n = n0; for (let c = 0; c <= 40; c++) { ys.push(n); n = n * (1 + eff * (1 - n / K)); } return ys; }
+function ct(ys, thr) { for (let i = 1; i < ys.length; i++) if (ys[i] >= thr) { const a = Math.log10(ys[i - 1]), b = Math.log10(ys[i]); return i - 1 + (Math.log10(thr) - a) / (b - a); } return 40; }
+function drawQ() {
+  const cyc = Array.from({length: 41}, (_, i) => i), thr = 1e9, ser = [], cts = [];
+  [1e6, 1e5, 1e4, 1e3, 1e2].forEach((n, i) => { const ys = curve(n, E.value); ser.push({xs: cyc, ys: ys.map((y) => y / 1e11), color: `hsl(265 40% ${35 + i * 9}%)`, width: 1.5}); cts.push(ct(ys, thr)); });
+  ser[0].label = "standards: 10⁶ … 10² copies";
+  const x = curve(10 ** N0.value, E.value), ctx = ct(x, thr);
+  ser.push({xs: cyc, ys: x.map((y) => y / 1e11), color: "var(--accent2)", width: 3, label: "sample X"});
+  const {X, Y} = plot($("qsvg"), ser, {ymin: 0, ymax: 1.05, xmin: 0, xmax: 40, xlabel: "PCR cycle", ylabel: "fluorescence (relative)"});
+  $("qsvg").append(s("line", {x1: X(0), x2: X(40), y1: Y(thr / 1e11), y2: Y(thr / 1e11), stroke: "var(--ink)", "stroke-dasharray": "4 3"}), s("text", {x: X(1), y: Y(thr / 1e11) - 5, class: "tx"}, "threshold"));
+  const slope = (cts[4] - cts[0]) / 4;
+  $("qmsg").innerHTML = `Each cycle copies every DNA molecule between the two primers, so the amount grows as (1 + efficiency)<sup>cycles</sup> until the reagents run out (the plateau). <b>Quantitative PCR</b> reads the fluorescence every cycle and records the cycle at which it crosses a threshold, the <b>Ct</b>. ` +
+    `Sample X crosses at <b>Ct = ${ctx.toFixed(1)}</b>. Each 10-fold dilution of the standards shifts Ct by <b>${slope.toFixed(2)} cycles</b> (3.32 at 100% efficiency, because 2<sup>3.32</sup> = 10). Fewer starting copies give a later Ct, so the standards convert Ct back into copies.`;
+}
+drawQ();
+// ---------- gel: fragment sizes of phage lambda (NC_001416), computed from the sequence in chapter P3
+const DIG = {"uncut lambda": [48502], EcoRI: [21226, 7421, 5804, 5643, 4878, 3530], HindIII: [23130, 9416, 6682, 4361, 2322, 2027, 564], BamHI: [16841, 7233, 6770, 6527, 5626, 5505]};
+const LADDER = [20000, 10000, 7000, 5000, 4000, 3000, 2000, 1500, 1000, 700, 500];
+const chosen = new Set(["EcoRI", "HindIII"]);
+Object.keys(DIG).forEach((k) => { const b = h("button", {type: "button"}, k); b.dataset.k = k; b.onclick = () => { chosen.has(k) ? chosen.delete(k) : chosen.add(k); drawG(); }; $("enz").append(b); });
+const AG = slider("agarose %", 0.5, 2, 0.1, 0.8, (v) => v.toFixed(1) + "%", drawG);
+const TM = slider("running time (minutes)", 10, 90, 5, 45, (v) => v + " min", drawG);
+$("gctl").append(AG.el, TM.el);
+function migrate(bp) { const k = (TM.value / 45) * (0.8 / AG.value) ** 1.2; return Math.max(0.01, Math.min(0.98, k * (5 - Math.log10(bp)) / 3 * 0.95)); }
+function drawG() {
+  document.querySelectorAll("#enz button").forEach((b) => b.classList.toggle("on", chosen.has(b.dataset.k)));
+  const lanes = [["ladder", LADDER], ...[...chosen].map((k) => [k, DIG[k]])];
+  const W = 700, lw = Math.min(110, (W - 60) / lanes.length), top = 50, len = 250, parts = [];
+  parts.push(s("rect", {x: 20, y: top - 20, width: W - 40, height: len + 40, rx: 8, fill: "#1b1530"}));
+  lanes.forEach(([name, frags], i) => {
+    const cx = 40 + lw * (i + 0.5);
+    parts.push(s("rect", {x: cx - lw * 0.35, y: top - 12, width: lw * 0.7, height: 7, fill: "#000", opacity: 0.6}));
+    parts.push(s("text", {x: cx, y: top - 26, class: "tx", "text-anchor": "middle"}, name));
+    frags.forEach((bp) => { const y = top + len * migrate(bp); parts.push(s("rect", {x: cx - lw * 0.33, y: y - 2, width: lw * 0.66, height: 4, rx: 2, fill: "#e9f7ff", opacity: Math.min(1, 0.35 + Math.log10(bp) / 6)})); if (name === "ladder") parts.push(s("text", {x: 24, y: y + 3, class: "tx", style: "fill:#b9c3d6;font-size:9px"}, bp >= 1000 ? bp / 1000 + " kb" : bp)); });
+  });
+  parts.push(s("text", {x: W - 30, y: top + len + 14, class: "tx", "text-anchor": "end", style: "fill:#b9c3d6"}, "wells at top · DNA runs towards + ↓"));
+  $("gsvg").replaceChildren(...parts);
+  $("gmsg").innerHTML = `DNA is negatively charged, so in an electric field it moves through the gel towards the positive electrode. The gel is a mesh, and small pieces slip through faster than big ones: the distance travelled falls roughly with the <b>logarithm</b> of size. Compare each lane with the <b>ladder</b> of known sizes to read fragment lengths. ` +
+    `A higher agarose percentage makes a tighter mesh that separates small fragments better; a low percentage suits large ones. Bands of similar size (EcoRI's 5.8 and 5.6 kb, BamHI's cluster near 6–7 kb) merge unless the gel runs long enough. Uncut lambda (48.5 kb) barely leaves the well.`;
+}
+drawG();
+// ---------- sequencing coverage: random reads on a 50 kb genome; Lander-Waterman: fraction uncovered ≈ e^(-c)
+const r = rng(4);
+const GL = 50000;
+const RL = slider("read length (bases)", 50, 1000, 50, 150, (v) => v, drawS);
+const NR = slider("number of reads", 50, 4000, 50, 1000, (v) => v.toLocaleString(), drawS);
+$("sctl").append(RL.el, NR.el);
+$("sre").onclick = drawS;
+function drawS() {
+  const L = RL.value, n = NR.value, diff = new Float64Array(GL + 1);
+  for (let i = 0; i < n; i++) { const st = Math.floor(r() * (GL - L)); diff[st]++; diff[st + L]--; }
+  let d = 0, zero = 0; const depth = new Float64Array(GL);
+  for (let i = 0; i < GL; i++) { d += diff[i]; depth[i] = d; if (d === 0) zero++; }
+  const bin = 250, xs = [], ys = [];
+  for (let i = 0; i < GL; i += bin) { let m = Infinity; for (let j = i; j < i + bin; j++) m = Math.min(m, depth[j]); xs.push(i / 1000); ys.push(m); }
+  const c = n * L / GL;
+  plot($("ssvg"), [{xs, ys, color: "var(--accent)"}], {H: 260, ymin: 0, xlabel: "position along a 50 kb genome (kb)", ylabel: "read depth (min per 250 bp)"});
+  $("smsg").innerHTML = `Mean coverage c = reads × length / genome size = <b>${c.toFixed(1)}×</b>. Reads land at random, so depth varies a lot from place to place even at the same average. ` +
+    `Uncovered bases here: <b>${(100 * zero / GL).toFixed(2)}%</b>; the Lander–Waterman formula predicts about e<sup>−c</sup> = ${(100 * Math.exp(-c)).toFixed(2)}%. ` +
+    `That is why genomes are sequenced to 30× or more: to call a variant confidently you need many reads at every position, not just on average.`;
+}
+drawS();
+</script></body></html>

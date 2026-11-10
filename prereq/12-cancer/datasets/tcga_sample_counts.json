@@ -1,0 +1,10 @@
+{
+ "coadread_tcga_pan_can_atlas_2018": 534,
+ "brca_tcga_pan_can_atlas_2018": 1066,
+ "luad_tcga_pan_can_atlas_2018": 566,
+ "paad_tcga_pan_can_atlas_2018": 179,
+ "skcm_tcga_pan_can_atlas_2018": 440,
+ "gbm_tcga_pan_can_atlas_2018": 397,
+ "ucec_tcga_pan_can_atlas_2018": 517,
+ "lgg_tcga_pan_can_atlas_2018": 514
+}

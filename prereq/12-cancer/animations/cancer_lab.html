@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Cancer Lab</title><link rel="stylesheet" href="../../../assets/pg.css">
+<style>.tg{display:flex;gap:8px;flex-wrap:wrap;margin:6px 0}.tg button.on{background:var(--accent);color:var(--bg);border-color:var(--accent)}
+.hm{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:6px}.hm button{border-radius:10px;text-align:left;padding:7px 9px;line-height:1.3}</style></head><body>
+<div class="tabs"><button class="on" data-t="evo" type="button">Hit by hit: how a tumour forms</button><button data-t="hall" type="button">The hallmarks of cancer</button></div>
+<section class="pane on" id="evo">
+  <div class="ctl" id="ectl"></div>
+  <div class="tg"><button type="button" id="fap">inherited first hit (like familial APC)</button><button class="pri" type="button" id="erun">Run a lifetime</button></div>
+  <svg id="esvg" viewBox="0 0 700 290" role="img" aria-label="Cells with 0 to 3 driver mutations over a lifetime"></svg>
+  <div class="msg" id="emsg"></div>
+</section>
+<section class="pane" id="hall">
+  <div class="hm" id="hm"></div>
+  <div class="msg" id="hmsg">Click a hallmark.</div>
+</section>
+<script src="../../../assets/pg.js"></script>
+<script>
+const {$, h, s, tabs, slider, plot, rng} = PG; tabs();
+const r = rng(12);
+const MU = slider("driver mutation rate per cell division (log10)", -8, -5, 0.1, -6.7, (v) => "1e" + v.toFixed(1), null);
+const S = slider("growth advantage per driver hit, per division", 0, 0.04, 0.002, 0.01, (v) => "+" + (100 * v).toFixed(1) + "%", null);
+$("ectl").append(MU.el, S.el);
+let fap = false;
+$("fap").onclick = () => { fap = !fap; $("fap").classList.toggle("on", fap); run(); };
+function poisson(l) { if (l > 50) return Math.max(0, Math.round(l + Math.sqrt(l) * r.normal())); let k = 0, p = Math.exp(-l), c = p, u = r(); while (u > c) { k++; p *= l / k; c += p; } return k; }
+function run() {
+  const N = 1e7, mu = 10 ** MU.value, sel = S.value, years = 90, divPerYear = 20;
+  let n = fap ? [0, N, 0, 0] : [N, 0, 0, 0];
+  const ts = [], fr = [[], [], [], []]; let cancerAge = null;
+  for (let y = 0; y <= years; y++) {
+    for (let d = 0; d < divPerYear && cancerAge === null; d++) {
+      const nn = n.slice();
+      for (let k = 0; k < 3; k++) { const m = Math.min(poisson(n[k] * mu), n[k]); nn[k] -= m; nn[k + 1] += m; }
+      let tot = 0; for (let k = 0; k < 4; k++) { nn[k] *= (1 + sel) ** k; tot += nn[k]; }
+      for (let k = 0; k < 4; k++) { const v = nn[k] * N / tot; n[k] = v > 0 && v < 1 ? (r() < v ? 1 : 0) : v; }   // tissue size stays fixed; tiny clones live or die by chance
+      if (n[3] > 1e6) cancerAge = y + d / divPerYear;
+    }
+    ts.push(y);
+    fr[3].push(Math.log10(Math.max(n[0], 1))); fr[0].push(Math.log10(Math.max(n[1], 1))); fr[1].push(Math.log10(Math.max(n[2], 1))); fr[2].push(Math.log10(Math.max(n[3], 1)));
+    if (cancerAge !== null) break;
+  }
+  const {X, Y} = plot($("esvg"), [{xs: ts, ys: fr[3], color: "var(--muted)", label: "normal cells"}, {xs: ts, ys: fr[0], color: "var(--c)", label: "1 hit (e.g. APC)"}, {xs: ts, ys: fr[1], color: "var(--accent)", label: "2 hits (+KRAS)"}, {xs: ts, ys: fr[2], color: "var(--accent2)", label: "3 hits (+TP53): cancer"}],
+    {ymin: 0, ymax: 7.5, xmin: 0, xmax: 90, xlabel: "age (years)", ylabel: "number of cells (log10)", yfmt: (v) => "1e" + v});
+  $("esvg").append(s("line", {x1: X(0), x2: X(90), y1: Y(6), y2: Y(6), stroke: "var(--ink)", "stroke-dasharray": "3 3"}), s("text", {x: X(1), y: Y(6) - 4, class: "tx"}, "a million 3-hit cells: a tumour"));
+  $("emsg").innerHTML = `A tissue of 10 million dividing stem cells. Each division, a cell may gain its next driver mutation; each hit makes the cell's descendants out-compete their neighbours a little, so every mutant <b>clone</b> expands and becomes a bigger target for the next hit. Most new mutant cells still die out by chance while they are few (chapter P8). The run stops when a tumour forms. ` +
+    (cancerAge !== null ? `In this run a tumour of a million fully transformed cells appeared at about <b>age ${cancerAge.toFixed(0)}</b>.` : `In this run no tumour formed within 90 years.`) +
+    ` Press Run again: each lifetime is different, because mutations are random. ` + (fap ? "With the first hit inherited in every cell, as in familial adenomatous polyposis, cancer comes decades earlier and almost always." : "Try switching on the inherited first hit, or lowering the mutation rate (as better DNA repair would).");
+}
+$("erun").onclick = run;
+run();
+const HM = [
+  ["Sustaining growth signals", "Making their own growth signals or carrying stuck-on switches (mutant KRAS, BRAF, EGFR; HER2 amplification). Drugs: EGFR, BRAF, MEK, HER2 and KRAS G12C inhibitors."],
+  ["Evading growth suppressors", "Losing the brakes Rb, p16 (CDKN2A) and p53. Drugs: CDK4/6 inhibitors put a brake back."],
+  ["Resisting cell death", "Blocking apoptosis, for example with extra BCL-2 or loss of p53. Drug: venetoclax."],
+  ["Unlimited replication", "Switching on telomerase (often via TERT promoter mutations) so telomeres never run out."],
+  ["Inducing blood vessels", "Secreting VEGF to grow new blood vessels once a tumour passes 1–2 mm (diffusion limit, chapter P1). Drug: bevacizumab."],
+  ["Invasion and metastasis", "Breaking through tissue boundaries and spreading to other organs; causes about 90% of cancer deaths."],
+  ["Reprogrammed metabolism", "Aerobic glycolysis (the Warburg effect) and heavy glutamine use; seen by FDG-PET (chapter P9)."],
+  ["Avoiding immune destruction", "Hiding from T cells with PD-L1, losing HLA, recruiting suppressive cells. Drugs: checkpoint inhibitors (chapter P10)."],
+  ["Genome instability (enabling)", "Broken DNA repair (BRCA1/2, mismatch repair) speeds up mutation. Drugs: PARP inhibitors exploit BRCA loss."],
+  ["Tumour-promoting inflammation (enabling)", "Chronic inflammation supplies growth factors and DNA damage."],
+  ["Phenotypic plasticity", "Switching cell identity (for example back to a stem-like state) to escape therapy. Added to the list in 2022."],
+  ["Non-mutational epigenetic reprogramming", "Changing gene regulation without DNA mutations: methylation, chromatin (chapter P6). Added in 2022."],
+];
+HM.forEach(([name, d]) => { const b = h("button", {type: "button"}, name); b.onclick = () => { $("hmsg").innerHTML = `<b>${name}.</b> ${d}`; }; $("hm").append(b); });
+</script></body></html>

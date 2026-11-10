@@ -1,0 +1,371 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>How drugs work · Cells to Code</title>
+<meta name="description" content="What a drug is, how it binds its target, how potency and selectivity are measured, what the body does to a drug, and how a molecule becomes a medicine. The bridge from biology to the drug-discovery part of the course, with real data on 3,000 approved drugs.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,600;1,6..72,400&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.css">
+<link rel="stylesheet" href="../../assets/guide.css">
+<script>try{var t=localStorage.getItem('c2c-theme');if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
+</head>
+<body>
+<header class="topbar">
+  <a class="brand" href="../../index.html"><span class="logo" aria-hidden="true"></span>Cells to Code</a>
+  <span class="crumb">Biology from zero · Chapter P13</span>
+  <button class="tocbtn" type="button" aria-controls="toc" aria-expanded="false">Contents</button>
+  <button class="themebtn" type="button" aria-label="Switch light or dark theme">Theme</button>
+  <span class="progress" aria-hidden="true"></span>
+</header>
+<div class="layout">
+  <nav class="toc" id="toc" aria-label="On this page">
+    <p class="toc-h">On this page</p>
+    <ol><li><a href="#what-a-drug-targets">What a drug targets</a></li>
+<li><a href="#binding-affinity-and-occupancy">Binding, affinity and occupancy</a></li>
+<li><a href="#potency-is-not-enough-selectivity-and-the-therapeutic-window">Potency is not enough: selectivity and the therapeutic window</a></li>
+<li><a href="#what-the-body-does-to-the-drug-adme">What the body does to the drug: ADME</a></li>
+<li><a href="#can-it-even-be-a-pill-lipinskis-rule-of-five">Can it even be a pill? Lipinski's rule of five</a></li>
+<li><a href="#from-molecule-to-medicine">From molecule to medicine</a></li>
+<li><a href="#the-drug-discovery-part-of-this-course">The drug-discovery part of this course</a></li>
+<li><a href="#summary">Summary</a></li></ol>
+    <p class="toc-nb"><a href="pharmacology.ipynb" download>Download the notebook ↓</a></p>
+  </nav>
+  <main class="content">
+    <p class="eyebrow">Biology from zero · Chapter P13</p>
+    <h1>How drugs work</h1>
+    <p class="lede">What a drug is, how it binds its target, how potency and selectivity are measured, what the body does to a drug, and how a molecule becomes a medicine. The bridge from biology to the drug-discovery part of the course, with real data on 3,000 approved drugs.</p>
+    <p class="meta">About 1.5 hours · Chapters P2, P5 and P9</p>
+<p>This chapter closes the prerequisites and opens the door to the drug-discovery part of the course. A drug is just a molecule that binds something in the body and changes what it does. Everything else, potency, selectivity, dose, side effects, is about <em>which</em> molecule binds <em>what</em>, <em>how tightly</em>, and what the body does to the molecule in between. These are the quantities that cheminformatics, docking and QSAR (Part 3) try to predict.</p>
+<div class="box eli5">
+<p class="lab">Like you’re five</p>
+<p>A drug is a small molecule shaped to fit a particular pocket on a particular protein, like a key cut for one lock. When it fits, it jams the lock (blocks the protein) or turns it (switches the protein on). A good drug fits its target lock tightly (<strong>potency</strong>), ignores the thousands of other locks in the body (<strong>selectivity</strong>), survives long enough to do its job but not forever (<strong>pharmacokinetics</strong>), and can actually reach the lock, which for a pill means surviving the gut and getting into the blood. Most molecules fail at one of these, which is why making a new medicine is so hard.</p>
+</div>
+<h2 id="what-a-drug-targets">What a drug targets</h2>
+<p>Most drugs are small molecules that bind a protein and change its activity. The main target classes:</p>
+<table>
+<thead>
+<tr>
+<th>Target</th>
+<th>What the drug does</th>
+<th>Examples</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Enzymes</strong></td>
+<td>usually block the active site (chapter P5)</td>
+<td>statins, kinase inhibitors, aspirin</td>
+</tr>
+<tr>
+<td><strong>G-protein-coupled receptors</strong></td>
+<td>activate (agonist) or block (antagonist)</td>
+<td>beta-blockers, antihistamines, opioids</td>
+</tr>
+<tr>
+<td><strong>Ion channels</strong></td>
+<td>block or modulate the pore</td>
+<td>local anaesthetics, many heart drugs</td>
+</tr>
+<tr>
+<td><strong>Nuclear receptors</strong></td>
+<td>change gene transcription</td>
+<td>steroids, tamoxifen</td>
+</tr>
+<tr>
+<td><strong>Transporters</strong></td>
+<td>block a pump</td>
+<td>SSRI antidepressants, some diuretics</td>
+</tr>
+</tbody>
+</table>
+<p>Beyond small molecules, <strong>biologics</strong> (antibodies, chapter P10; engineered proteins) target things outside cells, and newer approaches (antisense oligonucleotides, siRNA, mRNA, PROTACs that tag a protein for destruction, chapter P5) are expanding what can be drugged.</p>
+<h2 id="binding-affinity-and-occupancy">Binding, affinity and occupancy</h2>
+<p>A drug works by binding its target, and binding is the equilibrium from chapter P2. The key number is the <strong>dissociation constant</strong> $K_d$: the concentration of drug at which half the target is occupied. Smaller $K_d$ means tighter binding.</p>
+<div class="box math">
+<p class="lab">The maths, from scratch</p>
+<p>At drug concentration $[L]$, the fraction of target bound is
+$$\theta = \frac{[L]}{[L] + K_d}.$$
+For an enzyme inhibitor the equivalent constant is often called $K_i$, and the measured concentration producing half-maximal effect in an assay is the $\text{IC}_{50}$ (for inhibition) or $\text{EC}_{50}$ (for activation). All are concentrations: the smaller, the more potent.</p>
+</div>
+<p>Drug concentrations span an enormous range, so they are always discussed on a log scale, usually as <strong>pIC50</strong> $= -\log_{10}(\text{IC}_{50}\text{ in M})$. A 1 nM drug has pIC50 = 9; a 1 µM drug pIC50 = 6. Each unit of pIC50 is a 10-fold change in potency, and corresponds to about 5.9 kJ/mol of binding energy (chapter P2). The first tab of the playground shows how the dose–response curve and the therapeutic window depend on these numbers.</p>
+<div class="playground"><div class="pg-bar"><span>Interactive playground</span><a href="animations/pharm_lab.html" target="_blank" rel="noopener">open full screen ↗</a></div><iframe src="animations/pharm_lab.html" loading="lazy" style="height:620px" title="Interactive playground"></iframe></div>
+
+<h2 id="potency-is-not-enough-selectivity-and-the-therapeutic-window">Potency is not enough: selectivity and the therapeutic window</h2>
+<p>A drug that blocks its target at 1 nM is useless if it also blocks ten other proteins at 2 nM. <strong>Selectivity</strong> is the gap between the concentration that hits the target and the concentration that causes harm. At the whole-body level this is the <strong>therapeutic index</strong>: the ratio between the toxic dose and the effective dose.</p>
+<pre class="code"><code><span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">matplotlib.pyplot</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">plt</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">matplotlib</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">mpl</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pathlib</span><span class="w"> </span><span class="kn">import</span> <span class="n">Path</span>
+
+<span class="n">mpl</span><span class="o">.</span><span class="n">rc</span><span class="p">(</span><span class="s2">"figure"</span><span class="p">,</span> <span class="n">dpi</span><span class="o">=</span><span class="mi">110</span><span class="p">);</span> <span class="n">mpl</span><span class="o">.</span><span class="n">rc</span><span class="p">(</span><span class="s2">"axes"</span><span class="p">,</span> <span class="n">labelsize</span><span class="o">=</span><span class="mi">12</span><span class="p">,</span> <span class="n">titlesize</span><span class="o">=</span><span class="mi">13</span><span class="p">)</span>
+<span class="n">IMAGES</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="s2">"images"</span><span class="p">);</span> <span class="n">IMAGES</span><span class="o">.</span><span class="n">mkdir</span><span class="p">(</span><span class="n">exist_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">save_fig</span><span class="p">(</span><span class="n">name</span><span class="p">):</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">tight_layout</span><span class="p">();</span> <span class="n">plt</span><span class="o">.</span><span class="n">savefig</span><span class="p">(</span><span class="n">IMAGES</span> <span class="o">/</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">.png"</span><span class="p">,</span> <span class="n">dpi</span><span class="o">=</span><span class="mi">150</span><span class="p">,</span> <span class="n">bbox_inches</span><span class="o">=</span><span class="s2">"tight"</span><span class="p">)</span>
+<span class="n">R</span> <span class="o">=</span> <span class="p">{}</span>
+
+<span class="n">dose</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">logspace</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">400</span><span class="p">)</span>                       <span class="c1"># mg, log scale</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">response</span><span class="p">(</span><span class="n">d</span><span class="p">,</span> <span class="n">ed50</span><span class="p">,</span> <span class="n">n</span><span class="o">=</span><span class="mi">2</span><span class="p">):</span>
+    <span class="k">return</span> <span class="mi">100</span> <span class="o">*</span> <span class="n">d</span> <span class="o">**</span> <span class="n">n</span> <span class="o">/</span> <span class="p">(</span><span class="n">ed50</span> <span class="o">**</span> <span class="n">n</span> <span class="o">+</span> <span class="n">d</span> <span class="o">**</span> <span class="n">n</span><span class="p">)</span>
+<span class="n">effect</span> <span class="o">=</span> <span class="n">response</span><span class="p">(</span><span class="n">dose</span><span class="p">,</span> <span class="mi">5</span><span class="p">)</span>                             <span class="c1"># wanted effect, ED50 = 5 mg</span>
+<span class="n">toxic</span> <span class="o">=</span> <span class="n">response</span><span class="p">(</span><span class="n">dose</span><span class="p">,</span> <span class="mi">120</span><span class="p">)</span>                            <span class="c1"># harmful effect, TD50 = 120 mg</span>
+<span class="n">fig</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">8</span><span class="p">,</span> <span class="mi">4</span><span class="p">))</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">semilogx</span><span class="p">(</span><span class="n">dose</span><span class="p">,</span> <span class="n">effect</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s2">"#5b3a8c"</span><span class="p">,</span> <span class="n">lw</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s2">"wanted effect"</span><span class="p">)</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">semilogx</span><span class="p">(</span><span class="n">dose</span><span class="p">,</span> <span class="n">toxic</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s2">"#c2416b"</span><span class="p">,</span> <span class="n">lw</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s2">"toxic effect"</span><span class="p">)</span>
+<span class="n">ed50</span><span class="p">,</span> <span class="n">td50</span> <span class="o">=</span> <span class="mi">5</span><span class="p">,</span> <span class="mi">120</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">axvline</span><span class="p">(</span><span class="n">ed50</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s2">"#5b3a8c"</span><span class="p">,</span> <span class="n">ls</span><span class="o">=</span><span class="s2">":"</span><span class="p">);</span> <span class="n">ax</span><span class="o">.</span><span class="n">axvline</span><span class="p">(</span><span class="n">td50</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s2">"#c2416b"</span><span class="p">,</span> <span class="n">ls</span><span class="o">=</span><span class="s2">":"</span><span class="p">)</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">axvspan</span><span class="p">(</span><span class="n">ed50</span><span class="p">,</span> <span class="n">td50</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s2">"#8fb7a0"</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.15</span><span class="p">)</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">text</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">ed50</span> <span class="o">*</span> <span class="n">td50</span><span class="p">),</span> <span class="mi">55</span><span class="p">,</span> <span class="s2">"therapeutic</span><span class="se">\n</span><span class="s2">window"</span><span class="p">,</span> <span class="n">ha</span><span class="o">=</span><span class="s2">"center"</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s2">"#3a6b50"</span><span class="p">)</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">set_xlabel</span><span class="p">(</span><span class="s2">"dose (mg, log scale)"</span><span class="p">);</span> <span class="n">ax</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="s2">"</span><span class="si">% o</span><span class="s2">f people with the effect"</span><span class="p">);</span> <span class="n">ax</span><span class="o">.</span><span class="n">legend</span><span class="p">(</span><span class="n">loc</span><span class="o">=</span><span class="s2">"center right"</span><span class="p">)</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Therapeutic index = TD50 / ED50 = </span><span class="si">{</span><span class="n">td50</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="n">ed50</span><span class="si">:</span><span class="s2">.0f</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+<span class="n">save_fig</span><span class="p">(</span><span class="s2">"therapeutic_window"</span><span class="p">);</span> <span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+<span class="n">R</span><span class="p">[</span><span class="s2">"ti"</span><span class="p">]</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">td50</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="n">ed50</span><span class="si">:</span><span class="s2">.0f</span><span class="si">}</span><span class="s2">"</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"therapeutic index = </span><span class="si">{</span><span class="n">td50</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="n">ed50</span><span class="si">:</span><span class="s2">.0f</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+</code></pre>
+<pre class="out">therapeutic index = 24</pre>
+<figure><img src="images/therapeutic_window.png" alt="Figure P13-1. Dose–response for the wanted effect (left) and toxicity (right). The gap between them is the therapeutic window. A large therapeutic index means the dose can be set comfortably between too little and too much." loading="lazy"><figcaption><b>Figure P13-1.</b> Figure P13-1. Dose–response for the wanted effect (left) and toxicity (right). The gap between them is the therapeutic window. A large therapeutic index means the dose can be set comfortably between too little and too much.</figcaption></figure>
+
+<p>Here the toxic dose is 24 times the effective dose. Penicillin has a huge therapeutic index (hard to overdose); warfarin (a blood thinner) and most chemotherapies have a narrow one, so their blood levels are monitored and doses individualised. Narrow windows are a major reason drugs fail or are withdrawn, and predicting toxicity early is a central goal of computational drug discovery.</p>
+<h2 id="what-the-body-does-to-the-drug-adme">What the body does to the drug: ADME</h2>
+<p>Binding the target is necessary but not sufficient. The drug must also get to the target and stay around the right length of time. That is <strong>pharmacokinetics</strong>, summarised as <strong>ADME</strong>:</p>
+<ul>
+<li><strong>Absorption</strong>: for a pill, getting from the gut into the blood. The fraction that makes it is the <strong>bioavailability</strong> $F$.</li>
+<li><strong>Distribution</strong>: spreading through the body's water, tissues and fat.</li>
+<li><strong>Metabolism</strong>: chemical modification, mostly in the liver by <strong>cytochrome P450</strong> enzymes, usually to inactivate the drug and make it easier to excrete. A big source of drug–drug interactions.</li>
+<li><strong>Excretion</strong>: removal, mostly by the kidneys into urine, or by the liver into bile.</li>
+</ul>
+<p>A simple and surprisingly useful model treats the body as one well-mixed compartment. The drug is absorbed from the gut at rate $k_a$ and eliminated at rate $k_e$:</p>
+<div class="box math">
+<p class="lab">The maths, from scratch</p>
+<p>$$\frac{dA_\text{gut}}{dt} = -k_a A_\text{gut}, \qquad \frac{dC}{dt} = \frac{k_a A_\text{gut}}{V} - k_e C,$$</p>
+<p>where $C$ is blood concentration and $V$ the <strong>volume of distribution</strong>. The elimination half-life is $t_{1/2} = \ln 2 / k_e$. With repeated doses every $\tau$ hours, the drug accumulates to an average steady state $C_\text{ss} = \dfrac{F \cdot \text{dose}}{V k_e \tau}$, reached after about 4–5 half-lives.</p>
+</div>
+<pre class="code"><code><span class="kn">from</span><span class="w"> </span><span class="nn">scipy.integrate</span><span class="w"> </span><span class="kn">import</span> <span class="n">solve_ivp</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">pk</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">ka</span><span class="p">,</span> <span class="n">ke</span><span class="p">,</span> <span class="n">V</span><span class="p">,</span> <span class="n">F</span><span class="p">,</span> <span class="n">dose</span><span class="p">,</span> <span class="n">tau</span><span class="p">):</span>
+    <span class="n">gut</span><span class="p">,</span> <span class="n">C</span> <span class="o">=</span> <span class="n">y</span>
+    <span class="k">return</span> <span class="p">[</span><span class="o">-</span><span class="n">ka</span> <span class="o">*</span> <span class="n">gut</span><span class="p">,</span> <span class="n">ka</span> <span class="o">*</span> <span class="n">gut</span> <span class="o">/</span> <span class="n">V</span> <span class="o">-</span> <span class="n">ke</span> <span class="o">*</span> <span class="n">C</span><span class="p">]</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">dosing</span><span class="p">(</span><span class="n">ka</span><span class="p">,</span> <span class="n">ke</span><span class="p">,</span> <span class="n">V</span><span class="p">,</span> <span class="n">F</span><span class="p">,</span> <span class="n">dose</span><span class="p">,</span> <span class="n">tau</span><span class="p">,</span> <span class="n">T</span><span class="o">=</span><span class="mi">96</span><span class="p">):</span>
+    <span class="n">times</span><span class="p">,</span> <span class="n">conc</span> <span class="o">=</span> <span class="p">[],</span> <span class="p">[]</span>
+    <span class="n">gut</span> <span class="o">=</span> <span class="n">C</span> <span class="o">=</span> <span class="mf">0.0</span>
+    <span class="n">t</span> <span class="o">=</span> <span class="mf">0.0</span>
+    <span class="k">while</span> <span class="n">t</span> <span class="o">&lt;</span> <span class="n">T</span><span class="p">:</span>
+        <span class="n">gut</span> <span class="o">+=</span> <span class="n">F</span> <span class="o">*</span> <span class="n">dose</span>                                     <span class="c1"># take a dose</span>
+        <span class="n">sol</span> <span class="o">=</span> <span class="n">solve_ivp</span><span class="p">(</span><span class="n">pk</span><span class="p">,</span> <span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">t</span> <span class="o">+</span> <span class="n">tau</span><span class="p">),</span> <span class="p">[</span><span class="n">gut</span><span class="p">,</span> <span class="n">C</span><span class="p">],</span> <span class="n">args</span><span class="o">=</span><span class="p">(</span><span class="n">ka</span><span class="p">,</span> <span class="n">ke</span><span class="p">,</span> <span class="n">V</span><span class="p">,</span> <span class="n">F</span><span class="p">,</span> <span class="n">dose</span><span class="p">,</span> <span class="n">tau</span><span class="p">),</span> <span class="n">max_step</span><span class="o">=</span><span class="mf">0.1</span><span class="p">,</span> <span class="n">dense_output</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="n">tt</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">t</span> <span class="o">+</span> <span class="n">tau</span><span class="p">,</span> <span class="mi">60</span><span class="p">)</span>
+        <span class="n">times</span> <span class="o">+=</span> <span class="nb">list</span><span class="p">(</span><span class="n">tt</span><span class="p">);</span> <span class="n">conc</span> <span class="o">+=</span> <span class="nb">list</span><span class="p">(</span><span class="n">sol</span><span class="o">.</span><span class="n">sol</span><span class="p">(</span><span class="n">tt</span><span class="p">)[</span><span class="mi">1</span><span class="p">])</span>
+        <span class="n">gut</span><span class="p">,</span> <span class="n">C</span> <span class="o">=</span> <span class="n">sol</span><span class="o">.</span><span class="n">y</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">],</span> <span class="n">sol</span><span class="o">.</span><span class="n">y</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+        <span class="n">t</span> <span class="o">+=</span> <span class="n">tau</span>
+    <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">times</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">conc</span><span class="p">)</span>
+
+<span class="n">fig</span><span class="p">,</span> <span class="n">axs</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">11</span><span class="p">,</span> <span class="mf">3.6</span><span class="p">),</span> <span class="n">sharey</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="k">for</span> <span class="n">ax</span><span class="p">,</span> <span class="p">(</span><span class="n">half</span><span class="p">,</span> <span class="n">tau</span><span class="p">,</span> <span class="n">title</span><span class="p">)</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">axs</span><span class="p">,</span> <span class="p">[(</span><span class="mi">6</span><span class="p">,</span> <span class="mi">8</span><span class="p">,</span> <span class="s2">"short half-life (6 h), dosed every 8 h"</span><span class="p">),</span> <span class="p">(</span><span class="mi">24</span><span class="p">,</span> <span class="mi">24</span><span class="p">,</span> <span class="s2">"long half-life (24 h), dosed daily"</span><span class="p">)]):</span>
+    <span class="n">ke</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span> <span class="o">/</span> <span class="n">half</span>
+    <span class="n">t</span><span class="p">,</span> <span class="n">c</span> <span class="o">=</span> <span class="n">dosing</span><span class="p">(</span><span class="n">ka</span><span class="o">=</span><span class="mf">1.2</span><span class="p">,</span> <span class="n">ke</span><span class="o">=</span><span class="n">ke</span><span class="p">,</span> <span class="n">V</span><span class="o">=</span><span class="mi">40</span><span class="p">,</span> <span class="n">F</span><span class="o">=</span><span class="mf">0.7</span><span class="p">,</span> <span class="n">dose</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span> <span class="n">tau</span><span class="o">=</span><span class="n">tau</span><span class="p">)</span>
+    <span class="n">css</span> <span class="o">=</span> <span class="mf">0.7</span> <span class="o">*</span> <span class="mi">100</span> <span class="o">/</span> <span class="p">(</span><span class="mi">40</span> <span class="o">*</span> <span class="n">ke</span> <span class="o">*</span> <span class="n">tau</span><span class="p">)</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">c</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s2">"#5b3a8c"</span><span class="p">);</span> <span class="n">ax</span><span class="o">.</span><span class="n">axhline</span><span class="p">(</span><span class="n">css</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s2">"#c2416b"</span><span class="p">,</span> <span class="n">ls</span><span class="o">=</span><span class="s2">"--"</span><span class="p">,</span> <span class="n">lw</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="n">title</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mf">10.5</span><span class="p">);</span> <span class="n">ax</span><span class="o">.</span><span class="n">set_xlabel</span><span class="p">(</span><span class="s2">"time (h)"</span><span class="p">)</span>
+<span class="n">axs</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="s2">"blood concentration (mg/L)"</span><span class="p">)</span>
+<span class="n">save_fig</span><span class="p">(</span><span class="s2">"pk_dosing"</span><span class="p">);</span> <span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+<span class="n">ke</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span> <span class="o">/</span> <span class="mi">24</span>
+<span class="n">R</span><span class="p">[</span><span class="s2">"css_daily"</span><span class="p">]</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="mf">0.7</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="mi">100</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="p">(</span><span class="mi">40</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">ke</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="mi">24</span><span class="p">)</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2">"</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">"time to steady state ≈ 4-5 half-lives"</span><span class="p">)</span>
+</code></pre>
+<pre class="out">time to steady state ≈ 4-5 half-lives</pre>
+<figure><img src="images/pk_dosing.png" alt="Figure P13-2. Blood levels under repeated dosing. A short half-life gives big swings between doses; a long half-life gives steady levels but takes days to build up (dashed line = average steady state)." loading="lazy"><figcaption><b>Figure P13-2.</b> Figure P13-2. Blood levels under repeated dosing. A short half-life gives big swings between doses; a long half-life gives steady levels but takes days to build up (dashed line = average steady state).</figcaption></figure>
+
+<p>The second tab of the playground lets you change dose, interval and half-life and watch the curve. The trade-off is general: short half-life means frequent dosing or big swings; long half-life means smooth levels but slow onset, which is why long-acting drugs often start with a <strong>loading dose</strong>.</p>
+<h2 id="can-it-even-be-a-pill-lipinskis-rule-of-five">Can it even be a pill? Lipinski's rule of five</h2>
+<p>A molecule has to cross the oily gut lining (chapter P2) to be absorbed, yet dissolve in water to travel in blood. Christopher Lipinski looked at thousands of drugs in 1997 and found that oral drugs rarely violate more than one of four limits (all multiples of five, hence "rule of five"): molecular weight ≤ 500, no more than 5 hydrogen-bond donors, no more than 10 acceptors, and $\log P \le 5$ ($\log P$ measures oiliness, chapter P2). Let's check it on real data: every small-molecule drug ever approved, downloaded from the <strong>ChEMBL</strong> database.</p>
+<pre class="code"><code><span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
+<span class="n">drugs</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="s2">"datasets/chembl_approved_small_molecules.csv"</span><span class="p">)</span>
+<span class="n">drugs</span> <span class="o">=</span> <span class="n">drugs</span><span class="o">.</span><span class="n">dropna</span><span class="p">(</span><span class="n">subset</span><span class="o">=</span><span class="p">[</span><span class="s2">"mw"</span><span class="p">,</span> <span class="s2">"alogp"</span><span class="p">,</span> <span class="s2">"hbd"</span><span class="p">,</span> <span class="s2">"hba"</span><span class="p">])</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">drugs</span><span class="p">)</span><span class="si">:</span><span class="s2">,</span><span class="si">}</span><span class="s2"> approved small-molecule drugs with properties"</span><span class="p">)</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">violations</span><span class="p">(</span><span class="n">row</span><span class="p">):</span>
+    <span class="k">return</span> <span class="nb">int</span><span class="p">(</span><span class="n">row</span><span class="o">.</span><span class="n">mw</span> <span class="o">&gt;</span> <span class="mi">500</span><span class="p">)</span> <span class="o">+</span> <span class="nb">int</span><span class="p">(</span><span class="n">row</span><span class="o">.</span><span class="n">hbd</span> <span class="o">&gt;</span> <span class="mi">5</span><span class="p">)</span> <span class="o">+</span> <span class="nb">int</span><span class="p">(</span><span class="n">row</span><span class="o">.</span><span class="n">hba</span> <span class="o">&gt;</span> <span class="mi">10</span><span class="p">)</span> <span class="o">+</span> <span class="nb">int</span><span class="p">(</span><span class="n">row</span><span class="o">.</span><span class="n">alogp</span> <span class="o">&gt;</span> <span class="mi">5</span><span class="p">)</span>
+<span class="n">drugs</span><span class="p">[</span><span class="s2">"viol"</span><span class="p">]</span> <span class="o">=</span> <span class="n">drugs</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="n">violations</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+<span class="n">oral</span> <span class="o">=</span> <span class="n">drugs</span><span class="p">[</span><span class="n">drugs</span><span class="o">.</span><span class="n">oral</span> <span class="o">==</span> <span class="kc">True</span><span class="p">]</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"oral drugs passing (≤1 violation): </span><span class="si">{</span><span class="p">(</span><span class="n">oral</span><span class="o">.</span><span class="n">viol</span><span class="w"> </span><span class="o">&lt;=</span><span class="w"> </span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span><span class="si">:</span><span class="s2">.0%</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"non-oral drugs passing: </span><span class="si">{</span><span class="p">(</span><span class="n">drugs</span><span class="p">[</span><span class="n">drugs</span><span class="o">.</span><span class="n">oral</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="kc">False</span><span class="p">]</span><span class="o">.</span><span class="n">viol</span><span class="w"> </span><span class="o">&lt;=</span><span class="w"> </span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span><span class="si">:</span><span class="s2">.0%</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+
+<span class="n">fig</span><span class="p">,</span> <span class="n">axs</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">11</span><span class="p">,</span> <span class="mi">4</span><span class="p">))</span>
+<span class="n">axs</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">hist</span><span class="p">([</span><span class="n">oral</span><span class="o">.</span><span class="n">mw</span><span class="p">,</span> <span class="n">drugs</span><span class="p">[</span><span class="n">drugs</span><span class="o">.</span><span class="n">oral</span> <span class="o">==</span> <span class="kc">False</span><span class="p">]</span><span class="o">.</span><span class="n">mw</span><span class="p">],</span> <span class="n">bins</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1200</span><span class="p">,</span> <span class="mi">40</span><span class="p">),</span> <span class="n">label</span><span class="o">=</span><span class="p">[</span><span class="s2">"oral"</span><span class="p">,</span> <span class="s2">"non-oral"</span><span class="p">],</span> <span class="n">color</span><span class="o">=</span><span class="p">[</span><span class="s2">"#5b3a8c"</span><span class="p">,</span> <span class="s2">"#c2416b"</span><span class="p">])</span>
+<span class="n">axs</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">axvline</span><span class="p">(</span><span class="mi">500</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s2">"0.4"</span><span class="p">,</span> <span class="n">ls</span><span class="o">=</span><span class="s2">"--"</span><span class="p">);</span> <span class="n">axs</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">set_xlabel</span><span class="p">(</span><span class="s2">"molecular weight"</span><span class="p">);</span> <span class="n">axs</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="s2">"drugs"</span><span class="p">);</span> <span class="n">axs</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">legend</span><span class="p">();</span> <span class="n">axs</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="s2">"Most drugs are below 500 Da; the heavy tail is mostly non-oral"</span><span class="p">)</span>
+<span class="n">axs</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">scatter</span><span class="p">(</span><span class="n">drugs</span><span class="o">.</span><span class="n">mw</span><span class="p">,</span> <span class="n">drugs</span><span class="o">.</span><span class="n">alogp</span><span class="p">,</span> <span class="n">s</span><span class="o">=</span><span class="mi">6</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.3</span><span class="p">,</span> <span class="n">c</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">drugs</span><span class="o">.</span><span class="n">oral</span> <span class="o">==</span> <span class="kc">True</span><span class="p">,</span> <span class="s2">"#5b3a8c"</span><span class="p">,</span> <span class="s2">"#c2416b"</span><span class="p">))</span>
+<span class="n">axs</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">axvline</span><span class="p">(</span><span class="mi">500</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s2">"0.4"</span><span class="p">,</span> <span class="n">ls</span><span class="o">=</span><span class="s2">"--"</span><span class="p">);</span> <span class="n">axs</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">axhline</span><span class="p">(</span><span class="mi">5</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s2">"0.4"</span><span class="p">,</span> <span class="n">ls</span><span class="o">=</span><span class="s2">"--"</span><span class="p">)</span>
+<span class="n">axs</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">set_xlabel</span><span class="p">(</span><span class="s2">"molecular weight"</span><span class="p">);</span> <span class="n">axs</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="s2">"logP (oiliness)"</span><span class="p">);</span> <span class="n">axs</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">set_xlim</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1200</span><span class="p">);</span> <span class="n">axs</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">set_ylim</span><span class="p">(</span><span class="o">-</span><span class="mi">6</span><span class="p">,</span> <span class="mi">10</span><span class="p">)</span>
+<span class="n">axs</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="s2">"Most drugs fall in the drug-like box"</span><span class="p">)</span>
+<span class="n">save_fig</span><span class="p">(</span><span class="s2">"lipinski"</span><span class="p">);</span> <span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+<span class="n">R</span><span class="p">[</span><span class="s2">"oral_pass"</span><span class="p">]</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="p">(</span><span class="n">oral</span><span class="o">.</span><span class="n">viol</span><span class="w"> </span><span class="o">&lt;=</span><span class="w"> </span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span><span class="si">:</span><span class="s2">.0%</span><span class="si">}</span><span class="s2">"</span><span class="p">;</span> <span class="n">R</span><span class="p">[</span><span class="s2">"nonoral_pass"</span><span class="p">]</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="p">(</span><span class="n">drugs</span><span class="p">[</span><span class="n">drugs</span><span class="o">.</span><span class="n">oral</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="kc">False</span><span class="p">]</span><span class="o">.</span><span class="n">viol</span><span class="w"> </span><span class="o">&lt;=</span><span class="w"> </span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span><span class="si">:</span><span class="s2">.0%</span><span class="si">}</span><span class="s2">"</span>
+<span class="n">R</span><span class="p">[</span><span class="s2">"mw_med"</span><span class="p">]</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">oral</span><span class="o">.</span><span class="n">mw</span><span class="o">.</span><span class="n">median</span><span class="p">()</span><span class="si">:</span><span class="s2">.0f</span><span class="si">}</span><span class="s2">"</span>
+</code></pre>
+<pre class="out">3,147 approved small-molecule drugs with properties</pre><pre class="out">oral drugs passing (≤1 violation): 90%
+non-oral drugs passing: 87%</pre>
+<figure><img src="images/lipinski.png" alt="Figure P13-3. Left: both oral (purple) and injected (red) drugs cluster below 500 Da, but the heavy tail past 600 Da is mostly injected drugs that skip the gut. Right: molecular weight against oiliness; most drugs sit inside Lipinski&#x27;s box (lower left of the dashed lines)." loading="lazy"><figcaption><b>Figure P13-3.</b> Figure P13-3. Left: both oral (purple) and injected (red) drugs cluster below 500 Da, but the heavy tail past 600 Da is mostly injected drugs that skip the gut. Right: molecular weight against oiliness; most drugs sit inside Lipinski's box (lower left of the dashed lines).</figcaption></figure>
+
+<p>Of approved <strong>oral</strong> drugs, 90% satisfy the rule of five, with a median weight of just 379 Da. Injected drugs pass slightly less often (87%), but the real difference is in the tail: because they skip the gut, they include the genuinely large molecules (antibiotics like vancomycin, many cancer drugs) that no pill could absorb, as the weight histogram shows. The rule is a guideline, not a law: there are famous exceptions, and whole classes of modern drugs (the "beyond rule of five" space) deliberately break it. But it captures why most of the screening libraries in Part 3 are built from small, not-too-greasy molecules.</p>
+<h3 id="ligand-efficiency-potency-per-atom">Ligand efficiency: potency per atom</h3>
+<p>A big molecule can always bind more tightly by adding more contacts, but big molecules make bad drugs. Medicinal chemists therefore track <strong>ligand efficiency</strong>: binding energy per heavy (non-hydrogen) atom. It keeps molecules small as they are optimised.</p>
+<div class="box math">
+<p class="lab">The maths, from scratch</p>
+<p>$$\text{LE} = \frac{1.37 \times \text{pIC}_{50}}{\text{number of heavy atoms}} \quad \text{(kcal/mol per atom)},$$
+using $\Delta G \approx -1.37\,\text{pIC}_{50}$ kcal/mol at room temperature. A useful lead has LE around 0.3 or more.</p>
+</div>
+<pre class="code"><code><span class="n">heavy_atoms</span> <span class="o">=</span> <span class="n">drugs</span><span class="o">.</span><span class="n">mw</span> <span class="o">/</span> <span class="mf">13.3</span>                            <span class="c1"># rough: average heavy atom ~13 Da in organic molecules</span>
+<span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">pic50</span><span class="p">,</span> <span class="n">ha</span> <span class="ow">in</span> <span class="p">[(</span><span class="s2">"a fragment hit"</span><span class="p">,</span> <span class="mf">4.5</span><span class="p">,</span> <span class="mi">12</span><span class="p">),</span> <span class="p">(</span><span class="s2">"a lead"</span><span class="p">,</span> <span class="mf">6.5</span><span class="p">,</span> <span class="mi">24</span><span class="p">),</span> <span class="p">(</span><span class="s2">"a drug"</span><span class="p">,</span> <span class="mf">9.0</span><span class="p">,</span> <span class="mi">38</span><span class="p">)]:</span>
+    <span class="n">le</span> <span class="o">=</span> <span class="mf">1.37</span> <span class="o">*</span> <span class="n">pic50</span> <span class="o">/</span> <span class="n">ha</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">name</span><span class="si">:</span><span class="s2">16s</span><span class="si">}</span><span class="s2"> pIC50 </span><span class="si">{</span><span class="n">pic50</span><span class="si">}</span><span class="s2">  heavy atoms </span><span class="si">{</span><span class="n">ha</span><span class="si">:</span><span class="s2">2d</span><span class="si">}</span><span class="s2">  ligand efficiency </span><span class="si">{</span><span class="n">le</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+<span class="n">R</span><span class="p">[</span><span class="s2">"le_lead"</span><span class="p">]</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="mf">1.37</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="mf">6.5</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="mi">24</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2">"</span>
+</code></pre>
+<pre class="out">a fragment hit   pIC50 4.5  heavy atoms 12  ligand efficiency 0.51
+a lead           pIC50 6.5  heavy atoms 24  ligand efficiency 0.37
+a drug           pIC50 9.0  heavy atoms 38  ligand efficiency 0.32</pre>
+<p>A weak <strong>fragment</strong> that binds a small pocket can have excellent ligand efficiency, and growing it carefully into a potent drug while keeping LE high is the strategy behind <strong>fragment-based drug discovery</strong> (chapter 15). Keeping this number in view stops a project from reaching high potency by bolting on greasy, drug-killing bulk.</p>
+<h2 id="from-molecule-to-medicine">From molecule to medicine</h2>
+<p>Turning a promising molecule into an approved drug takes 10–15 years and billions of dollars, and most candidates fail. The stages:</p>
+<table>
+<thead>
+<tr>
+<th>Stage</th>
+<th>What happens</th>
+<th>Attrition</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Target identification</strong></td>
+<td>find a protein whose modulation should help (genetics, chapter P8; CRISPR screens, chapter P11)</td>
+<td></td>
+</tr>
+<tr>
+<td><strong>Hit finding</strong></td>
+<td>screen large libraries, or fragments, for anything that binds (chapter 13)</td>
+<td></td>
+</tr>
+<tr>
+<td><strong>Lead optimisation</strong></td>
+<td>medicinal chemistry: improve potency, selectivity, ADME, safety (chapters 13–15)</td>
+<td></td>
+</tr>
+<tr>
+<td><strong>Preclinical</strong></td>
+<td>test in cells and animals for efficacy and toxicity</td>
+<td></td>
+</tr>
+<tr>
+<td><strong>Phase I</strong></td>
+<td>safety and dosing in a few healthy volunteers</td>
+<td>about 90% advance</td>
+</tr>
+<tr>
+<td><strong>Phase II</strong></td>
+<td>does it work, in a few hundred patients</td>
+<td>most failures here</td>
+</tr>
+<tr>
+<td><strong>Phase III</strong></td>
+<td>large randomised trial against the current standard</td>
+<td>expensive</td>
+</tr>
+<tr>
+<td><strong>Approval and Phase IV</strong></td>
+<td>regulators review; monitoring continues after launch</td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<p>Only about 1 in 10 drugs that enter clinical trials is approved, and far fewer of the molecules made at the start. Failures come from lack of efficacy and from unexpected toxicity, often appearing late and expensively. That economic reality is why computational methods, which aim to kill bad molecules early and cheaply and to find better starting points, are so valuable, and it is what the rest of this course builds towards.</p>
+<div class="box idea">
+<p class="lab">The real idea</p>
+<p>Every quantity in this chapter is something a model tries to predict from a molecule's structure. Can we predict binding affinity (docking, chapter 15; QSAR, chapter 14)? Solubility, absorption and metabolism (ADME models, chapter 16)? Toxicity? Whether a target is even druggable (chapter 11)? Part 3 of this course is, in effect, the computational version of this chapter.</p>
+</div>
+<h2 id="the-drug-discovery-part-of-this-course">The drug-discovery part of this course</h2>
+<p>You now have the whole biological foundation. From here the course turns computational, and each field builds directly on these prerequisites:</p>
+<ul>
+<li><strong>Bioinformatics</strong> (Part 1): read and compare the sequences from chapters P3–P4.</li>
+<li><strong>Omics and machine learning</strong> (Part 2): measure gene regulation (P6) across thousands of cells, and predict function with deep learning.</li>
+<li><strong>Structure and drug discovery</strong> (Part 3): the proteins (P5), binding (P2) and pharmacology (this chapter) of finding new medicines.</li>
+<li><strong>Systems biology</strong> (Part 4): the pathways (P9) and populations (P7, P8) as dynamical systems.</li>
+<li><strong>Cancer research</strong> (Part 5): everything, applied to the disease of chapter P12.</li>
+</ul>
+<h2 id="summary">Summary</h2>
+<table>
+<thead>
+<tr>
+<th>Idea</th>
+<th>One line</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Target</td>
+<td>mostly proteins: enzymes, receptors, channels, transporters</td>
+</tr>
+<tr>
+<td>Affinity</td>
+<td>Kd / Ki / IC50: concentration for half-effect; smaller = more potent</td>
+</tr>
+<tr>
+<td>pIC50</td>
+<td>−log10(IC50); each unit is 10× potency and ~5.9 kJ/mol</td>
+</tr>
+<tr>
+<td>Therapeutic index</td>
+<td>toxic dose / effective dose; wide is safe, narrow needs monitoring</td>
+</tr>
+<tr>
+<td>ADME</td>
+<td>absorption, distribution, metabolism, excretion set the dosing</td>
+</tr>
+<tr>
+<td>Half-life</td>
+<td>sets dosing frequency; steady state after ~4–5 half-lives</td>
+</tr>
+<tr>
+<td>Rule of five</td>
+<td>oral drugs: MW ≤ 500, HBD ≤ 5, HBA ≤ 10, logP ≤ 5</td>
+</tr>
+<tr>
+<td>Ligand efficiency</td>
+<td>binding energy per heavy atom; keeps drugs small</td>
+</tr>
+</tbody>
+</table>
+<div class="box check">
+<p class="lab">Check yourself</p>
+<ol>
+<li>Drug A has IC50 = 10 nM and drug B 1 µM for the same target. Which is more potent, and by how much? <em>(A, by 100-fold.)</em></li>
+<li>What is the therapeutic index, and why does a small one matter? <em>(Toxic dose / effective dose; a small one means little room between helping and harming, so levels must be monitored.)</em></li>
+<li>A drug has a 24-hour half-life. Roughly how long until it reaches steady state on daily dosing? <em>(About 4–5 days.)</em></li>
+<li>Why do injected drugs break Lipinski's rule more often than pills? <em>(They skip the gut, so they don't need to be absorbed orally.)</em></li>
+<li>Why do chemists track ligand efficiency rather than just potency? <em>(To reach potency without adding size and greasiness that ruin a molecule's drug-like properties.)</em></li>
+</ol>
+</div>
+<div class="box exercise">
+<p class="lab">Try it</p>
+<p>Using the ChEMBL table, compare drugs approved before 1990 with those approved from 2010 onward. (a) Has the median molecular weight changed? (b) What fraction of each group passes the rule of five? Modern targets are often "harder" (protein–protein interactions, kinases). Does the data hint at drugs drifting out of classic drug-like space?</p>
+</div>
+<details><summary>Solution</summary>
+<pre class="code"><code><span class="n">drugs</span><span class="p">[</span><span class="s2">"era"</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">drugs</span><span class="o">.</span><span class="n">first_approval</span> <span class="o">&lt;</span> <span class="mi">1990</span><span class="p">,</span> <span class="s2">"before 1990"</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">drugs</span><span class="o">.</span><span class="n">first_approval</span> <span class="o">&gt;=</span> <span class="mi">2010</span><span class="p">,</span> <span class="s2">"2010+"</span><span class="p">,</span> <span class="s2">"1990-2009"</span><span class="p">))</span>
+<span class="k">for</span> <span class="n">era</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">"before 1990"</span><span class="p">,</span> <span class="s2">"2010+"</span><span class="p">]:</span>
+    <span class="n">g</span> <span class="o">=</span> <span class="n">drugs</span><span class="p">[</span><span class="n">drugs</span><span class="o">.</span><span class="n">era</span> <span class="o">==</span> <span class="n">era</span><span class="p">]</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">era</span><span class="si">:</span><span class="s2">12s</span><span class="si">}</span><span class="s2"> n=</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">g</span><span class="p">)</span><span class="si">:</span><span class="s2">4d</span><span class="si">}</span><span class="s2">  median MW </span><span class="si">{</span><span class="n">g</span><span class="o">.</span><span class="n">mw</span><span class="o">.</span><span class="n">median</span><span class="p">()</span><span class="si">:</span><span class="s2">5.0f</span><span class="si">}</span><span class="s2">  median logP </span><span class="si">{</span><span class="n">g</span><span class="o">.</span><span class="n">alogp</span><span class="o">.</span><span class="n">median</span><span class="p">()</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2">  pass rule of five </span><span class="si">{</span><span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">g</span><span class="o">.</span><span class="n">viol</span><span class="w"> </span><span class="o">&lt;=</span><span class="w"> </span><span class="mi">1</span><span class="p">)</span><span class="si">:</span><span class="s2">.0%</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+</code></pre>
+<pre class="out">before 1990  n=1314  median MW   339  median logP 2.4  pass rule of five 90%
+2010+        n= 643  median MW   460  median logP 3.3  pass rule of five 80%</pre>
+<p>Drugs approved since 2010 tend to be noticeably heavier than those from before 1990, and a somewhat larger fraction violate the rule of five. As the easy targets were exhausted, the industry moved to harder ones that need bigger molecules, pushing into "beyond rule of five" space. The trend is real but modest: small, drug-like molecules still dominate, which is why the screening libraries and models in Part 3 still focus on them. (The exact numbers depend on how many older drugs ChEMBL records with approval dates, so treat them as indicative.)</p>
+</details>
+    <nav class="pager">
+      <a class="prev" href="../12-cancer/index.html"><small>Previous</small>P12 · Cancer biology</a>
+      <a class="next" href="../../index.html"><small>Next</small>Course home</a>
+    </nav>
+  </main>
+</div>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.js"></script>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/contrib/auto-render.min.js"></script>
+<script defer src="../../assets/guide.js"></script>
+</body>
+</html>
