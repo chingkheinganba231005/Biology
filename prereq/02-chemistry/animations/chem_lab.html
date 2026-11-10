@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Chemistry Lab</title><link rel="stylesheet" href="../../../assets/pg.css"></head><body>
+<div class="tabs"><button class="on" data-t="bind" type="button">Binding and affinity</button><button data-t="ph" type="button">The pH scale</button><button data-t="energy" type="button">Energy and equilibrium</button></div>
+<section class="pane on" id="bind">
+  <div class="ctl" id="bctl"></div>
+  <svg id="bsvg" viewBox="0 0 700 290" role="img" aria-label="Fraction of receptor bound against drug concentration"></svg>
+  <div class="msg" id="bmsg"></div>
+</section>
+<section class="pane" id="ph">
+  <div class="ctl" id="pctl"></div>
+  <svg id="psvg" viewBox="0 0 700 170" role="img" aria-label="The pH scale with biological examples"></svg>
+  <div class="msg" id="pmsg"></div>
+</section>
+<section class="pane" id="energy">
+  <div class="ctl" id="ectl"></div>
+  <svg id="esvg" viewBox="0 0 700 250" role="img" aria-label="Equilibrium between two states"></svg>
+  <div class="msg" id="emsg"></div>
+</section>
+<script src="../../../assets/pg.js"></script>
+<script>
+const {$, h, s, tabs, slider, plot} = PG; tabs();
+// --- binding: fraction bound = L / (L + Kd)
+const fmtM = (m) => m >= 1e-3 ? +(m * 1e3).toPrecision(3) + " mM" : m >= 1e-6 ? +(m * 1e6).toPrecision(3) + " µM" : m >= 1e-9 ? +(m * 1e9).toPrecision(3) + " nM" : +(m * 1e12).toPrecision(3) + " pM";
+const kd = slider("Kd of drug A (log10 M)", -11, -3, 0.1, -8, (v) => fmtM(10 ** v), drawBind);
+const kd2 = slider("Kd of drug B (log10 M)", -11, -3, 0.1, -6, (v) => fmtM(10 ** v), drawBind);
+const conc = slider("drug concentration (log10 M)", -12, -2, 0.1, -7, (v) => fmtM(10 ** v), drawBind);
+$("bctl").append(kd.el, kd2.el, conc.el);
+function drawBind() {
+  const xs = []; for (let e = -12; e <= -2.001; e += 0.05) xs.push(10 ** e);
+  const KA = 10 ** kd.value, KB = 10 ** kd2.value, L = 10 ** conc.value;
+  const {X, Y} = plot($("bsvg"), [
+    {xs, ys: xs.map((x) => 100 * x / (x + KA)), color: "var(--accent)", label: "drug A"},
+    {xs, ys: xs.map((x) => 100 * x / (x + KB)), color: "var(--accent2)", label: "drug B"},
+  ], {logx: true, xmin: 1e-12, xmax: 1e-2, ymin: 0, ymax: 100, xlabel: "drug concentration (M, log scale)", ylabel: "% of target bound", xfmt: (v) => "1e" + Math.round(Math.log10(v))});
+  const svg = $("bsvg");
+  svg.append(s("line", {x1: X(L), x2: X(L), y1: 14, y2: 256, stroke: "var(--ink)", "stroke-dasharray": "4 3"}));
+  const fA = L / (L + KA), fB = L / (L + KB);
+  $("bmsg").innerHTML = `At ${fmtM(L)}: drug A occupies <b>${(100 * fA).toFixed(1)}%</b> of its target, drug B <b>${(100 * fB).toFixed(1)}%</b>. ` +
+    `The <b>dissociation constant Kd</b> is the concentration at which half the target is bound. A smaller Kd means tighter binding (higher affinity): drug A needs ${(KB / KA).toPrecision(2)}× less drug than B to reach the same occupancy.`;
+}
+drawBind();
+// --- pH
+const EX = [[1.5, "stomach acid"], [2.4, "lemon juice"], [4.5, "inside a lysosome"], [6.7, "tumour surroundings (often acidic)"], [7.0, "pure water"], [7.2, "cytosol"], [7.4, "blood"], [8.0, "mitochondrial matrix"], [12.4, "bleach-like"]];
+const ph = slider("pH", 0, 14, 0.1, 7.4, (v) => v.toFixed(1), drawPh);
+$("pctl").append(ph.el);
+function drawPh() {
+  const W = 700, X = (p) => 20 + (W - 40) * p / 14, parts = [];
+  for (let p = 0; p < 14; p += 0.25) parts.push(s("rect", {x: X(p), y: 60, width: (W - 40) / 56 + 0.5, height: 26, fill: `hsl(${p / 14 * 260} 70% 55%)`}));
+  for (let p = 0; p <= 14; p += 1) parts.push(s("text", {x: X(p), y: 102, class: "tx", "text-anchor": "middle"}, p));
+  EX.forEach(([p, n], i) => { parts.push(s("line", {x1: X(p), x2: X(p), y1: 86, y2: 118 + (i % 3) * 14, stroke: "var(--muted)"})); parts.push(s("text", {x: X(p), y: 128 + (i % 3) * 14, class: "tx", "text-anchor": "middle"}, n)); });
+  parts.push(s("polygon", {points: `${X(ph.value)},56 ${X(ph.value) - 7},40 ${X(ph.value) + 7},40`, fill: "var(--ink)"}));
+  parts.push(s("text", {x: 20, y: 24, class: "lb"}, "acidic ←"), s("text", {x: W - 20, y: 24, class: "lb", "text-anchor": "end"}, "→ basic"));
+  $("psvg").replaceChildren(...parts);
+  const H = 10 ** -ph.value;
+  $("pmsg").innerHTML = `pH ${ph.value.toFixed(1)} means [H⁺] = 10<sup>−${ph.value.toFixed(1)}</sup> = <b>${H.toExponential(2)} mol/L</b>. ` +
+    `Each step of 1 is a <b>10-fold</b> change: blood (7.4) has ${(10 ** (7.4 - 4.5)).toFixed(0)}× fewer H⁺ ions than a lysosome (4.5). pH changes the electric charge of molecules, so it changes how proteins fold and how drugs dissolve and cross membranes.`;
+}
+drawPh();
+// --- energy: K = exp(-dG / RT)
+const dG = slider("ΔG of the reaction (kJ/mol)", -40, 40, 0.5, -10, (v) => v.toFixed(1), drawE);
+const T = slider("temperature (°C)", 0, 60, 1, 37, (v) => v + " °C", drawE);
+$("ectl").append(dG.el, T.el);
+function drawE() {
+  const RT = 8.314e-3 * (T.value + 273.15), K = Math.exp(-dG.value / RT), fB = K / (1 + K);
+  const parts = [], W = 700;
+  const nA = Math.round(60 * (1 - fB)), nB = 60 - nA;
+  const dot = (x, y, c) => s("circle", {cx: x, cy: y, r: 6, fill: c});
+  for (let i = 0; i < nA; i++) parts.push(dot(60 + (i % 10) * 20, 50 + Math.floor(i / 10) * 20, "var(--accent)"));
+  for (let i = 0; i < nB; i++) parts.push(dot(460 + (i % 10) * 20, 50 + Math.floor(i / 10) * 20, "var(--accent2)"));
+  parts.push(s("text", {x: 150, y: 30, class: "lb", "text-anchor": "middle"}, `state A: ${nA}`), s("text", {x: 550, y: 30, class: "lb", "text-anchor": "middle"}, `state B: ${nB}`));
+  parts.push(s("text", {x: W / 2, y: 120, class: "lb", "text-anchor": "middle"}, "A ⇌ B"));
+  $("esvg").replaceChildren(...parts);
+  $("emsg").innerHTML = `ΔG = ${dG.value} kJ/mol at ${T.value} °C gives an equilibrium constant K = [B]/[A] = e<sup>−ΔG/RT</sup> = <b>${K.toPrecision(3)}</b>, so ${(100 * fB).toFixed(1)}% of molecules end up in state B. ` +
+    `Negative ΔG favours B. Every 5.9 kJ/mol changes K ten-fold at body temperature, which is why a tiny extra hydrogen bond in a drug can make it bind ten times more tightly.`;
+}
+drawE();
+</script></body></html>

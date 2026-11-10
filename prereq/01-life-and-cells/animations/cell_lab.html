@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Cell Lab</title><link rel="stylesheet" href="../../../assets/pg.css"></head><body>
+<div class="tabs"><button class="on" data-t="scale" type="button">Zoom through scale</button><button data-t="cell" type="button">Tour an animal cell</button></div>
+<section class="pane on" id="scale">
+  <div class="ctl" id="sctl"></div>
+  <svg id="ssvg" viewBox="0 0 700 240" role="img" aria-label="Objects drawn at their relative sizes"></svg>
+  <div class="msg" id="smsg"></div>
+</section>
+<section class="pane" id="cell">
+  <svg id="csvg" viewBox="0 0 700 420" role="img" aria-label="Diagram of an animal cell; click a part to learn about it"></svg>
+  <div class="msg" id="cmsg">Click any part of the cell.</div>
+</section>
+<script src="../../../assets/pg.js"></script>
+<script>
+const {$, h, s, tabs, slider} = PG; tabs();
+// sizes in metres
+const THINGS = [
+  ["hydrogen atom", 1e-10, "The smallest atom: one proton and one electron."],
+  ["water molecule", 2.8e-10, "H₂O. Cells are about 70% water by mass."],
+  ["glucose", 9e-10, "A sugar: the main fuel molecule of cells."],
+  ["DNA helix (width)", 2e-9, "The double helix is 2 nm wide but can be metres long."],
+  ["a protein (haemoglobin)", 6.5e-9, "A typical protein is a few nanometres across."],
+  ["ribosome", 2.5e-8, "The protein-making machine: about 25 nm."],
+  ["virus (influenza)", 1e-7, "About 100 nm. Not a cell; it hijacks cells to copy itself."],
+  ["bacterium (E. coli)", 2e-6, "A whole single-celled organism, about 2 µm long."],
+  ["mitochondrion", 1.5e-6, "The cell's power plant, about the size of a bacterium (it was one, long ago)."],
+  ["red blood cell", 7.5e-6, "7.5 µm across; you have about 25 trillion of them."],
+  ["typical human cell", 2e-5, "Most of your cells are 10–30 µm."],
+  ["human egg cell", 1.2e-4, "One of the largest human cells: about the width of a hair."],
+  ["width of a hair", 7e-5, "The smallest thing you can see without a microscope is about 0.1 mm."],
+  ["ant", 3e-3, "An animal made of roughly a few hundred million cells."],
+  ["human", 1.7, "About 37 trillion human cells, of over 200 types."],
+];
+const p2 = (v) => String(+v.toPrecision(2));
+const fmt = (m) => m >= 1 ? p2(m) + " m" : m >= 1e-3 ? p2(m * 1e3) + " mm" : m >= 1e-6 ? p2(m * 1e6) + " µm" : m >= 1e-9 ? p2(m * 1e9) + " nm" : p2(m * 1e10) + " Å";
+const zoom = slider("view width", -9.5, 0.5, 0.05, -5.5, (v) => fmt(10 ** v), draw);
+$("sctl").append(zoom.el);
+function draw() {
+  const viewW = 10 ** zoom.value, W = 700, H = 240, base = 200, px = (m) => (m / viewW) * W;
+  const shown = THINGS.filter(([, m]) => px(m) >= 4 && px(m) <= W * 1.4).sort((a, b) => a[1] - b[1]);
+  const parts = [s("line", { x1: 0, x2: W, y1: base, y2: base, class: "ax" })];
+  let x = 50;
+  shown.forEach(([name, m], i) => {
+    const d = Math.min(px(m), 180);
+    const cx = x + d / 2, cy = base - d / 2;
+    parts.push(s("circle", { cx, cy, r: d / 2, fill: i % 2 ? "var(--accent2)" : "var(--accent)", opacity: 0.25, stroke: i % 2 ? "var(--accent2)" : "var(--accent)" }));
+    parts.push(s("text", { x: cx, y: base + 16 + (i % 2) * 14, class: "tx", "text-anchor": "middle" }, name));
+    x += d + 18;
+  });
+  parts.push(s("line", { x1: W - 210, x2: W - 10, y1: 20, y2: 20, stroke: "var(--ink)", "stroke-width": 2 }));
+  parts.push(s("text", { x: W - 110, y: 14, class: "tx", "text-anchor": "middle" }, "scale bar: " + fmt(viewW * 200 / W)));
+  $("ssvg").replaceChildren(...parts);
+  const inview = THINGS.filter(([, m]) => px(m) >= 4 && px(m) <= W * 1.4);
+  $("smsg").innerHTML = inview.length ? inview.map(([n, m, d]) => `<b>${n}</b> (${fmt(m)}): ${d}`).join("<br>") : "Nothing in this list is this size. Slide to zoom.";
+}
+draw();
+// --- cell tour
+const PARTS = [
+  ["membrane", "Plasma membrane", "A thin, oily double layer of lipids (about 5 nm) that encloses the cell. It lets some things through and keeps others out. Proteins embedded in it act as gates, pumps and sensors (receptors), which is why most drugs act on membrane proteins."],
+  ["nucleus", "Nucleus", "Holds the DNA, the cell's instruction manual: 2 metres of it, folded into a sphere about 6 µm across. Genes are copied into RNA here."],
+  ["nucleolus", "Nucleolus", "A dense region inside the nucleus where ribosomes are assembled."],
+  ["mito", "Mitochondria", "Power plants. They burn sugar and fat with oxygen to make ATP, the cell's energy currency. They have their own small DNA, a clue that they were once free-living bacteria."],
+  ["er", "Endoplasmic reticulum (ER)", "A folded network of membranes. The rough ER is studded with ribosomes and makes proteins that will be exported or put into membranes; the smooth ER makes lipids and detoxifies."],
+  ["golgi", "Golgi apparatus", "The post office: it modifies, sorts and packages proteins from the ER and ships them to their destinations."],
+  ["ribo", "Ribosomes", "Tiny machines (25 nm) that read RNA and build proteins, about 20 amino acids per second. A cell has millions."],
+  ["lyso", "Lysosomes", "Recycling bins filled with digestive enzymes that break down worn-out parts and things the cell swallowed."],
+  ["cyto", "Cytoskeleton", "Protein filaments that give the cell its shape, move things around inside it, and pull chromosomes apart during division (the target of some cancer drugs such as paclitaxel)."],
+  ["cytosol", "Cytosol", "The crowded gel that fills the cell: water packed with proteins, metabolites and ions. Many chemical reactions of the cell happen here."],
+];
+const TXT = Object.fromEntries(PARTS.map(([k, t, d]) => [k, [t, d]]));
+function cell() {
+  const g = [];
+  const add = (key, el) => { el.setAttribute("data-k", key); el.style.cursor = "pointer"; el.setAttribute("tabindex", "0"); el.setAttribute("role", "button"); el.setAttribute("aria-label", TXT[key][0]); g.push(el); };
+  add("cytosol", s("ellipse", { cx: 350, cy: 210, rx: 330, ry: 195, fill: "var(--soft)", stroke: "none" }));
+  add("membrane", s("ellipse", { cx: 350, cy: 210, rx: 330, ry: 195, fill: "none", stroke: "var(--accent)", "stroke-width": 7 }));
+  for (let i = 0; i < 14; i++) { const a = i / 14 * Math.PI * 2; add("cyto", s("line", { x1: 350 + 60 * Math.cos(a), y1: 210 + 40 * Math.sin(a), x2: 350 + 300 * Math.cos(a), y2: 210 + 175 * Math.sin(a), stroke: "var(--muted)", "stroke-width": 1, opacity: 0.35 })); }
+  [[200, 300, 0.4], [470, 110, -0.3], [560, 260, 0.9], [150, 150, -0.6]].forEach(([x, y, r]) => add("mito", s("ellipse", { cx: x, cy: y, rx: 42, ry: 18, transform: `rotate(${r * 57} ${x} ${y})`, fill: "var(--c)", opacity: 0.85, stroke: "var(--ink)", "stroke-width": 1 })));
+  add("er", s("path", { d: "M430 170 q30 -30 60 0 t60 0 M430 195 q30 -30 60 0 t60 0 M430 220 q30 -30 60 0 t60 0", fill: "none", stroke: "var(--a)", "stroke-width": 7, "stroke-linecap": "round" }));
+  for (let i = 0; i < 18; i++) add("ribo", s("circle", { cx: 440 + (i % 6) * 22, cy: 160 + Math.floor(i / 6) * 25, r: 3.2, fill: "var(--ink)" }));
+  add("golgi", s("path", { d: "M250 90 q50 -25 100 0 M255 108 q45 -22 90 0 M262 126 q38 -18 76 0", fill: "none", stroke: "var(--g)", "stroke-width": 7, "stroke-linecap": "round" }));
+  [[560, 140], [250, 360], [120, 230]].forEach(([x, y]) => add("lyso", s("circle", { cx: x, cy: y, r: 14, fill: "var(--accent2)", opacity: 0.8 })));
+  add("nucleus", s("circle", { cx: 330, cy: 220, r: 85, fill: "var(--surface)", stroke: "var(--u)", "stroke-width": 4 }));
+  add("nucleolus", s("circle", { cx: 345, cy: 230, r: 26, fill: "var(--u)", opacity: 0.55 }));
+  g.push(s("text", { x: 20, y: 412, class: "tx" }, "Not to scale. Click or tab to a part, then press Enter."));
+  $("csvg").replaceChildren(...g);
+  $("csvg").querySelectorAll("[data-k]").forEach((el) => {
+    const show = (e) => { e.stopPropagation(); const [t, d] = TXT[el.dataset.k]; $("cmsg").innerHTML = `<b>${t}.</b> ${d}`; };
+    el.addEventListener("click", show); el.addEventListener("keydown", (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); show(e); } });
+  });
+}
+cell();
+</script></body></html>

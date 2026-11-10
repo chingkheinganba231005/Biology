@@ -1,0 +1,454 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>DNA and genomes · Cells to Code</title>
+<meta name="description" content="The molecule that stores every instruction a cell needs. How it is built, why its two strands fit together, how it is copied, and what is actually written in a genome. You will read real genomes from NCBI with a few lines of Python.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,600;1,6..72,400&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.css">
+<link rel="stylesheet" href="../../assets/guide.css">
+<script>try{var t=localStorage.getItem('c2c-theme');if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
+</head>
+<body>
+<header class="topbar">
+  <a class="brand" href="../../index.html"><span class="logo" aria-hidden="true"></span>Cells to Code</a>
+  <span class="crumb">Biology from zero · Chapter P3</span>
+  <button class="tocbtn" type="button" aria-controls="toc" aria-expanded="false">Contents</button>
+  <button class="themebtn" type="button" aria-label="Switch light or dark theme">Theme</button>
+  <span class="progress" aria-hidden="true"></span>
+</header>
+<div class="layout">
+  <nav class="toc" id="toc" aria-label="On this page">
+    <p class="toc-h">On this page</p>
+    <ol><li><a href="#the-building-block-a-nucleotide">The building block: a nucleotide</a></li>
+<li><a href="#the-double-helix">The double helix</a></li>
+<li><a href="#reading-a-real-genome">Reading a real genome</a></li>
+<li><a href="#chargaffs-rules-a-test-of-base-pairing">Chargaff's rules: a test of base pairing</a></li>
+<li><a href="#gc-content-and-why-it-matters">GC content and why it matters</a></li>
+<li><a href="#reverse-complements-and-palindromes">Reverse complements and palindromes</a></li>
+<li><a href="#packing-two-metres-into-a-nucleus">Packing two metres into a nucleus</a></li>
+<li><a href="#copying-dna">Copying DNA</a></li>
+<li><a href="#what-is-written-in-a-genome">What is written in a genome?</a></li>
+<li><a href="#summary">Summary</a></li></ol>
+    <p class="toc-nb"><a href="dna_and_genomes.ipynb" download>Download the notebook ↓</a></p>
+  </nav>
+  <main class="content">
+    <p class="eyebrow">Biology from zero · Chapter P3</p>
+    <h1>DNA and genomes</h1>
+    <p class="lede">The molecule that stores every instruction a cell needs. How it is built, why its two strands fit together, how it is copied, and what is actually written in a genome. You will read real genomes from NCBI with a few lines of Python.</p>
+    <p class="meta">About 1.5 hours · Chapters P1 and P2</p>
+<p>Almost everything in this course comes back to one molecule. Bioinformatics reads it, cancer genomics hunts for typos in it, CRISPR edits it, gene therapy delivers it, and deep learning models now try to predict what each stretch of it does. This chapter explains what DNA is, chemically and as information, and gets you reading real genomes as text.</p>
+<div class="box eli5">
+<p class="lab">Like you’re five</p>
+<p>DNA is a very long instruction book written with only four letters: <strong>A</strong>, <strong>C</strong>, <strong>G</strong> and <strong>T</strong>. It comes as two strands twisted together like a ladder. The two strands are mirror copies: wherever one has A, the other has T, and wherever one has G, the other has C. Because of that rule, if you tear the ladder down the middle, each half has all the information needed to rebuild the other half. That is how a cell copies its DNA before it divides.</p>
+</div>
+<h2 id="the-building-block-a-nucleotide">The building block: a nucleotide</h2>
+<p>DNA (<strong>deoxyribonucleic acid</strong>) is a polymer: a long chain of repeating units called <strong>nucleotides</strong>. Each nucleotide has three parts:</p>
+<table>
+<thead>
+<tr>
+<th>Part</th>
+<th>What it is</th>
+<th>Role</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Phosphate</strong></td>
+<td>a phosphorus atom with four oxygens, negatively charged</td>
+<td>links one nucleotide to the next; makes DNA strongly negative</td>
+</tr>
+<tr>
+<td><strong>Sugar</strong> (deoxyribose)</td>
+<td>a five-carbon ring; its carbons are numbered 1′ to 5′</td>
+<td>the backbone; the numbering gives the strand a direction</td>
+</tr>
+<tr>
+<td><strong>Base</strong></td>
+<td>one of four flat, ring-shaped molecules</td>
+<td>carries the information</td>
+</tr>
+</tbody>
+</table>
+<p>The four bases come in two shapes:</p>
+<ul>
+<li><strong>Purines</strong> (two rings): <strong>A</strong>denine and <strong>G</strong>uanine.</li>
+<li><strong>Pyrimidines</strong> (one ring): <strong>C</strong>ytosine and <strong>T</strong>hymine.</li>
+</ul>
+<p>Nucleotides join through their phosphates, linking the 3′ carbon of one sugar to the 5′ carbon of the next. The result is a <strong>sugar–phosphate backbone</strong> with the bases sticking out to the side, like charms on a bracelet. One end of the chain has a free 5′ phosphate (the <strong>5′ end</strong>) and the other a free 3′ hydroxyl (the <strong>3′ end</strong>). By convention, a DNA sequence is always written from 5′ to 3′.</p>
+<div class="box bio">
+<p class="lab">Biology view</p>
+<p><strong>RNA</strong> is the same idea with two differences: its sugar is ribose (one extra oxygen, which makes RNA less stable) and it uses <strong>U</strong>racil instead of T. Most RNA is single-stranded. Chapter P4 is about RNA. Many viruses, including SARS-CoV-2 and influenza, store their genome as RNA rather than DNA. Databases still write RNA genomes with T instead of U, which is why the SARS-CoV-2 file below contains Ts.</p>
+</div>
+<h2 id="the-double-helix">The double helix</h2>
+<p>In 1953 James Watson and Francis Crick, using X-ray photographs taken by Rosalind Franklin and Maurice Wilkins, worked out that DNA is two strands wound around each other in a <strong>double helix</strong>. Three facts make it work:</p>
+<ol>
+<li><strong>Base pairing.</strong> The bases point inward and pair across the strands: <strong>A with T</strong> (two hydrogen bonds) and <strong>G with C</strong> (three hydrogen bonds). A purine always pairs with a pyrimidine, so every rung of the ladder is the same width (about 2 nm).</li>
+<li><strong>Antiparallel strands.</strong> The two strands run in opposite directions: one 5′→3′, the other 3′→5′.</li>
+<li><strong>Stacking.</strong> The flat bases stack on each other like a pile of coins. Stacking, not hydrogen bonding, provides most of the helix's stability.</li>
+</ol>
+<p>One full turn of the helix is about 10.5 base pairs and 3.4 nm long, so each base pair adds <strong>0.34 nm</strong> of length. Remember that number; we use it below.</p>
+<p>Because of base pairing, the two strands are <strong>complementary</strong>: one fully determines the other. The partner of a sequence, written in the standard 5′→3′ direction, is its <strong>reverse complement</strong>: complement every base, then reverse the order.</p>
+<pre><code>5′-ATGCGTAC-3′      top strand
+3′-TACGCATG-5′      bottom strand (complement, read right to left)
+bottom strand written 5′→3′:  GTACGCAT   = reverse complement of the top
+</code></pre>
+<p>Try it yourself: type any sequence and watch the second strand, the hydrogen bonds and the melting temperature change.</p>
+<div class="playground"><div class="pg-bar"><span>Interactive playground</span><a href="animations/dna_lab.html" target="_blank" rel="noopener">open full screen ↗</a></div><iframe src="animations/dna_lab.html" loading="lazy" style="height:600px" title="Interactive playground"></iframe></div>
+
+<h2 id="reading-a-real-genome">Reading a real genome</h2>
+<p>Genomes are stored as plain text in the <strong>FASTA</strong> format: a header line starting with <code>&gt;</code>, then the sequence. We downloaded three files from NCBI, the US national sequence database (chapter 1 of Part 1 shows how to fetch any of the hundreds of millions of sequences there):</p>
+<ul>
+<li><strong>phage lambda</strong> (NC_001416): a virus that infects <em>E. coli</em>, with a double-stranded DNA genome. It was one of the first genomes ever sequenced (1982) and is still used in labs as a size marker.</li>
+<li><strong>SARS-CoV-2</strong> (NC_045512): the COVID-19 virus, with a single-stranded RNA genome.</li>
+<li><strong>human TP53 mRNA</strong> (NM_000546): the message copied from <em>TP53</em>, the most frequently mutated gene in human cancer.</li>
+</ul>
+<p>A FASTA reader takes only a few lines of plain Python:</p>
+<pre class="code"><code><span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">matplotlib.pyplot</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">plt</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">matplotlib</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">mpl</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pathlib</span><span class="w"> </span><span class="kn">import</span> <span class="n">Path</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">collections</span><span class="w"> </span><span class="kn">import</span> <span class="n">Counter</span>
+
+<span class="n">mpl</span><span class="o">.</span><span class="n">rc</span><span class="p">(</span><span class="s2">"figure"</span><span class="p">,</span> <span class="n">dpi</span><span class="o">=</span><span class="mi">110</span><span class="p">);</span> <span class="n">mpl</span><span class="o">.</span><span class="n">rc</span><span class="p">(</span><span class="s2">"axes"</span><span class="p">,</span> <span class="n">labelsize</span><span class="o">=</span><span class="mi">12</span><span class="p">,</span> <span class="n">titlesize</span><span class="o">=</span><span class="mi">13</span><span class="p">)</span>
+<span class="n">IMAGES</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="s2">"images"</span><span class="p">);</span> <span class="n">IMAGES</span><span class="o">.</span><span class="n">mkdir</span><span class="p">(</span><span class="n">exist_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">save_fig</span><span class="p">(</span><span class="n">name</span><span class="p">):</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">tight_layout</span><span class="p">();</span> <span class="n">plt</span><span class="o">.</span><span class="n">savefig</span><span class="p">(</span><span class="n">IMAGES</span> <span class="o">/</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">.png"</span><span class="p">,</span> <span class="n">dpi</span><span class="o">=</span><span class="mi">150</span><span class="p">,</span> <span class="n">bbox_inches</span><span class="o">=</span><span class="s2">"tight"</span><span class="p">)</span>
+<span class="n">R</span> <span class="o">=</span> <span class="p">{}</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">read_fasta</span><span class="p">(</span><span class="n">path</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""Return (header, sequence) for a single-record FASTA file."""</span>
+    <span class="n">lines</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">path</span><span class="p">)</span><span class="o">.</span><span class="n">read_text</span><span class="p">()</span><span class="o">.</span><span class="n">splitlines</span><span class="p">()</span>
+    <span class="n">header</span> <span class="o">=</span> <span class="n">lines</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">1</span><span class="p">:]</span>                                   <span class="c1"># drop the '&gt;'</span>
+    <span class="n">seq</span> <span class="o">=</span> <span class="s2">""</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">line</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span> <span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="n">lines</span><span class="p">[</span><span class="mi">1</span><span class="p">:])</span><span class="o">.</span><span class="n">upper</span><span class="p">()</span>
+    <span class="k">return</span> <span class="n">header</span><span class="p">,</span> <span class="n">seq</span>
+
+<span class="n">genomes</span> <span class="o">=</span> <span class="p">{}</span>
+<span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">acc</span> <span class="ow">in</span> <span class="p">[(</span><span class="s2">"phage lambda"</span><span class="p">,</span> <span class="s2">"NC_001416"</span><span class="p">),</span> <span class="p">(</span><span class="s2">"SARS-CoV-2"</span><span class="p">,</span> <span class="s2">"NC_045512"</span><span class="p">),</span> <span class="p">(</span><span class="s2">"TP53 mRNA"</span><span class="p">,</span> <span class="s2">"NM_000546"</span><span class="p">)]:</span>
+    <span class="n">header</span><span class="p">,</span> <span class="n">seq</span> <span class="o">=</span> <span class="n">read_fasta</span><span class="p">(</span><span class="sa">f</span><span class="s2">"datasets/</span><span class="si">{</span><span class="n">acc</span><span class="si">}</span><span class="s2">.fasta"</span><span class="p">)</span>
+    <span class="n">genomes</span><span class="p">[</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="n">seq</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">name</span><span class="si">:</span><span class="s2">13s</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">seq</span><span class="p">)</span><span class="si">:</span><span class="s2">&gt;7,</span><span class="si">}</span><span class="s2"> letters   </span><span class="si">{</span><span class="n">header</span><span class="p">[:</span><span class="mi">70</span><span class="p">]</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">" "</span> <span class="o">*</span> <span class="mi">14</span><span class="p">,</span> <span class="n">seq</span><span class="p">[:</span><span class="mi">60</span><span class="p">],</span> <span class="s2">"..."</span><span class="p">)</span>
+<span class="n">R</span><span class="p">[</span><span class="s2">"lambda_len"</span><span class="p">]</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">genomes</span><span class="p">[</span><span class="s1">'phage lambda'</span><span class="p">])</span><span class="si">:</span><span class="s2">,</span><span class="si">}</span><span class="s2">"</span>
+<span class="n">R</span><span class="p">[</span><span class="s2">"sars_len"</span><span class="p">]</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">genomes</span><span class="p">[</span><span class="s1">'SARS-CoV-2'</span><span class="p">])</span><span class="si">:</span><span class="s2">,</span><span class="si">}</span><span class="s2">"</span>
+</code></pre>
+<pre class="out">phage lambda   48,502 letters   NC_001416.1 Enterobacteria phage lambda, complete genome
+               GGGCGGCGACCTCGCGGGTTTTCGCTATTTATGAAAATTTTCCGGTTTAAGGCGTTTCCG ...
+SARS-CoV-2     29,903 letters   NC_045512.2 Severe acute respiratory syndrome coronavirus 2 isolate Wu
+               ATTAAAGGTTTATACCTTCCCAGGTAACAAACCAACCAACTTTCGATCTCTTGTAGATCT ...
+TP53 mRNA       2,512 letters   NM_000546.6 Homo sapiens tumor protein p53 (TP53), transcript variant 
+               CTCAAAAGTCTAGAGCCACCGTCCAGGGAGCAGGTAGCTGCTGGGCTCCGGGGACACTTT ...</pre>
+<p>The lambda genome is 48,502 letters and SARS-CoV-2 is 29,903. To a computer, a genome is just a string, and much of bioinformatics is clever string processing. The professional tool for this is <strong>Biopython</strong>, which reads every common format and knows the biology (the genetic code, for example). The same file in Biopython:</p>
+<pre class="code"><code><span class="kn">from</span><span class="w"> </span><span class="nn">Bio</span><span class="w"> </span><span class="kn">import</span> <span class="n">SeqIO</span>
+<span class="n">record</span> <span class="o">=</span> <span class="n">SeqIO</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="s2">"datasets/NC_001416.fasta"</span><span class="p">,</span> <span class="s2">"fasta"</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">record</span><span class="o">.</span><span class="n">id</span><span class="p">,</span> <span class="s2">"|"</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">record</span><span class="o">.</span><span class="n">seq</span><span class="p">),</span> <span class="s2">"bases"</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">record</span><span class="o">.</span><span class="n">seq</span><span class="p">[:</span><span class="mi">30</span><span class="p">],</span> <span class="s2">"-&gt; reverse complement of the first 30:"</span><span class="p">,</span> <span class="n">record</span><span class="o">.</span><span class="n">seq</span><span class="p">[:</span><span class="mi">30</span><span class="p">]</span><span class="o">.</span><span class="n">reverse_complement</span><span class="p">())</span>
+</code></pre>
+<pre class="out">NC_001416.1 | 48502 bases
+GGGCGGCGACCTCGCGGGTTTTCGCTATTT -&gt; reverse complement of the first 30: AAATAGCGAAAACCCGCGAGGTCGCCGCCC</pre>
+<h2 id="chargaffs-rules-a-test-of-base-pairing">Chargaff's rules: a test of base pairing</h2>
+<p>Before the double helix was known, Erwin Chargaff measured the bases in DNA from many species and found a puzzling pattern: the amount of A always equalled the amount of T, and G always equalled C. Base pairing explains it at once: every A on one strand has a T opposite it.</p>
+<p>But a sequence file holds only <strong>one</strong> strand. Does the rule hold there? Let's count.</p>
+<pre class="code"><code><span class="k">def</span><span class="w"> </span><span class="nf">composition</span><span class="p">(</span><span class="n">seq</span><span class="p">):</span>
+    <span class="n">c</span> <span class="o">=</span> <span class="n">Counter</span><span class="p">(</span><span class="n">seq</span><span class="p">)</span>
+    <span class="k">return</span> <span class="p">{</span><span class="n">b</span><span class="p">:</span> <span class="n">c</span><span class="p">[</span><span class="n">b</span><span class="p">]</span> <span class="o">/</span> <span class="nb">len</span><span class="p">(</span><span class="n">seq</span><span class="p">)</span> <span class="k">for</span> <span class="n">b</span> <span class="ow">in</span> <span class="s2">"ACGT"</span><span class="p">}</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">revcomp</span><span class="p">(</span><span class="n">seq</span><span class="p">):</span>
+    <span class="n">comp</span> <span class="o">=</span> <span class="p">{</span><span class="s2">"A"</span><span class="p">:</span> <span class="s2">"T"</span><span class="p">,</span> <span class="s2">"T"</span><span class="p">:</span> <span class="s2">"A"</span><span class="p">,</span> <span class="s2">"G"</span><span class="p">:</span> <span class="s2">"C"</span><span class="p">,</span> <span class="s2">"C"</span><span class="p">:</span> <span class="s2">"G"</span><span class="p">,</span> <span class="s2">"N"</span><span class="p">:</span> <span class="s2">"N"</span><span class="p">}</span>
+    <span class="k">return</span> <span class="s2">""</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">comp</span><span class="p">[</span><span class="n">b</span><span class="p">]</span> <span class="k">for</span> <span class="n">b</span> <span class="ow">in</span> <span class="nb">reversed</span><span class="p">(</span><span class="n">seq</span><span class="p">))</span>
+
+<span class="n">rows</span> <span class="o">=</span> <span class="p">{}</span>
+<span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">seq</span> <span class="ow">in</span> <span class="n">genomes</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+    <span class="n">rows</span><span class="p">[</span><span class="n">name</span> <span class="o">+</span> <span class="s2">"</span><span class="se">\n</span><span class="s2">(one strand)"</span><span class="p">]</span> <span class="o">=</span> <span class="n">composition</span><span class="p">(</span><span class="n">seq</span><span class="p">)</span>
+<span class="n">lam</span> <span class="o">=</span> <span class="n">genomes</span><span class="p">[</span><span class="s2">"phage lambda"</span><span class="p">]</span>
+<span class="n">rows</span><span class="p">[</span><span class="s2">"phage lambda</span><span class="se">\n</span><span class="s2">(both strands)"</span><span class="p">]</span> <span class="o">=</span> <span class="n">composition</span><span class="p">(</span><span class="n">lam</span> <span class="o">+</span> <span class="n">revcomp</span><span class="p">(</span><span class="n">lam</span><span class="p">))</span>
+
+<span class="n">fig</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="mf">4.2</span><span class="p">))</span>
+<span class="n">colours</span> <span class="o">=</span> <span class="p">{</span><span class="s2">"A"</span><span class="p">:</span> <span class="s2">"#2f8f5b"</span><span class="p">,</span> <span class="s2">"C"</span><span class="p">:</span> <span class="s2">"#3a6fc2"</span><span class="p">,</span> <span class="s2">"G"</span><span class="p">:</span> <span class="s2">"#d29a1e"</span><span class="p">,</span> <span class="s2">"T"</span><span class="p">:</span> <span class="s2">"#c2416b"</span><span class="p">}</span>
+<span class="n">labels</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">rows</span><span class="p">)</span>
+<span class="k">for</span> <span class="n">j</span><span class="p">,</span> <span class="n">b</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="s2">"ACGT"</span><span class="p">):</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">bar</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">labels</span><span class="p">))</span> <span class="o">+</span> <span class="p">(</span><span class="n">j</span> <span class="o">-</span> <span class="mf">1.5</span><span class="p">)</span> <span class="o">*</span> <span class="mf">0.2</span><span class="p">,</span> <span class="p">[</span><span class="n">rows</span><span class="p">[</span><span class="n">k</span><span class="p">][</span><span class="n">b</span><span class="p">]</span> <span class="o">*</span> <span class="mi">100</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">labels</span><span class="p">],</span> <span class="mf">0.2</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="n">colours</span><span class="p">[</span><span class="n">b</span><span class="p">],</span> <span class="n">label</span><span class="o">=</span><span class="n">b</span><span class="p">)</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">set_xticks</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">labels</span><span class="p">)),</span> <span class="n">labels</span><span class="p">);</span> <span class="n">ax</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="s2">"</span><span class="si">% o</span><span class="s2">f bases"</span><span class="p">);</span> <span class="n">ax</span><span class="o">.</span><span class="n">axhline</span><span class="p">(</span><span class="mi">25</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s2">"0.6"</span><span class="p">,</span> <span class="n">lw</span><span class="o">=</span><span class="mf">0.8</span><span class="p">,</span> <span class="n">ls</span><span class="o">=</span><span class="s2">"--"</span><span class="p">)</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">legend</span><span class="p">(</span><span class="n">ncol</span><span class="o">=</span><span class="mi">4</span><span class="p">);</span> <span class="n">ax</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="s2">"Base composition: Chargaff's rule holds exactly only for both strands together"</span><span class="p">)</span>
+<span class="n">save_fig</span><span class="p">(</span><span class="s2">"chargaff"</span><span class="p">);</span> <span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+
+<span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">rows</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">k</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="nb">chr</span><span class="p">(</span><span class="mi">10</span><span class="p">),</span><span class="w"> </span><span class="s1">' '</span><span class="p">)</span><span class="si">:</span><span class="s2">30s</span><span class="si">}</span><span class="s2"> A/T = </span><span class="si">{</span><span class="n">v</span><span class="p">[</span><span class="s1">'A'</span><span class="p">]</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="n">v</span><span class="p">[</span><span class="s1">'T'</span><span class="p">]</span><span class="si">:</span><span class="s2">.3f</span><span class="si">}</span><span class="s2">   G/C = </span><span class="si">{</span><span class="n">v</span><span class="p">[</span><span class="s1">'G'</span><span class="p">]</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="n">v</span><span class="p">[</span><span class="s1">'C'</span><span class="p">]</span><span class="si">:</span><span class="s2">.3f</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+<span class="n">both</span> <span class="o">=</span> <span class="n">rows</span><span class="p">[</span><span class="s2">"phage lambda</span><span class="se">\n</span><span class="s2">(both strands)"</span><span class="p">]</span>
+<span class="n">R</span><span class="p">[</span><span class="s2">"lam_at"</span><span class="p">]</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">rows</span><span class="p">[</span><span class="s1">'phage lambda'</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="nb">chr</span><span class="p">(</span><span class="mi">10</span><span class="p">)</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="s1">'(one strand)'</span><span class="p">][</span><span class="s1">'A'</span><span class="p">]</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="n">rows</span><span class="p">[</span><span class="s1">'phage lambda'</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="nb">chr</span><span class="p">(</span><span class="mi">10</span><span class="p">)</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="s1">'(one strand)'</span><span class="p">][</span><span class="s1">'T'</span><span class="p">]</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2">"</span>
+<span class="n">R</span><span class="p">[</span><span class="s2">"sars_t"</span><span class="p">]</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">rows</span><span class="p">[</span><span class="s1">'SARS-CoV-2'</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="nb">chr</span><span class="p">(</span><span class="mi">10</span><span class="p">)</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="s1">'(one strand)'</span><span class="p">][</span><span class="s1">'T'</span><span class="p">]</span><span class="si">:</span><span class="s2">.0%</span><span class="si">}</span><span class="s2">"</span>
+<span class="n">R</span><span class="p">[</span><span class="s2">"sars_c"</span><span class="p">]</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">rows</span><span class="p">[</span><span class="s1">'SARS-CoV-2'</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="nb">chr</span><span class="p">(</span><span class="mi">10</span><span class="p">)</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="s1">'(one strand)'</span><span class="p">][</span><span class="s1">'C'</span><span class="p">]</span><span class="si">:</span><span class="s2">.0%</span><span class="si">}</span><span class="s2">"</span>
+<span class="n">R</span><span class="p">[</span><span class="s2">"sars_g"</span><span class="p">]</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">rows</span><span class="p">[</span><span class="s1">'SARS-CoV-2'</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="nb">chr</span><span class="p">(</span><span class="mi">10</span><span class="p">)</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="s1">'(one strand)'</span><span class="p">][</span><span class="s1">'G'</span><span class="p">]</span><span class="si">:</span><span class="s2">.0%</span><span class="si">}</span><span class="s2">"</span>
+<span class="k">assert</span> <span class="nb">abs</span><span class="p">(</span><span class="n">both</span><span class="p">[</span><span class="s2">"A"</span><span class="p">]</span> <span class="o">-</span> <span class="n">both</span><span class="p">[</span><span class="s2">"T"</span><span class="p">])</span> <span class="o">&lt;</span> <span class="mf">1e-12</span> <span class="ow">and</span> <span class="nb">abs</span><span class="p">(</span><span class="n">both</span><span class="p">[</span><span class="s2">"G"</span><span class="p">]</span> <span class="o">-</span> <span class="n">both</span><span class="p">[</span><span class="s2">"C"</span><span class="p">])</span> <span class="o">&lt;</span> <span class="mf">1e-12</span>
+</code></pre>
+<pre class="out">phage lambda (one strand)      A/T = 1.029   G/C = 1.128
+SARS-CoV-2 (one strand)        A/T = 0.933   G/C = 1.068
+TP53 mRNA (one strand)         A/T = 0.833   G/C = 0.862
+phage lambda (both strands)    A/T = 1.000   G/C = 1.000</pre>
+<figure><img src="images/chargaff.png" alt="Figure P3-1. Base composition of three real sequences. When both strands of lambda are counted, A equals T and G equals C exactly, as Chargaff found by chemistry. A single strand only roughly follows the rule." loading="lazy"><figcaption><b>Figure P3-1.</b> Figure P3-1. Base composition of three real sequences. When both strands of lambda are counted, A equals T and G equals C exactly, as Chargaff found by chemistry. A single strand only roughly follows the rule.</figcaption></figure>
+
+<p>Three lessons from one chart:</p>
+<ul>
+<li><strong>Both strands of lambda</strong> obey Chargaff's rule exactly. That is not a fact about lambda; it is guaranteed by base pairing, and the <code>assert</code> in the code proves it.</li>
+<li><strong>One strand of lambda</strong> is close (A/T = 1.03) but not exact. Long double-stranded genomes tend to be roughly balanced on each strand too, an observation called Chargaff's <em>second</em> rule, but nothing forces it.</li>
+<li><strong>SARS-CoV-2</strong>, a single-stranded RNA virus, is lopsided: 32% T (really U) but only 18% C against 20% G. One explanation is that human antiviral enzymes (APOBEC proteins) attack the virus by converting C to U, and over many generations the genome drifts towards fewer Cs. Chapter P10 meets these enzymes as part of the immune system, and chapter P12 meets them again as a source of mutations in cancer.</li>
+</ul>
+<h2 id="gc-content-and-why-it-matters">GC content and why it matters</h2>
+<p>The fraction of G and C bases is the <strong>GC content</strong>. A G–C pair has three hydrogen bonds and stacks more strongly than A–T, so GC-rich DNA is harder to pull apart (to <strong>melt</strong>, or <strong>denature</strong>). GC content varies a lot: between species (from about 20% to 75% in bacteria) and along a single genome. A sliding window shows the variation along lambda:</p>
+<pre class="code"><code><span class="k">def</span><span class="w"> </span><span class="nf">gc</span><span class="p">(</span><span class="n">seq</span><span class="p">):</span>
+    <span class="k">return</span> <span class="p">(</span><span class="n">seq</span><span class="o">.</span><span class="n">count</span><span class="p">(</span><span class="s2">"G"</span><span class="p">)</span> <span class="o">+</span> <span class="n">seq</span><span class="o">.</span><span class="n">count</span><span class="p">(</span><span class="s2">"C"</span><span class="p">))</span> <span class="o">/</span> <span class="nb">len</span><span class="p">(</span><span class="n">seq</span><span class="p">)</span>
+
+<span class="n">win</span><span class="p">,</span> <span class="n">step</span> <span class="o">=</span> <span class="mi">1000</span><span class="p">,</span> <span class="mi">200</span>
+<span class="n">pos</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">lam</span><span class="p">)</span> <span class="o">-</span> <span class="n">win</span><span class="p">,</span> <span class="n">step</span><span class="p">)</span>
+<span class="n">gcs</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">gc</span><span class="p">(</span><span class="n">lam</span><span class="p">[</span><span class="n">p</span><span class="p">:</span><span class="n">p</span> <span class="o">+</span> <span class="n">win</span><span class="p">])</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">pos</span><span class="p">])</span>
+
+<span class="n">fig</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="mf">3.6</span><span class="p">))</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">((</span><span class="n">pos</span> <span class="o">+</span> <span class="n">win</span> <span class="o">/</span> <span class="mi">2</span><span class="p">)</span> <span class="o">/</span> <span class="mi">1000</span><span class="p">,</span> <span class="n">gcs</span> <span class="o">*</span> <span class="mi">100</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s2">"#5b3a8c"</span><span class="p">)</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">axhline</span><span class="p">(</span><span class="n">gc</span><span class="p">(</span><span class="n">lam</span><span class="p">)</span> <span class="o">*</span> <span class="mi">100</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s2">"0.5"</span><span class="p">,</span> <span class="n">ls</span><span class="o">=</span><span class="s2">"--"</span><span class="p">,</span> <span class="n">lw</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="sa">f</span><span class="s2">"whole genome </span><span class="si">{</span><span class="n">gc</span><span class="p">(</span><span class="n">lam</span><span class="p">)</span><span class="si">:</span><span class="s2">.1%</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">axvline</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">lam</span><span class="p">)</span> <span class="o">/</span> <span class="mi">2000</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s2">"#c2416b"</span><span class="p">,</span> <span class="n">lw</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">ls</span><span class="o">=</span><span class="s2">":"</span><span class="p">)</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">set_xlabel</span><span class="p">(</span><span class="s2">"position along the lambda genome (thousands of bases)"</span><span class="p">);</span> <span class="n">ax</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="s2">"GC content (%)"</span><span class="p">)</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="s2">"GC content in 1,000-base windows"</span><span class="p">);</span> <span class="n">ax</span><span class="o">.</span><span class="n">legend</span><span class="p">()</span>
+<span class="n">save_fig</span><span class="p">(</span><span class="s2">"gc_window"</span><span class="p">);</span> <span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+<span class="n">half</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">lam</span><span class="p">)</span> <span class="o">//</span> <span class="mi">2</span>
+<span class="n">R</span><span class="p">[</span><span class="s2">"gc_all"</span><span class="p">]</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">gc</span><span class="p">(</span><span class="n">lam</span><span class="p">)</span><span class="si">:</span><span class="s2">.1%</span><span class="si">}</span><span class="s2">"</span>
+<span class="n">R</span><span class="p">[</span><span class="s2">"gc_left"</span><span class="p">]</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">gc</span><span class="p">(</span><span class="n">lam</span><span class="p">[:</span><span class="n">half</span><span class="p">])</span><span class="si">:</span><span class="s2">.0%</span><span class="si">}</span><span class="s2">"</span>
+<span class="n">R</span><span class="p">[</span><span class="s2">"gc_right"</span><span class="p">]</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">gc</span><span class="p">(</span><span class="n">lam</span><span class="p">[</span><span class="n">half</span><span class="p">:])</span><span class="si">:</span><span class="s2">.0%</span><span class="si">}</span><span class="s2">"</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"left half </span><span class="si">{</span><span class="n">gc</span><span class="p">(</span><span class="n">lam</span><span class="p">[:</span><span class="n">half</span><span class="p">])</span><span class="si">:</span><span class="s2">.1%</span><span class="si">}</span><span class="s2">, right half </span><span class="si">{</span><span class="n">gc</span><span class="p">(</span><span class="n">lam</span><span class="p">[</span><span class="n">half</span><span class="p">:])</span><span class="si">:</span><span class="s2">.1%</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+</code></pre>
+<pre class="out">left half 54.9%, right half 44.8%</pre>
+<figure><img src="images/gc_window.png" alt="Figure P3-2. GC content along phage lambda in 1,000-base windows. The left half, which carries the genes for building the virus particle, is noticeably more GC-rich than the right half." loading="lazy"><figcaption><b>Figure P3-2.</b> Figure P3-2. GC content along phage lambda in 1,000-base windows. The left half, which carries the genes for building the virus particle, is noticeably more GC-rich than the right half.</figcaption></figure>
+
+<p>Lambda as a whole is 49.9% GC, but its left half is about 55% and its right half about 45%. The left half holds the genes for the virus's head and tail; the right half holds genes for recombination, regulation and bursting out of the host. Shifts in GC content like this often hint that parts of a genome have different evolutionary histories. Local GC content is a clue to a sequence's function and history, and you'll use it in Part 1.</p>
+<p>In the lab, GC content sets the <strong>melting temperature</strong> (Tm), the temperature at which half the DNA has separated into single strands. Short DNA pieces called <strong>primers</strong> must stick to the right place during PCR (chapter P11), so they are designed with about 40–60% GC and a Tm around 55–65 °C. The quick rule used in the playground above, for short primers:</p>
+<div class="box math">
+<p class="lab">The maths, from scratch</p>
+<p><strong>Wallace rule</strong> (primers under about 14 bases): $T_m \approx 2\,(\#A + \#T) + 4\,(\#G + \#C)\ ^\circ\text{C}$.</p>
+<p>For longer primers a common approximation is $T_m \approx 64.9 + 41\,\dfrac{\#G + \#C - 16.4}{N}$, with $N$ the length. Real primer-design software uses nearest-neighbour thermodynamics, which accounts for which bases are stacked next to each other.</p>
+</div>
+<pre class="code"><code><span class="k">def</span><span class="w"> </span><span class="nf">tm</span><span class="p">(</span><span class="n">primer</span><span class="p">):</span>
+    <span class="n">n</span><span class="p">,</span> <span class="n">g</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">primer</span><span class="p">),</span> <span class="n">primer</span><span class="o">.</span><span class="n">count</span><span class="p">(</span><span class="s2">"G"</span><span class="p">)</span> <span class="o">+</span> <span class="n">primer</span><span class="o">.</span><span class="n">count</span><span class="p">(</span><span class="s2">"C"</span><span class="p">)</span>
+    <span class="k">return</span> <span class="mi">2</span> <span class="o">*</span> <span class="p">(</span><span class="n">n</span> <span class="o">-</span> <span class="n">g</span><span class="p">)</span> <span class="o">+</span> <span class="mi">4</span> <span class="o">*</span> <span class="n">g</span> <span class="k">if</span> <span class="n">n</span> <span class="o">&lt;</span> <span class="mi">14</span> <span class="k">else</span> <span class="mf">64.9</span> <span class="o">+</span> <span class="mi">41</span> <span class="o">*</span> <span class="p">(</span><span class="n">g</span> <span class="o">-</span> <span class="mf">16.4</span><span class="p">)</span> <span class="o">/</span> <span class="n">n</span>
+
+<span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">"ATGCGTACGTTAGC"</span><span class="p">,</span> <span class="s2">"AAATTTAATATTTAAATTAT"</span><span class="p">,</span> <span class="s2">"GCGGCCGCGGGCCCGCGC"</span><span class="p">,</span> <span class="s2">"TGGAATTCGCATGCAGTCGA"</span><span class="p">]:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">p</span><span class="si">:</span><span class="s2">22s</span><span class="si">}</span><span class="s2"> length </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">p</span><span class="p">)</span><span class="si">:</span><span class="s2">2d</span><span class="si">}</span><span class="s2">  GC </span><span class="si">{</span><span class="n">gc</span><span class="p">(</span><span class="n">p</span><span class="p">)</span><span class="si">:</span><span class="s2">4.0%</span><span class="si">}</span><span class="s2">  Tm about </span><span class="si">{</span><span class="n">tm</span><span class="p">(</span><span class="n">p</span><span class="p">)</span><span class="si">:</span><span class="s2">4.0f</span><span class="si">}</span><span class="s2"> °C"</span><span class="p">)</span>
+</code></pre>
+<pre class="out">ATGCGTACGTTAGC         length 14  GC  50%  Tm about   37 °C
+AAATTTAATATTTAAATTAT   length 20  GC   0%  Tm about   31 °C
+GCGGCCGCGGGCCCGCGC     length 18  GC 100%  Tm about   69 °C
+TGGAATTCGCATGCAGTCGA   length 20  GC  50%  Tm about   52 °C</pre>
+<p>The AT-only primer melts at about 31 °C and would fall off at PCR temperatures; the GC-only one sticks so strongly that it also binds to places it only partly matches, which is just as bad. Good primers sit in the middle.</p>
+<h2 id="reverse-complements-and-palindromes">Reverse complements and palindromes</h2>
+<p>Because either strand can carry a gene, any search through a genome must look at both strands. The reverse complement is therefore one of the most-used functions in bioinformatics. Two properties are worth checking in code:</p>
+<pre class="code"><code><span class="n">s</span> <span class="o">=</span> <span class="s2">"ATGCCGTATTGCAGG"</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">revcomp</span><span class="p">(</span><span class="n">s</span><span class="p">),</span> <span class="s2">"| twice gives back the original:"</span><span class="p">,</span> <span class="n">revcomp</span><span class="p">(</span><span class="n">revcomp</span><span class="p">(</span><span class="n">s</span><span class="p">))</span> <span class="o">==</span> <span class="n">s</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">"EcoRI site GAATTC is its own reverse complement:"</span><span class="p">,</span> <span class="n">revcomp</span><span class="p">(</span><span class="s2">"GAATTC"</span><span class="p">)</span> <span class="o">==</span> <span class="s2">"GAATTC"</span><span class="p">)</span>
+</code></pre>
+<pre class="out">CCTGCAATACGGCAT | twice gives back the original: True
+EcoRI site GAATTC is its own reverse complement: True</pre>
+<p>A sequence that equals its own reverse complement, like <code>GAATTC</code>, is called a <strong>palindrome</strong> (it reads the same on both strands, each read 5′→3′). Bacteria defend themselves against viruses with <strong>restriction enzymes</strong> that cut DNA at specific palindromes. <em>EcoRI</em>, from <em>E. coli</em>, cuts at every <code>GAATTC</code>. Restriction enzymes launched genetic engineering in the 1970s and are still in every molecular biology lab. Where would <em>EcoRI</em> cut lambda?</p>
+<pre class="code"><code><span class="kn">import</span><span class="w"> </span><span class="nn">re</span>
+<span class="n">sites</span> <span class="o">=</span> <span class="p">[</span><span class="n">m</span><span class="o">.</span><span class="n">start</span><span class="p">()</span> <span class="k">for</span> <span class="n">m</span> <span class="ow">in</span> <span class="n">re</span><span class="o">.</span><span class="n">finditer</span><span class="p">(</span><span class="s2">"GAATTC"</span><span class="p">,</span> <span class="n">lam</span><span class="p">)]</span>
+<span class="n">cuts</span> <span class="o">=</span> <span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="p">[</span><span class="n">p</span> <span class="o">+</span> <span class="mi">1</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">sites</span><span class="p">]</span> <span class="o">+</span> <span class="p">[</span><span class="nb">len</span><span class="p">(</span><span class="n">lam</span><span class="p">)]</span>           <span class="c1"># EcoRI cuts between G and AATTC</span>
+<span class="n">frags</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">((</span><span class="n">b</span> <span class="o">-</span> <span class="n">a</span> <span class="k">for</span> <span class="n">a</span><span class="p">,</span> <span class="n">b</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">cuts</span><span class="p">,</span> <span class="n">cuts</span><span class="p">[</span><span class="mi">1</span><span class="p">:])),</span> <span class="n">reverse</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">"EcoRI sites at:"</span><span class="p">,</span> <span class="n">sites</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">"fragment sizes (bp):"</span><span class="p">,</span> <span class="n">frags</span><span class="p">)</span>
+<span class="n">R</span><span class="p">[</span><span class="s2">"n_sites"</span><span class="p">]</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">sites</span><span class="p">);</span> <span class="n">R</span><span class="p">[</span><span class="s2">"n_frags"</span><span class="p">]</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">frags</span><span class="p">);</span> <span class="n">R</span><span class="p">[</span><span class="s2">"big_frag"</span><span class="p">]</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">frags</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="si">:</span><span class="s2">,</span><span class="si">}</span><span class="s2">"</span>
+</code></pre>
+<pre class="out">EcoRI sites at: [21225, 26103, 31746, 39167, 44971]
+fragment sizes (bp): [21226, 7421, 5804, 5643, 4878, 3530]</pre>
+<p>There are 5 sites, so lambda is cut into 6 pieces, the largest 21,226 base pairs. Those exact fragments are sold as a "lambda <em>EcoRI</em> digest" and run alongside unknown samples in gel electrophoresis (chapter P11) as a ruler. You just predicted a lab result from a text file, which is the essence of bioinformatics.</p>
+<h2 id="packing-two-metres-into-a-nucleus">Packing two metres into a nucleus</h2>
+<p>How long is the DNA in one human cell? Each base pair is 0.34 nm, and the human genome is about 3.1 billion base pairs per copy. Most cells have two copies (one from each parent).</p>
+<pre class="code"><code><span class="n">bp_per_copy</span><span class="p">,</span> <span class="n">nm_per_bp</span> <span class="o">=</span> <span class="mf">3.1e9</span><span class="p">,</span> <span class="mf">0.34</span>
+<span class="n">length_m</span> <span class="o">=</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">bp_per_copy</span> <span class="o">*</span> <span class="n">nm_per_bp</span> <span class="o">*</span> <span class="mf">1e-9</span>
+<span class="n">nucleus_m</span> <span class="o">=</span> <span class="mf">6e-6</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"DNA per cell: </span><span class="si">{</span><span class="n">length_m</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2"> m, in a nucleus </span><span class="si">{</span><span class="n">nucleus_m</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="mf">1e6</span><span class="si">:</span><span class="s2">.0f</span><span class="si">}</span><span class="s2"> µm across: </span><span class="si">{</span><span class="n">length_m</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="n">nucleus_m</span><span class="si">:</span><span class="s2">,.0f</span><span class="si">}</span><span class="s2"> times longer"</span><span class="p">)</span>
+<span class="n">cells</span> <span class="o">=</span> <span class="mf">3.7e13</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"all the DNA in your body end to end: </span><span class="si">{</span><span class="n">length_m</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">cells</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="mf">1.496e11</span><span class="si">:</span><span class="s2">.0f</span><span class="si">}</span><span class="s2"> times the Earth-Sun distance"</span><span class="p">)</span>
+<span class="n">bits</span> <span class="o">=</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">bp_per_copy</span>                                     <span class="c1"># 4 letters = 2 bits each</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"information per copy: </span><span class="si">{</span><span class="n">bits</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="mi">8</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="mf">1e6</span><span class="si">:</span><span class="s2">.0f</span><span class="si">}</span><span class="s2"> MB (2 bits per base)"</span><span class="p">)</span>
+<span class="n">R</span><span class="p">[</span><span class="s2">"dna_m"</span><span class="p">]</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">length_m</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2">"</span><span class="p">;</span> <span class="n">R</span><span class="p">[</span><span class="s2">"ratio"</span><span class="p">]</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">length_m</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="n">nucleus_m</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="mi">1000</span><span class="si">:</span><span class="s2">,.0f</span><span class="si">}</span><span class="s2">"</span><span class="p">;</span> <span class="n">R</span><span class="p">[</span><span class="s2">"mb"</span><span class="p">]</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">bits</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="mi">8</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="mf">1e6</span><span class="si">:</span><span class="s2">.0f</span><span class="si">}</span><span class="s2">"</span>
+</code></pre>
+<pre class="out">DNA per cell: 2.1 m, in a nucleus 6 µm across: 351,333 times longer
+all the DNA in your body end to end: 521 times the Earth-Sun distance
+information per copy: 775 MB (2 bits per base)</pre>
+<p>About 2.1 metres of DNA fits in a nucleus a few micrometres wide, roughly 351 thousand times longer than the box it is in. Squeezed into a phone file, one copy of the genome is only about 775 MB, less than a film.</p>
+<p>The packing is done by proteins in a hierarchy:</p>
+<ol>
+<li>DNA wraps about 1.7 times (147 base pairs) around a spool of eight <strong>histone</strong> proteins. The spool plus DNA is a <strong>nucleosome</strong>. Strings of nucleosomes look like beads on a string.</li>
+<li>The beads fold and loop into <strong>chromatin</strong>. Loops are anchored by proteins such as cohesin and CTCF.</li>
+<li>During cell division, chromatin condenses further into the X-shaped <strong>chromosomes</strong> you have seen in pictures (chapter P7).</li>
+</ol>
+<p>Humans have <strong>23 pairs of chromosomes</strong>: 22 pairs of <strong>autosomes</strong> numbered roughly by size, plus the sex chromosomes (XX or XY). Tightly packed chromatin (<strong>heterochromatin</strong>) is hard for the cell to read; loosely packed <strong>euchromatin</strong> is where active genes sit. Chemical tags on histones and on the DNA itself control the packing, and therefore which genes can be read. That is <strong>epigenetics</strong>, in chapter P6.</p>
+<div class="box idea">
+<p class="lab">The real idea</p>
+<p>Packing is not just storage. Whether a gene is wrapped up tightly or left open is one of the main ways a neuron and a liver cell, with identical DNA, end up reading different genes. Many cancers carry mutations in the proteins that place and read histone tags.</p>
+</div>
+<h2 id="copying-dna">Copying DNA</h2>
+<p>Before a cell divides, it must copy all 6.2 billion base pairs, quickly and almost without mistakes. Replication follows directly from base pairing:</p>
+<ol>
+<li><strong>Helicase</strong> unzips the double helix, making a Y-shaped <strong>replication fork</strong>.</li>
+<li><strong>Primase</strong> lays down a short RNA primer, because polymerase can only extend an existing strand.</li>
+<li><strong>DNA polymerase</strong> reads each old strand and adds the complementary nucleotide to a new strand. It can only build in the <strong>5′→3′ direction</strong>.</li>
+<li>Because the strands are antiparallel, one new strand (the <strong>leading strand</strong>) is made continuously, while the other (the <strong>lagging strand</strong>) is made backwards in short <strong>Okazaki fragments</strong>, later joined by <strong>DNA ligase</strong>.</li>
+</ol>
+<p>Each new double helix contains one old strand and one new one. This is called <strong>semi-conservative replication</strong>. Step through it in the "Copy the DNA" tab of the playground above.</p>
+<p>Why does replication start at many places at once? Some arithmetic shows why:</p>
+<pre class="code"><code><span class="n">speed</span> <span class="o">=</span> <span class="mi">50</span>                                     <span class="c1"># bases added per second per fork (human)</span>
+<span class="n">chrom1</span> <span class="o">=</span> <span class="mf">249e6</span>                                 <span class="c1"># chromosome 1, base pairs</span>
+<span class="n">one_origin</span> <span class="o">=</span> <span class="n">chrom1</span> <span class="o">/</span> <span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">speed</span><span class="p">)</span>              <span class="c1"># two forks moving apart from one origin</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"chromosome 1 from a single origin: </span><span class="si">{</span><span class="n">one_origin</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="mi">86400</span><span class="si">:</span><span class="s2">.0f</span><span class="si">}</span><span class="s2"> days"</span><span class="p">)</span>
+<span class="n">origins</span> <span class="o">=</span> <span class="mi">50_000</span>                               <span class="c1"># roughly how many origins fire across the genome</span>
+<span class="n">per_origin</span> <span class="o">=</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">bp_per_copy</span> <span class="o">/</span> <span class="n">origins</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"with </span><span class="si">{</span><span class="n">origins</span><span class="si">:</span><span class="s2">,</span><span class="si">}</span><span class="s2"> origins: about </span><span class="si">{</span><span class="n">per_origin</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="p">(</span><span class="mi">2</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">speed</span><span class="p">)</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="mi">60</span><span class="si">:</span><span class="s2">.0f</span><span class="si">}</span><span class="s2"> minutes of copying per origin"</span><span class="p">)</span>
+<span class="n">error_rate</span> <span class="o">=</span> <span class="mf">1e-9</span>                              <span class="c1"># after proofreading and mismatch repair</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"expected new errors per cell division: </span><span class="si">{</span><span class="n">error_rate</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="mi">2</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">bp_per_copy</span><span class="si">:</span><span class="s2">.0f</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+<span class="n">R</span><span class="p">[</span><span class="s2">"one_origin_days"</span><span class="p">]</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">one_origin</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="mi">86400</span><span class="si">:</span><span class="s2">.0f</span><span class="si">}</span><span class="s2">"</span>
+<span class="n">R</span><span class="p">[</span><span class="s2">"errors"</span><span class="p">]</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">error_rate</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="mi">2</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">bp_per_copy</span><span class="si">:</span><span class="s2">.0f</span><span class="si">}</span><span class="s2">"</span>
+</code></pre>
+<pre class="out">chromosome 1 from a single origin: 29 days
+with 50,000 origins: about 21 minutes of copying per origin
+expected new errors per cell division: 6</pre>
+<p>From a single starting point, copying chromosome 1 would take about 29 days. Instead, tens of thousands of <strong>origins of replication</strong> fire across the genome. Each origin needs only minutes of copying, but they fire in waves (open euchromatin early, packed heterochromatin late), so the whole job takes about 8 hours (the S phase of the cell cycle, chapter P7). Even with proofreading and repair, about 6 new mistakes slip in every time a cell divides. Most fall in unimportant places. A few, accumulated over years in the wrong genes, start cancers (chapter P12). Cancer drugs such as 5-fluorouracil and gemcitabine work by jamming DNA replication, which hurts fast-dividing cells most.</p>
+<h2 id="what-is-written-in-a-genome">What is written in a genome?</h2>
+<p>Click the bar in the "What is in a genome" tab of the playground. The surprise is how little of the human genome codes for protein:</p>
+<table>
+<thead>
+<tr>
+<th>Part</th>
+<th>Share of the genome (approximate)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Protein-coding exons</td>
+<td>about 1–2%</td>
+</tr>
+<tr>
+<td>Introns (inside genes, spliced out)</td>
+<td>about 24%</td>
+</tr>
+<tr>
+<td>Transposable elements ("jumping genes")</td>
+<td>about 45%</td>
+</tr>
+<tr>
+<td>Regulatory elements (promoters, enhancers)</td>
+<td>a few %</td>
+</tr>
+<tr>
+<td>Other repeats and unassigned</td>
+<td>the rest</td>
+</tr>
+</tbody>
+</table>
+<p>A <strong>gene</strong> is a stretch of DNA that is copied into a functional RNA. For protein-coding genes (about 20,000 in humans) a gene contains:</p>
+<ul>
+<li>a <strong>promoter</strong> upstream, where the copying machinery binds (chapter P6),</li>
+<li><strong>exons</strong>, the pieces kept in the final message, separated by <strong>introns</strong>, which are cut out (chapter P4),</li>
+<li><strong>untranslated regions</strong> (UTRs) at the start and end of the message, which control how it is used,</li>
+<li>the <strong>coding sequence</strong> (CDS), from a start signal (<code>ATG</code>) to a stop signal, which spells out the protein.</li>
+</ul>
+<p>The TP53 file is the mature message, with introns already removed. We can find its coding sequence: the first <code>ATG</code>, then read three letters at a time until a stop codon. (Chapter P4 explains the three-letter code properly.)</p>
+<pre class="code"><code><span class="n">tp53</span> <span class="o">=</span> <span class="n">genomes</span><span class="p">[</span><span class="s2">"TP53 mRNA"</span><span class="p">]</span>
+<span class="n">start</span> <span class="o">=</span> <span class="n">tp53</span><span class="o">.</span><span class="n">find</span><span class="p">(</span><span class="s2">"ATG"</span><span class="p">)</span>
+<span class="n">stops</span> <span class="o">=</span> <span class="p">{</span><span class="s2">"TAA"</span><span class="p">,</span> <span class="s2">"TAG"</span><span class="p">,</span> <span class="s2">"TGA"</span><span class="p">}</span>
+<span class="n">end</span> <span class="o">=</span> <span class="nb">next</span><span class="p">(</span><span class="n">i</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">start</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">tp53</span><span class="p">)</span> <span class="o">-</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span> <span class="k">if</span> <span class="n">tp53</span><span class="p">[</span><span class="n">i</span><span class="p">:</span><span class="n">i</span> <span class="o">+</span> <span class="mi">3</span><span class="p">]</span> <span class="ow">in</span> <span class="n">stops</span><span class="p">)</span>
+<span class="n">cds</span> <span class="o">=</span> <span class="n">tp53</span><span class="p">[</span><span class="n">start</span><span class="p">:</span><span class="n">end</span> <span class="o">+</span> <span class="mi">3</span><span class="p">]</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"5′ UTR: </span><span class="si">{</span><span class="n">start</span><span class="si">}</span><span class="s2"> bases | coding sequence: </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">cds</span><span class="p">)</span><span class="si">}</span><span class="s2"> bases = </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">cds</span><span class="p">)</span><span class="w"> </span><span class="o">//</span><span class="w"> </span><span class="mi">3</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="mi">1</span><span class="si">}</span><span class="s2"> amino acids + stop | 3′ UTR: </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">tp53</span><span class="p">)</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">end</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="mi">3</span><span class="si">}</span><span class="s2"> bases"</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">"coding sequence starts:"</span><span class="p">,</span> <span class="s2">" "</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">cds</span><span class="p">[</span><span class="n">i</span><span class="p">:</span><span class="n">i</span> <span class="o">+</span> <span class="mi">3</span><span class="p">]</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">30</span><span class="p">,</span> <span class="mi">3</span><span class="p">)),</span> <span class="s2">"..."</span><span class="p">)</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">Bio.Seq</span><span class="w"> </span><span class="kn">import</span> <span class="n">Seq</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">"protein (Biopython):"</span><span class="p">,</span> <span class="n">Seq</span><span class="p">(</span><span class="n">cds</span><span class="p">)</span><span class="o">.</span><span class="n">translate</span><span class="p">()[:</span><span class="mi">40</span><span class="p">],</span> <span class="s2">"..."</span><span class="p">)</span>
+<span class="n">R</span><span class="p">[</span><span class="s2">"utr5"</span><span class="p">]</span> <span class="o">=</span> <span class="n">start</span><span class="p">;</span> <span class="n">R</span><span class="p">[</span><span class="s2">"n_aa"</span><span class="p">]</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">cds</span><span class="p">)</span> <span class="o">//</span> <span class="mi">3</span> <span class="o">-</span> <span class="mi">1</span><span class="p">;</span> <span class="n">R</span><span class="p">[</span><span class="s2">"utr3"</span><span class="p">]</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">tp53</span><span class="p">)</span> <span class="o">-</span> <span class="n">end</span> <span class="o">-</span> <span class="mi">3</span>
+</code></pre>
+<pre class="out">5′ UTR: 142 bases | coding sequence: 1182 bases = 393 amino acids + stop | 3′ UTR: 1188 bases
+coding sequence starts: ATG GAG GAG CCG CAG TCA GAT CCT AGC GTC ...
+protein (Biopython): MEEPQSDPSVEPPLSQETFSDLWKLLPENNVLSPLPSQAM ...</pre>
+<p>The message has a 5′ UTR of 142 bases, then a coding sequence for a protein of 393 amino acids, then a 3′ UTR of 1188 bases. That protein, p53, is called "the guardian of the genome": it halts the cell cycle when DNA is damaged and, if the damage is too great, tells the cell to kill itself. It is mutated in about half of all human cancers. You will meet it again in nearly every chapter from P7 onward.</p>
+<div class="box data">
+<p class="lab">About the data</p>
+<p>Sequence files you will meet in this course: <strong>FASTA</strong> (sequence only), <strong>FASTQ</strong> (sequencer reads plus a quality score for every base, Part 1), <strong>GenBank</strong> (sequence plus annotations such as where the genes are), <strong>BAM</strong> (reads aligned to a genome), <strong>VCF</strong> (variants: positions where a sample differs from the reference) and <strong>BED/GTF</strong> (coordinates of genes and other features). All of them are text or compressed text.</p>
+</div>
+<h2 id="summary">Summary</h2>
+<table>
+<thead>
+<tr>
+<th>Idea</th>
+<th>One line</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Nucleotide</td>
+<td>phosphate + deoxyribose sugar + one of A, C, G, T</td>
+</tr>
+<tr>
+<td>Base pairing</td>
+<td>A–T (2 hydrogen bonds), G–C (3)</td>
+</tr>
+<tr>
+<td>Antiparallel</td>
+<td>strands run 5′→3′ and 3′→5′; sequences are written 5′→3′</td>
+</tr>
+<tr>
+<td>Reverse complement</td>
+<td>the other strand, written 5′→3′</td>
+</tr>
+<tr>
+<td>GC content</td>
+<td>more G–C means a higher melting temperature</td>
+</tr>
+<tr>
+<td>Packing</td>
+<td>about 2 m per cell, wound on histones into chromatin and chromosomes</td>
+</tr>
+<tr>
+<td>Replication</td>
+<td>helicase unzips, polymerase copies 5′→3′, semi-conservative</td>
+</tr>
+<tr>
+<td>Genome</td>
+<td>about 1–2% protein-coding in humans; about 20,000 genes</td>
+</tr>
+</tbody>
+</table>
+<div class="box check">
+<p class="lab">Check yourself</p>
+<ol>
+<li>A DNA strand reads <code>5′-GATTACA-3′</code>. What is its reverse complement? <em>(<code>5′-TGTAATC-3′</code>.)</em></li>
+<li>A double-stranded DNA sample is 30% A. What fractions are T, G and C? <em>(T 30%, G 20%, C 20%.)</em></li>
+<li>Why can't you apply Chargaff's rule to a single-stranded RNA virus? <em>(There is no partner strand forcing A to equal T.)</em></li>
+<li>Which is harder to melt, a 20-base primer with 4 Gs and Cs or one with 12? <em>(The one with 12: more G–C pairs, more hydrogen bonds and stronger stacking.)</em></li>
+<li>Why must the lagging strand be made in pieces? <em>(Polymerase only builds 5′→3′, and the lagging strand's template is exposed in the opposite direction as the fork opens.)</em></li>
+</ol>
+</div>
+<div class="box exercise">
+<p class="lab">Try it</p>
+<p>The restriction enzyme <em>BamHI</em> cuts at <code>GGATCC</code>, between the two Gs. (a) Check that the site is a palindrome. (b) Find the fragment sizes it produces from lambda. (c) In random DNA with 25% of each base, how often would you expect a given 6-letter site? Compare with what you found.</p>
+</div>
+<details><summary>Solution</summary>
+<pre class="code"><code><span class="nb">print</span><span class="p">(</span><span class="s2">"palindrome:"</span><span class="p">,</span> <span class="n">revcomp</span><span class="p">(</span><span class="s2">"GGATCC"</span><span class="p">)</span> <span class="o">==</span> <span class="s2">"GGATCC"</span><span class="p">)</span>
+<span class="n">bam</span> <span class="o">=</span> <span class="p">[</span><span class="n">m</span><span class="o">.</span><span class="n">start</span><span class="p">()</span> <span class="k">for</span> <span class="n">m</span> <span class="ow">in</span> <span class="n">re</span><span class="o">.</span><span class="n">finditer</span><span class="p">(</span><span class="s2">"GGATCC"</span><span class="p">,</span> <span class="n">lam</span><span class="p">)]</span>
+<span class="n">cuts</span> <span class="o">=</span> <span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="p">[</span><span class="n">p</span> <span class="o">+</span> <span class="mi">1</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">bam</span><span class="p">]</span> <span class="o">+</span> <span class="p">[</span><span class="nb">len</span><span class="p">(</span><span class="n">lam</span><span class="p">)]</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">"BamHI sites:"</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">bam</span><span class="p">),</span> <span class="s2">"| fragments:"</span><span class="p">,</span> <span class="nb">sorted</span><span class="p">((</span><span class="n">b</span> <span class="o">-</span> <span class="n">a</span> <span class="k">for</span> <span class="n">a</span><span class="p">,</span> <span class="n">b</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">cuts</span><span class="p">,</span> <span class="n">cuts</span><span class="p">[</span><span class="mi">1</span><span class="p">:])),</span> <span class="n">reverse</span><span class="o">=</span><span class="kc">True</span><span class="p">))</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"expected one site every 4^6 = </span><span class="si">{</span><span class="mi">4</span><span class="w"> </span><span class="o">**</span><span class="w"> </span><span class="mi">6</span><span class="si">:</span><span class="s2">,</span><span class="si">}</span><span class="s2"> bp, so about </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">lam</span><span class="p">)</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="mi">4</span><span class="w"> </span><span class="o">**</span><span class="w"> </span><span class="mi">6</span><span class="si">:</span><span class="s2">.0f</span><span class="si">}</span><span class="s2"> sites in lambda"</span><span class="p">)</span>
+</code></pre>
+<pre class="out">palindrome: True
+BamHI sites: 5 | fragments: [16841, 7233, 6770, 6527, 5626, 5505]
+expected one site every 4^6 = 4,096 bp, so about 12 sites in lambda</pre>
+<p>The site is its own reverse complement. Lambda has five <em>BamHI</em> sites, giving six fragments. Random DNA would have a given 6-letter site about once every 4,096 bases, so about 12 in lambda. The real count is much lower, as it is for <em>EcoRI</em>. A plausible reason is evolution: phages that infect bacteria carrying these restriction enzymes are under pressure to lose the sites. Real genomes are not random strings, and the differences are biological clues.</p>
+</details>
+    <nav class="pager">
+      <a class="prev" href="../02-chemistry/index.html"><small>Previous</small>P2 · The chemistry of life</a>
+      <a class="next" href="../04-central-dogma/index.html"><small>Next</small>P4 · From gene to protein</a>
+    </nav>
+  </main>
+</div>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.js"></script>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/contrib/auto-render.min.js"></script>
+<script defer src="../../assets/guide.js"></script>
+</body>
+</html>

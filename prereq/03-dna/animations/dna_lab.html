@@ -1,0 +1,118 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>DNA Lab</title><link rel="stylesheet" href="../../../assets/pg.css"></head><body>
+<div class="tabs"><button class="on" data-t="pair" type="button">Pair the strands</button><button data-t="rep" type="button">Copy the DNA</button><button data-t="gen" type="button">What is in a genome</button></div>
+<section class="pane on" id="pair">
+  <div class="row"><input id="seq" type="text" value="ATGCGTACGTTAGCCGGAT" aria-label="DNA sequence" style="flex:1;min-width:200px">
+    <button type="button" id="rnd">Random</button><button type="button" id="gc">GC-rich</button><button type="button" id="at">AT-rich</button></div>
+  <svg id="psvg" viewBox="0 0 700 170" role="img" aria-label="Double-stranded DNA ladder"></svg>
+  <div id="pstats"></div>
+  <div class="msg" id="pmsg"></div>
+</section>
+<section class="pane" id="rep">
+  <div class="row"><button class="pri" type="button" id="rstep">Step ▶</button><button type="button" id="rplay">Play</button><button type="button" id="rreset">Restart</button><span id="rcount" class="tx"></span></div>
+  <svg id="rsvg" viewBox="0 0 700 230" role="img" aria-label="DNA replication"></svg>
+  <div class="msg" id="rmsg"></div>
+</section>
+<section class="pane" id="gen">
+  <svg id="gsvg" viewBox="0 0 700 142" role="img" aria-label="Composition of the human genome; click a segment"></svg>
+  <div class="msg" id="gmsg">Click a segment of the bar.</div>
+</section>
+<script src="../../../assets/pg.js"></script>
+<script>
+const {$, h, s, tabs, rng} = PG; tabs();
+const COMP = {A: "T", T: "A", G: "C", C: "G"};
+const col = (b) => `var(--${b.toLowerCase()})`;
+// ---------- pairing
+function drawPair() {
+  const seq = $("seq").value.toUpperCase().replace(/[^ACGT]/g, "").slice(0, 40);
+  const n = seq.length, W = 700, dx = Math.min(32, (W - 80) / Math.max(n, 1)), x0 = 40, parts = [];
+  parts.push(s("text", {x: 6, y: 44, class: "lb"}, "5′"), s("text", {x: 6, y: 134, class: "lb"}, "3′"), s("text", {x: x0 + n * dx + 6, y: 44, class: "lb"}, "3′"), s("text", {x: x0 + n * dx + 6, y: 134, class: "lb"}, "5′"));
+  parts.push(s("line", {x1: x0, x2: x0 + n * dx, y1: 22, y2: 22, stroke: "var(--muted)", "stroke-width": 4}), s("line", {x1: x0, x2: x0 + n * dx, y1: 150, y2: 150, stroke: "var(--muted)", "stroke-width": 4}));
+  let hb = 0, gc = 0;
+  [...seq].forEach((b, i) => {
+    const c = COMP[b], x = x0 + i * dx + dx / 2, bonds = (b === "G" || b === "C") ? 3 : 2;
+    hb += bonds; gc += bonds === 3;
+    parts.push(s("rect", {x: x - dx * 0.35, y: 30, width: dx * 0.7, height: 38, rx: 3, fill: col(b), opacity: 0.85}));
+    parts.push(s("rect", {x: x - dx * 0.35, y: 104, width: dx * 0.7, height: 38, rx: 3, fill: col(c), opacity: 0.85}));
+    for (let k = 0; k < bonds; k++) parts.push(s("line", {x1: x - 6 + k * 6, x2: x - 6 + k * 6, y1: 72, y2: 100, stroke: "var(--ink)", "stroke-dasharray": "2 3"}));
+    parts.push(s("text", {x, y: 54, class: "lb", "text-anchor": "middle", fill: "#fff"}, b), s("text", {x, y: 128, class: "lb", "text-anchor": "middle"}, c));
+  });
+  $("psvg").replaceChildren(...parts);
+  const gcPct = n ? 100 * gc / n : 0;
+  const tm = n < 14 ? 2 * (n - gc) + 4 * gc : 64.9 + 41 * (gc - 16.4) / n;
+  $("pstats").innerHTML = `<span class="stat">length <b>${n}</b> bp</span><span class="stat">GC content <b>${gcPct.toFixed(0)}%</b></span><span class="stat">hydrogen bonds <b>${hb}</b></span><span class="stat">estimated melting temperature <b>${n ? tm.toFixed(0) : "–"} °C</b></span>`;
+  $("pmsg").innerHTML = `The bottom strand is fully determined by the top one: A always pairs with T (2 hydrogen bonds), G with C (3). The strands run in opposite directions (5′→3′ on top, 3′→5′ below). More G–C pairs mean more hydrogen bonds and a higher melting temperature, which is why PCR primers (chapter P11) are designed with about 40–60% GC. Reverse complement of the top strand: <span class="mono">${[...seq].reverse().map((b) => COMP[b]).join("")}</span>`;
+}
+$("seq").addEventListener("input", drawPair);
+const r = rng(5);
+const randSeq = (n, gcBias) => Array.from({length: n}, () => (r() < gcBias ? (r() < 0.5 ? "G" : "C") : (r() < 0.5 ? "A" : "T"))).join("");
+$("rnd").onclick = () => { $("seq").value = randSeq(20, 0.5); drawPair(); };
+$("gc").onclick = () => { $("seq").value = randSeq(20, 0.85); drawPair(); };
+$("at").onclick = () => { $("seq").value = randSeq(20, 0.15); drawPair(); };
+drawPair();
+// ---------- replication
+const TOP = "ATGCCGTATTGCAGGCTAAC", N = TOP.length, BOT = [...TOP].map((b) => COMP[b]).join("");
+let step = 0, timer = null;
+const STEPS = N + 2;
+function drawRep() {
+  const W = 700, dx = 30, x0 = 40, fork = Math.min(step, N), parts = [];
+  const note = step === 0 ? "A stretch of double-stranded DNA. Press Step: the enzyme <b>helicase</b> will unzip it, breaking the hydrogen bonds between the strands."
+    : step <= N ? `Helicase has opened ${fork} base pairs. <b>DNA polymerase</b> reads each old strand and adds the matching base to a new strand. New DNA can only be built in the 5′→3′ direction, so one new strand (the <b>leading</b> strand, bottom) is made continuously, while the other (the <b>lagging</b> strand, top) is made backwards in short pieces called Okazaki fragments, later joined by <b>ligase</b>.`
+    : "Done: two double helices, each made of one old strand (grey outline) and one new strand. This is <b>semi-conservative replication</b>. Human polymerases add about 50 bases per second per fork and make about one mistake per billion bases after proofreading and repair.";
+  for (let i = 0; i < N; i++) {
+    const x = x0 + i * dx + dx / 2, open = i < fork;
+    const yT = open ? 30 : 80, yB = open ? 180 : 130;
+    parts.push(s("rect", {x: x - 11, y: yT, width: 22, height: 22, rx: 3, fill: col(TOP[i]), stroke: "var(--muted)", "stroke-width": 1.5}));
+    parts.push(s("text", {x, y: yT + 15, class: "lb", "text-anchor": "middle", fill: "#fff"}, TOP[i]));
+    parts.push(s("rect", {x: x - 11, y: yB, width: 22, height: 22, rx: 3, fill: col(BOT[i]), stroke: "var(--muted)", "stroke-width": 1.5}));
+    parts.push(s("text", {x, y: yB + 15, class: "lb", "text-anchor": "middle"}, BOT[i]));
+    if (!open) parts.push(s("line", {x1: x, x2: x, y1: 104, y2: 128, stroke: "var(--ink)", "stroke-dasharray": "2 3"}));
+    if (open) {
+      const newBot = TOP[i] && COMP[TOP[i]], newTop = COMP[BOT[i]];
+      const madeLead = i < fork - 1 || step > N, madeLag = (step > N) || (i < Math.floor((fork - 1) / 5) * 5);
+      if (madeLead) { parts.push(s("rect", {x: x - 11, y: 154, width: 22, height: 22, rx: 3, fill: col(newBot), opacity: 0.55})); parts.push(s("text", {x, y: 169, class: "lb", "text-anchor": "middle"}, newBot)); }
+      if (madeLag) { parts.push(s("rect", {x: x - 11, y: 56, width: 22, height: 22, rx: 3, fill: col(newTop), opacity: 0.55})); parts.push(s("text", {x, y: 71, class: "lb", "text-anchor": "middle"}, newTop)); }
+    }
+  }
+  const xf = x0 + fork * dx;
+  if (step > 0 && step <= N) parts.push(s("polygon", {points: `${xf - 24},93 ${xf - 24},117 ${xf - 3},105`, fill: "var(--accent2)"}), s("text", {x: xf - 28, y: 109, class: "tx", "text-anchor": "end"}, "helicase"));
+  parts.push(s("text", {x: 4, y: 45, class: "tx"}, "old"), s("text", {x: 4, y: 195, class: "tx"}, "old"));
+  if (step > 1) parts.push(s("text", {x: 4, y: 71, class: "tx"}, "new"), s("text", {x: 4, y: 169, class: "tx"}, "new"));
+  $("rsvg").replaceChildren(...parts);
+  $("rmsg").innerHTML = note;
+  $("rcount").textContent = `step ${step} of ${STEPS - 1}`;
+}
+$("rstep").onclick = () => { if (step < STEPS - 1) step++; drawRep(); };
+$("rreset").onclick = () => { step = 0; clearInterval(timer); timer = null; $("rplay").textContent = "Play"; drawRep(); };
+$("rplay").onclick = () => {
+  if (timer) { clearInterval(timer); timer = null; $("rplay").textContent = "Play"; return; }
+  $("rplay").textContent = "Pause";
+  timer = setInterval(() => { if (step >= STEPS - 1) { clearInterval(timer); timer = null; $("rplay").textContent = "Play"; return; } step++; drawRep(); }, 450);
+};
+drawRep();
+// ---------- genome composition (approximate shares of the human genome)
+const GEN = [
+  [1.5, "protein-coding exons", "var(--accent2)", "The parts of genes that are translated into protein: only about 1–2% of the genome, roughly 20,000 genes."],
+  [24, "introns", "var(--accent)", "Stretches inside genes that are copied into RNA but cut out (spliced) before the protein is made."],
+  [1.5, "UTRs and non-coding RNA genes", "var(--c)", "Untranslated regions of mRNAs, plus genes for RNAs that are never translated (ribosomal RNA, microRNAs, long non-coding RNAs)."],
+  [45, "transposable elements", "var(--a)", "Remnants of ‘jumping genes’ (LINEs, SINEs such as Alu, retroviruses) that copied themselves through our ancestors' genomes. Almost half of your DNA."],
+  [5, "regulatory elements", "var(--g)", "Promoters, enhancers and insulators that control when and where genes are switched on (chapter P6). Many disease-linked variants fall here."],
+  [23, "other repeats and unassigned", "var(--muted)", "Centromeres, telomeres, segmental duplications, simple repeats and DNA whose function is unknown or absent."],
+];
+(function drawGen() {
+  const W = 700, parts = []; let x = 10;
+  const tot = GEN.reduce((a, g) => a + g[0], 0);
+  GEN.forEach(([v, name, c, d]) => {
+    const w = (W - 20) * v / tot;
+    const r = s("rect", {x, y: 20, width: Math.max(w, 2), height: 50, fill: c, stroke: "var(--bg)", "stroke-width": 2, tabindex: 0, role: "button", "aria-label": name, style: "cursor:pointer"});
+    const show = () => { $("gmsg").innerHTML = `<b>${name}: about ${v}%.</b> ${d}`; };
+    r.addEventListener("click", show); r.addEventListener("keydown", (e) => { if (e.key === "Enter") show(); });
+    parts.push(r);
+    x += w;
+  });
+  GEN.forEach(([v, name, c], i) => { const lx = 10 + (i % 3) * 230, ly = 92 + Math.floor(i / 3) * 18; parts.push(s("rect", {x: lx, y: ly - 9, width: 10, height: 10, fill: c}), s("text", {x: lx + 15, y: ly, class: "tx"}, `${name} (${v}%)`)); });
+  parts.push(s("text", {x: 10, y: 136, class: "tx"}, "Human genome: 3.1 billion base pairs per copy. Shares are approximate."));
+  $("gsvg").replaceChildren(...parts);
+})();
+</script></body></html>

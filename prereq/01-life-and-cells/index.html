@@ -1,0 +1,309 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Life, scale and the cell · Cells to Code</title>
+<meta name="description" content="What living things are made of, how big everything is, and a guided tour of the cell, the factory where all of biology happens.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,600;1,6..72,400&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.css">
+<link rel="stylesheet" href="../../assets/guide.css">
+<script>try{var t=localStorage.getItem('c2c-theme');if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
+</head>
+<body>
+<header class="topbar">
+  <a class="brand" href="../../index.html"><span class="logo" aria-hidden="true"></span>Cells to Code</a>
+  <span class="crumb">Biology from zero · Chapter P1</span>
+  <button class="tocbtn" type="button" aria-controls="toc" aria-expanded="false">Contents</button>
+  <button class="themebtn" type="button" aria-label="Switch light or dark theme">Theme</button>
+  <span class="progress" aria-hidden="true"></span>
+</header>
+<div class="layout">
+  <nav class="toc" id="toc" aria-label="On this page">
+    <p class="toc-h">On this page</p>
+    <ol><li><a href="#what-makes-something-alive">What makes something alive?</a></li>
+<li><a href="#the-levels-of-life">The levels of life</a></li>
+<li><a href="#how-big-is-everything">How big is everything?</a></li>
+<li><a href="#why-are-cells-so-small-a-first-calculation">Why are cells so small? A first calculation</a></li>
+<li><a href="#two-kinds-of-cell">Two kinds of cell</a></li>
+<li><a href="#a-tour-of-the-animal-cell">A tour of the animal cell</a></li>
+<li><a href="#how-many-cells-and-how-many-kinds">How many cells, and how many kinds?</a></li>
+<li><a href="#the-big-question-of-this-course">The big question of this course</a></li></ol>
+    <p class="toc-nb"><a href="life_and_cells.ipynb" download>Download the notebook ↓</a></p>
+  </nav>
+  <main class="content">
+    <p class="eyebrow">Biology from zero · Chapter P1</p>
+    <h1>Life, scale and the cell</h1>
+    <p class="lede">What living things are made of, how big everything is, and a guided tour of the cell, the factory where all of biology happens.</p>
+    <p class="meta">About 1 hour · Nothing. A little Python helps with the code cells, but you can skip them.</p>
+<p>Every field in this course, from bioinformatics to drug discovery, studies one thing: <strong>the cell</strong>, and the molecules inside it. Before any DNA or proteins, we need a mental picture of what a cell is, how small it is, and what goes on inside it. That picture is what this chapter builds.</p>
+<div class="box eli5">
+<p class="lab">Like you’re five</p>
+<p>Your body is a city of about 37 trillion tiny rooms called <strong>cells</strong>. Each room has a copy of the same instruction book (DNA), little machines that read the instructions and build tools (proteins), power stations (mitochondria) and walls with doors (the membrane). Different rooms read different pages of the same book, which is why a skin cell and a brain cell look so different.</p>
+</div>
+<h2 id="what-makes-something-alive">What makes something alive?</h2>
+<p>Biologists don't agree on a one-line definition, but every living thing shares a few features:</p>
+<table>
+<thead>
+<tr>
+<th>Feature</th>
+<th>What it means</th>
+<th>Example</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Made of cells</strong></td>
+<td>One cell or many</td>
+<td>A bacterium is one cell; you are about 37 trillion</td>
+</tr>
+<tr>
+<td><strong>Metabolism</strong></td>
+<td>Takes in energy and matter and transforms them</td>
+<td>You eat sugar and burn it for energy</td>
+</tr>
+<tr>
+<td><strong>Homeostasis</strong></td>
+<td>Keeps its inside stable</td>
+<td>Body temperature stays near 37 °C</td>
+</tr>
+<tr>
+<td><strong>Reproduction</strong></td>
+<td>Makes more of itself</td>
+<td>Cells divide; organisms have offspring</td>
+</tr>
+<tr>
+<td><strong>Heredity</strong></td>
+<td>Passes instructions (DNA) to offspring</td>
+<td>You inherited half your DNA from each parent</td>
+</tr>
+<tr>
+<td><strong>Evolution</strong></td>
+<td>Populations change over generations</td>
+<td>Bacteria evolving antibiotic resistance</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Viruses</strong> sit on the border. They have genes and evolve, but they have no metabolism of their own and can only copy themselves inside a living cell. That is why antiviral drugs are hard to design: there is so little virus to attack that isn't also part of us.</p>
+<h2 id="the-levels-of-life">The levels of life</h2>
+<p>Biology is organised in levels, each built from the one below:</p>
+<p><strong>atoms → molecules → macromolecules (DNA, proteins) → organelles → cells → tissues → organs → organ systems → organism → population → ecosystem</strong></p>
+<p>Computational biology works at every level. Molecular dynamics simulates atoms; structural biology studies proteins; genomics reads DNA; single-cell analysis studies cells; cancer research studies tissues and patients; epidemiology studies populations.</p>
+<h2 id="how-big-is-everything">How big is everything?</h2>
+<p>Biology spans an enormous range of sizes, and almost all of the interesting molecular machinery is far too small to see with a normal microscope. Two units matter most:</p>
+<ul>
+<li><strong>micrometre (µm)</strong> = one millionth of a metre. Cells are measured in µm.</li>
+<li><strong>nanometre (nm)</strong> = one billionth of a metre (1000 nm = 1 µm). Molecules are measured in nm.</li>
+</ul>
+<pre class="code"><code><span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">matplotlib.pyplot</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">plt</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">matplotlib</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">mpl</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pathlib</span><span class="w"> </span><span class="kn">import</span> <span class="n">Path</span>
+
+<span class="n">mpl</span><span class="o">.</span><span class="n">rc</span><span class="p">(</span><span class="s2">"figure"</span><span class="p">,</span> <span class="n">dpi</span><span class="o">=</span><span class="mi">110</span><span class="p">);</span> <span class="n">mpl</span><span class="o">.</span><span class="n">rc</span><span class="p">(</span><span class="s2">"axes"</span><span class="p">,</span> <span class="n">labelsize</span><span class="o">=</span><span class="mi">12</span><span class="p">,</span> <span class="n">titlesize</span><span class="o">=</span><span class="mi">13</span><span class="p">)</span>
+<span class="n">IMAGES</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="s2">"images"</span><span class="p">);</span> <span class="n">IMAGES</span><span class="o">.</span><span class="n">mkdir</span><span class="p">(</span><span class="n">exist_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">save_fig</span><span class="p">(</span><span class="n">name</span><span class="p">):</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">tight_layout</span><span class="p">();</span> <span class="n">plt</span><span class="o">.</span><span class="n">savefig</span><span class="p">(</span><span class="n">IMAGES</span> <span class="o">/</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">.png"</span><span class="p">,</span> <span class="n">dpi</span><span class="o">=</span><span class="mi">150</span><span class="p">,</span> <span class="n">bbox_inches</span><span class="o">=</span><span class="s2">"tight"</span><span class="p">)</span>
+<span class="n">R</span> <span class="o">=</span> <span class="p">{}</span>
+
+<span class="n">sizes_m</span> <span class="o">=</span> <span class="p">{</span>                       <span class="c1"># typical sizes in metres</span>
+    <span class="s2">"carbon atom"</span><span class="p">:</span> <span class="mf">1.5e-10</span><span class="p">,</span> <span class="s2">"water molecule"</span><span class="p">:</span> <span class="mf">2.8e-10</span><span class="p">,</span> <span class="s2">"glucose"</span><span class="p">:</span> <span class="mf">9e-10</span><span class="p">,</span> <span class="s2">"DNA helix width"</span><span class="p">:</span> <span class="mf">2e-9</span><span class="p">,</span>
+    <span class="s2">"typical protein"</span><span class="p">:</span> <span class="mf">5e-9</span><span class="p">,</span> <span class="s2">"ribosome"</span><span class="p">:</span> <span class="mf">2.5e-8</span><span class="p">,</span> <span class="s2">"influenza virus"</span><span class="p">:</span> <span class="mf">1e-7</span><span class="p">,</span> <span class="s2">"mitochondrion"</span><span class="p">:</span> <span class="mf">1.5e-6</span><span class="p">,</span>
+    <span class="s2">"E. coli bacterium"</span><span class="p">:</span> <span class="mf">2e-6</span><span class="p">,</span> <span class="s2">"red blood cell"</span><span class="p">:</span> <span class="mf">7.5e-6</span><span class="p">,</span> <span class="s2">"typical human cell"</span><span class="p">:</span> <span class="mf">2e-5</span><span class="p">,</span>
+    <span class="s2">"human egg cell"</span><span class="p">:</span> <span class="mf">1.2e-4</span><span class="p">,</span> <span class="s2">"grain of sand"</span><span class="p">:</span> <span class="mf">5e-4</span><span class="p">,</span> <span class="s2">"ant"</span><span class="p">:</span> <span class="mf">3e-3</span><span class="p">,</span> <span class="s2">"human"</span><span class="p">:</span> <span class="mf">1.7</span><span class="p">,</span>
+<span class="p">}</span>
+<span class="n">names</span><span class="p">,</span> <span class="n">vals</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">sizes_m</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">sizes_m</span><span class="o">.</span><span class="n">values</span><span class="p">()))</span>
+<span class="n">fig</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="mi">5</span><span class="p">))</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">barh</span><span class="p">(</span><span class="n">names</span><span class="p">,</span> <span class="n">vals</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="p">[</span><span class="s2">"#5b3a8c"</span> <span class="k">if</span> <span class="n">v</span> <span class="o">&lt;</span> <span class="mf">1e-6</span> <span class="k">else</span> <span class="s2">"#c2416b"</span> <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">vals</span><span class="p">])</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">set_xscale</span><span class="p">(</span><span class="s2">"log"</span><span class="p">);</span> <span class="n">ax</span><span class="o">.</span><span class="n">invert_yaxis</span><span class="p">()</span>
+<span class="k">for</span> <span class="n">unit</span><span class="p">,</span> <span class="n">x</span> <span class="ow">in</span> <span class="p">[(</span><span class="s2">"1 nm"</span><span class="p">,</span> <span class="mf">1e-9</span><span class="p">),</span> <span class="p">(</span><span class="s2">"1 µm"</span><span class="p">,</span> <span class="mf">1e-6</span><span class="p">),</span> <span class="p">(</span><span class="s2">"1 mm"</span><span class="p">,</span> <span class="mf">1e-3</span><span class="p">),</span> <span class="p">(</span><span class="s2">"1 m"</span><span class="p">,</span> <span class="mi">1</span><span class="p">)]:</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">axvline</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s2">"0.6"</span><span class="p">,</span> <span class="n">lw</span><span class="o">=</span><span class="mf">0.8</span><span class="p">,</span> <span class="n">ls</span><span class="o">=</span><span class="s2">"--"</span><span class="p">);</span> <span class="n">ax</span><span class="o">.</span><span class="n">text</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.9</span><span class="p">,</span> <span class="n">unit</span><span class="p">,</span> <span class="n">ha</span><span class="o">=</span><span class="s2">"center"</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">9</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s2">"0.4"</span><span class="p">)</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">set_xlabel</span><span class="p">(</span><span class="s2">"size in metres (log scale: each step is 10 times bigger)"</span><span class="p">)</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="s2">"From atoms to people: ten orders of magnitude"</span><span class="p">)</span>
+<span class="n">save_fig</span><span class="p">(</span><span class="s2">"scales"</span><span class="p">);</span> <span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+<span class="n">R</span><span class="p">[</span><span class="s2">"orders"</span><span class="p">]</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">np</span><span class="o">.</span><span class="n">log10</span><span class="p">(</span><span class="n">vals</span><span class="o">.</span><span class="n">max</span><span class="p">()</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="n">vals</span><span class="o">.</span><span class="n">min</span><span class="p">())</span><span class="si">:</span><span class="s2">.0f</span><span class="si">}</span><span class="s2">"</span>
+</code></pre>
+
+<figure><img src="images/scales.png" alt="Figure P1-1. Typical sizes of biological objects on a logarithmic scale. Purple items are smaller than a micrometre and invisible in an ordinary light microscope." loading="lazy"><figcaption><b>Figure P1-1.</b> Figure P1-1. Typical sizes of biological objects on a logarithmic scale. Purple items are smaller than a micrometre and invisible in an ordinary light microscope.</figcaption></figure>
+
+<p>From a carbon atom to a person is about 10 powers of ten. Each step on that scale needs different tools: light microscopes resolve cells (down to about 0.2 µm), electron microscopes and cryo-EM resolve molecular machines, and X-ray crystallography and AlphaFold resolve individual atoms in proteins.</p>
+<h2 id="why-are-cells-so-small-a-first-calculation">Why are cells so small? A first calculation</h2>
+<p>Cells live by exchanging molecules with their surroundings through their surface: food in, waste out. Two simple geometric facts explain why cells stay small.</p>
+<div class="box math">
+<p class="lab">The maths, from scratch</p>
+<p>For a sphere of radius $r$, surface area $= 4\pi r^2$ and volume $= \tfrac43\pi r^3$, so</p>
+<p>$$\frac{\text{surface}}{\text{volume}} = \frac{3}{r}.$$</p>
+<p>Double the radius and each unit of volume has only half as much surface to feed it.</p>
+<p>Inside a cell, molecules move by <strong>diffusion</strong>, random jiggling. The typical time to diffuse a distance $x$ is</p>
+<p>$$t \approx \frac{x^2}{2D},$$</p>
+<p>where $D$ is the diffusion coefficient (about $100\ \mu\text{m}^2/\text{s}$ for a small molecule like glucose in water, about $10\ \mu\text{m}^2/\text{s}$ for a protein inside a cell). Time grows with the <strong>square</strong> of distance: ten times further takes a hundred times longer.</p>
+</div>
+<pre class="code"><code><span class="n">D_small</span><span class="p">,</span> <span class="n">D_protein</span> <span class="o">=</span> <span class="mf">100.0</span><span class="p">,</span> <span class="mf">10.0</span>              <span class="c1"># diffusion coefficients, µm²/s</span>
+<span class="k">for</span> <span class="n">label</span><span class="p">,</span> <span class="n">x</span> <span class="ow">in</span> <span class="p">[(</span><span class="s2">"across a bacterium"</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span> <span class="p">(</span><span class="s2">"across a human cell"</span><span class="p">,</span> <span class="mi">10</span><span class="p">),</span> <span class="p">(</span><span class="s2">"across an egg cell"</span><span class="p">,</span> <span class="mi">100</span><span class="p">),</span> <span class="p">(</span><span class="s2">"1 mm"</span><span class="p">,</span> <span class="mi">1000</span><span class="p">),</span> <span class="p">(</span><span class="s2">"1 cm"</span><span class="p">,</span> <span class="mi">10_000</span><span class="p">)]:</span>
+    <span class="n">t_small</span><span class="p">,</span> <span class="n">t_prot</span> <span class="o">=</span> <span class="n">x</span><span class="o">**</span><span class="mi">2</span> <span class="o">/</span> <span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">D_small</span><span class="p">),</span> <span class="n">x</span><span class="o">**</span><span class="mi">2</span> <span class="o">/</span> <span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">D_protein</span><span class="p">)</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">show</span><span class="p">(</span><span class="n">t</span><span class="p">):</span>
+        <span class="k">return</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">t</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="mi">1000</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2"> ms"</span> <span class="k">if</span> <span class="n">t</span> <span class="o">&lt;</span> <span class="mi">1</span> <span class="k">else</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">t</span><span class="si">:</span><span class="s2">.0f</span><span class="si">}</span><span class="s2"> s"</span> <span class="k">if</span> <span class="n">t</span> <span class="o">&lt;</span> <span class="mi">600</span> <span class="k">else</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">t</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="mi">3600</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2"> hours"</span> <span class="k">if</span> <span class="n">t</span> <span class="o">&lt;</span> <span class="mi">86400</span> <span class="o">*</span> <span class="mi">2</span> <span class="k">else</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">t</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="mi">86400</span><span class="si">:</span><span class="s2">.0f</span><span class="si">}</span><span class="s2"> days"</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">label</span><span class="si">:</span><span class="s2">22s</span><span class="si">}</span><span class="s2"> small molecule </span><span class="si">{</span><span class="n">show</span><span class="p">(</span><span class="n">t_small</span><span class="p">)</span><span class="si">:</span><span class="s2">&gt;10s</span><span class="si">}</span><span class="s2">   protein </span><span class="si">{</span><span class="n">show</span><span class="p">(</span><span class="n">t_prot</span><span class="p">)</span><span class="si">:</span><span class="s2">&gt;10s</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+<span class="n">R</span><span class="p">[</span><span class="s2">"prot_cm_days"</span><span class="p">]</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="p">(</span><span class="mf">1e4</span><span class="p">)</span><span class="o">**</span><span class="mi">2</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="p">(</span><span class="mi">2</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">D_protein</span><span class="p">)</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="mi">86400</span><span class="si">:</span><span class="s2">.0f</span><span class="si">}</span><span class="s2">"</span>
+</code></pre>
+<pre class="out">across a bacterium     small molecule     5.0 ms   protein    50.0 ms
+across a human cell    small molecule   500.0 ms   protein        5 s
+across an egg cell     small molecule       50 s   protein      500 s
+1 mm                   small molecule  1.4 hours   protein 13.9 hours
+1 cm                   small molecule     6 days   protein    58 days</pre>
+<p>Diffusion is fast over a cell (milliseconds to seconds) and hopelessly slow over centimetres: a protein would take about 58 days to drift one centimetre. That's why large organisms are made of many small cells and need blood vessels to deliver oxygen and food to within a few cell-widths of every cell. It's also why <strong>tumours</strong> larger than a millimetre or two must grow their own blood vessels (angiogenesis, one of the hallmarks of cancer in chapter P12).</p>
+<h2 id="two-kinds-of-cell">Two kinds of cell</h2>
+<table>
+<thead>
+<tr>
+<th></th>
+<th>Prokaryotes (bacteria, archaea)</th>
+<th>Eukaryotes (animals, plants, fungi, protists)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Size</td>
+<td>~1–5 µm</td>
+<td>~10–100 µm</td>
+</tr>
+<tr>
+<td>DNA</td>
+<td>One circular chromosome, floating in the cell</td>
+<td>Several linear chromosomes inside a <strong>nucleus</strong></td>
+</tr>
+<tr>
+<td>Internal compartments</td>
+<td>Almost none</td>
+<td>Many membrane-bound <strong>organelles</strong></td>
+</tr>
+<tr>
+<td>Example</td>
+<td><em>E. coli</em> in your gut</td>
+<td>your cells, yeast</td>
+</tr>
+</tbody>
+</table>
+<p>Bacteria matter enormously in this course: they are the workhorses of biotechnology (they produce insulin and many other protein drugs), the targets of antibiotics, and the source of CRISPR.</p>
+<h2 id="a-tour-of-the-animal-cell">A tour of the animal cell</h2>
+<p>Click through the parts of a cell in the playground below, then read the summary.</p>
+<div class="playground"><div class="pg-bar"><span>Interactive playground</span><a href="animations/cell_lab.html" target="_blank" rel="noopener">open full screen ↗</a></div><iframe src="animations/cell_lab.html" loading="lazy" style="height:640px" title="Interactive playground"></iframe></div>
+
+<table>
+<thead>
+<tr>
+<th>Part</th>
+<th>Job</th>
+<th>Why it matters later</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Plasma membrane</strong></td>
+<td>the boundary; controls what enters and leaves</td>
+<td>most drug targets are membrane proteins (receptors, channels)</td>
+</tr>
+<tr>
+<td><strong>Nucleus</strong></td>
+<td>stores DNA; genes are read (transcribed) here</td>
+<td>genomics, gene regulation</td>
+</tr>
+<tr>
+<td><strong>Ribosomes</strong></td>
+<td>build proteins from RNA instructions</td>
+<td>the central dogma (P4); antibiotics target bacterial ribosomes</td>
+</tr>
+<tr>
+<td><strong>Endoplasmic reticulum</strong></td>
+<td>makes membrane and secreted proteins, and lipids</td>
+<td>protein folding and quality control</td>
+</tr>
+<tr>
+<td><strong>Golgi apparatus</strong></td>
+<td>modifies, sorts and ships proteins</td>
+<td>how antibodies and hormones are secreted</td>
+</tr>
+<tr>
+<td><strong>Mitochondria</strong></td>
+<td>make ATP (energy) from sugar, fat and oxygen</td>
+<td>cancer metabolism (P9), cell death (P7)</td>
+</tr>
+<tr>
+<td><strong>Lysosomes</strong></td>
+<td>digest and recycle</td>
+<td>some drug delivery strategies</td>
+</tr>
+<tr>
+<td><strong>Cytoskeleton</strong></td>
+<td>shape, transport, cell division</td>
+<td>chemotherapy drugs like paclitaxel freeze it</td>
+</tr>
+</tbody>
+</table>
+<div class="box idea">
+<p class="lab">The real idea</p>
+<p>A cell is not a bag of soup. It is a crowded, organised factory: about 40% of the cytoplasm by volume is protein, and molecules are constantly being made, moved, used and destroyed. Almost every process you'll study is the result of molecules bumping into each other and sticking (or not), billions of times per second.</p>
+</div>
+<h2 id="how-many-cells-and-how-many-kinds">How many cells, and how many kinds?</h2>
+<pre class="code"><code><span class="n">cells</span> <span class="o">=</span> <span class="p">{</span><span class="s2">"red blood cells"</span><span class="p">:</span> <span class="mf">26e12</span><span class="p">,</span> <span class="s2">"platelets"</span><span class="p">:</span> <span class="mf">1.5e12</span><span class="p">,</span> <span class="s2">"bone marrow cells"</span><span class="p">:</span> <span class="mf">0.7e12</span><span class="p">,</span> <span class="s2">"white blood cells"</span><span class="p">:</span> <span class="mf">0.05e12</span><span class="p">,</span>
+         <span class="s2">"skin and other epithelial cells"</span><span class="p">:</span> <span class="mf">0.4e12</span><span class="p">,</span> <span class="s2">"muscle cells"</span><span class="p">:</span> <span class="mf">0.015e12</span><span class="p">,</span> <span class="s2">"neurons"</span><span class="p">:</span> <span class="mf">0.086e12</span><span class="p">,</span> <span class="s2">"fat cells"</span><span class="p">:</span> <span class="mf">0.05e12</span><span class="p">,</span>
+         <span class="s2">"everything else"</span><span class="p">:</span> <span class="mf">8.2e12</span><span class="p">}</span>
+<span class="n">total</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span><span class="n">cells</span><span class="o">.</span><span class="n">values</span><span class="p">())</span>
+<span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">cells</span><span class="o">.</span><span class="n">items</span><span class="p">(),</span> <span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">kv</span><span class="p">:</span> <span class="o">-</span><span class="n">kv</span><span class="p">[</span><span class="mi">1</span><span class="p">]):</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">k</span><span class="si">:</span><span class="s2">32s</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="n">v</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="mf">1e12</span><span class="si">:</span><span class="s2">6.2f</span><span class="si">}</span><span class="s2"> trillion  (</span><span class="si">{</span><span class="n">v</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="n">total</span><span class="si">:</span><span class="s2">5.1%</span><span class="si">}</span><span class="s2">)"</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="s1">'total'</span><span class="si">:</span><span class="s2">32s</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="n">total</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="mf">1e12</span><span class="si">:</span><span class="s2">6.1f</span><span class="si">}</span><span class="s2"> trillion"</span><span class="p">)</span>
+<span class="n">R</span><span class="p">[</span><span class="s2">"rbc_share"</span><span class="p">]</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">cells</span><span class="p">[</span><span class="s1">'red blood cells'</span><span class="p">]</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="n">total</span><span class="si">:</span><span class="s2">.0%</span><span class="si">}</span><span class="s2">"</span>
+</code></pre>
+<pre class="out">red blood cells                   26.00 trillion  (70.3%)
+everything else                    8.20 trillion  (22.2%)
+platelets                          1.50 trillion  ( 4.1%)
+bone marrow cells                  0.70 trillion  ( 1.9%)
+skin and other epithelial cells    0.40 trillion  ( 1.1%)
+neurons                            0.09 trillion  ( 0.2%)
+white blood cells                  0.05 trillion  ( 0.1%)
+fat cells                          0.05 trillion  ( 0.1%)
+muscle cells                       0.01 trillion  ( 0.0%)
+total                              37.0 trillion</pre>
+<p>These are rounded figures from published estimates (Sender, Fuchs and Milo, 2016; Bianconi et al., 2013). About 70% of your cells are red blood cells, which are small and have no nucleus. By <em>mass</em>, most of you is muscle and fat cells. There are over 200 recognised cell types, and single-cell sequencing (chapter 7) keeps discovering more.</p>
+<h2 id="the-big-question-of-this-course">The big question of this course</h2>
+<p>Every cell in your body (apart from a few) has the <strong>same DNA</strong>. So how does a neuron become a neuron and a liver cell a liver cell? And what goes wrong when a cell becomes cancerous? The answers run through the next twelve chapters:</p>
+<ol>
+<li>DNA stores instructions (P3).</li>
+<li>Cells copy selected instructions into RNA and build proteins from them (P4).</li>
+<li>Proteins do almost all the work (P5).</li>
+<li>Which genes are switched on decides what a cell is (P6).</li>
+<li>Cells divide under strict control (P7), and mutations can break that control (P8, P12).</li>
+</ol>
+<div class="box check">
+<p class="lab">Check yourself</p>
+<ol>
+<li>Roughly how many nanometres wide is a typical protein? A human cell? <em>(About 5 nm; about 10,000–30,000 nm.)</em></li>
+<li>Why does the surface-to-volume ratio limit cell size? <em>(Volume, which needs feeding, grows faster than surface, through which food arrives.)</em></li>
+<li>A molecule takes 1 second to diffuse across a cell. Roughly how long to cross a distance 10 times larger? <em>(About 100 seconds: time grows with distance squared.)</em></li>
+</ol>
+</div>
+<div class="box exercise">
+<p class="lab">Try it</p>
+<p>Using $t = x^2/2D$, estimate how far oxygen ($D \approx 2000\ \mu\text{m}^2/\text{s}$ in water) diffuses in 1 second. Tumour cells further than about 150 µm from a blood vessel are usually starved of oxygen (hypoxic). Is that consistent?</p>
+</div>
+<details><summary>Solution</summary>
+<pre class="code"><code><span class="n">D_o2</span> <span class="o">=</span> <span class="mf">2000.0</span>
+<span class="n">x</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">D_o2</span> <span class="o">*</span> <span class="mf">1.0</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"oxygen diffuses about </span><span class="si">{</span><span class="n">x</span><span class="si">:</span><span class="s2">.0f</span><span class="si">}</span><span class="s2"> µm in one second"</span><span class="p">)</span>
+</code></pre>
+<pre class="out">oxygen diffuses about 63 µm in one second</pre>
+<p>About 60 µm in a second. Over a few seconds it reaches roughly 100–150 µm, but cells along the way consume it. So beyond about 100–200 µm from a capillary, oxygen runs out. That is why the centres of tumours become hypoxic, which makes them resistant to radiotherapy and drives the growth of new blood vessels.</p>
+</details>
+    <nav class="pager">
+      <a class="prev" href="../../index.html"><small>Previous</small>Course home</a>
+      <a class="next" href="../02-chemistry/index.html"><small>Next</small>P2 · The chemistry of life</a>
+    </nav>
+  </main>
+</div>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.js"></script>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/contrib/auto-render.min.js"></script>
+<script defer src="../../assets/guide.js"></script>
+</body>
+</html>

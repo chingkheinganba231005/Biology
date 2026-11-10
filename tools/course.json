@@ -1,0 +1,328 @@
+{
+  "tracks": [
+    {
+      "name": "Part 0 · Biology from zero",
+      "blurb": "No biology assumed. From atoms and cells to DNA, proteins, genetics, the immune system, lab techniques, cancer and how drugs work: everything the computational fields build on, explained simply, with interactive models and a little Python.",
+      "chapters": [
+        {
+          "n": "P1",
+          "title": "Life, scale and the cell",
+          "path": "prereq/01-life-and-cells/",
+          "ready": true,
+          "kind": "Foundations",
+          "desc": "What living things are made of, how big everything is, and a tour of the cell as a factory."
+        },
+        {
+          "n": "P2",
+          "title": "The chemistry of life",
+          "path": "prereq/02-chemistry/",
+          "ready": true,
+          "kind": "Foundations",
+          "desc": "Atoms, bonds, water, pH, energy, and the four families of molecules every cell is built from."
+        },
+        {
+          "n": "P3",
+          "title": "DNA and genomes",
+          "path": "prereq/03-dna/",
+          "ready": true,
+          "kind": "Foundations",
+          "desc": "The double helix, base pairing, chromosomes, how DNA is copied, and what a genome really contains."
+        },
+        {
+          "n": "P4",
+          "title": "From gene to protein",
+          "path": "prereq/04-central-dogma/",
+          "ready": false,
+          "kind": "Foundations",
+          "desc": "Transcription, splicing, the genetic code and translation: how a DNA sequence becomes a working protein."
+        },
+        {
+          "n": "P5",
+          "title": "Proteins: shape is function",
+          "path": "prereq/05-proteins/",
+          "ready": false,
+          "kind": "Foundations",
+          "desc": "Amino acids, folding, the four levels of structure, enzymes and how fast they work."
+        },
+        {
+          "n": "P6",
+          "title": "Gene regulation and epigenetics",
+          "path": "prereq/06-regulation/",
+          "ready": false,
+          "kind": "Foundations",
+          "desc": "How a cell decides which genes to switch on: promoters, transcription factors, chromatin and cell identity."
+        },
+        {
+          "n": "P7",
+          "title": "The cell cycle, division and death",
+          "path": "prereq/07-cell-cycle/",
+          "ready": false,
+          "kind": "Foundations",
+          "desc": "Mitosis, meiosis, checkpoints, p53 and apoptosis: the machinery cancer breaks."
+        },
+        {
+          "n": "P8",
+          "title": "Genetics, mutation and evolution",
+          "path": "prereq/08-genetics-evolution/",
+          "ready": false,
+          "kind": "Foundations",
+          "desc": "Inheritance, alleles, mutations, populations, natural selection and the tree of life."
+        },
+        {
+          "n": "P9",
+          "title": "Signalling and metabolism",
+          "path": "prereq/09-signalling-metabolism/",
+          "ready": false,
+          "kind": "Foundations",
+          "desc": "How cells sense and respond (receptors, kinase cascades) and how they make and use energy."
+        },
+        {
+          "n": "P10",
+          "title": "The immune system",
+          "path": "prereq/10-immune/",
+          "ready": false,
+          "kind": "Foundations",
+          "desc": "Innate and adaptive immunity, antibodies, T cells and the basis of vaccines and immunotherapy."
+        },
+        {
+          "n": "P11",
+          "title": "The lab toolkit",
+          "path": "prereq/11-lab-toolkit/",
+          "ready": false,
+          "kind": "Foundations",
+          "desc": "PCR, gels, cloning, sequencing, CRISPR, microscopy and assays: where biological data comes from."
+        },
+        {
+          "n": "P12",
+          "title": "Cancer biology",
+          "path": "prereq/12-cancer/",
+          "ready": false,
+          "kind": "Foundations",
+          "desc": "Oncogenes, tumour suppressors, the hallmarks of cancer, tumour evolution and how cancer is treated."
+        },
+        {
+          "n": "P13",
+          "title": "How drugs work",
+          "path": "prereq/13-pharmacology/",
+          "ready": false,
+          "kind": "Foundations",
+          "desc": "Targets, binding, dose–response, potency and selectivity, ADME, and the drug-discovery pipeline."
+        }
+      ]
+    },
+    {
+      "name": "Part 1 · Bioinformatics",
+      "blurb": "Biological sequences as data: reading genomes, aligning sequences, building evolutionary trees, assembling genomes and finding variants, all from scratch on real data.",
+      "chapters": [
+        {
+          "n": "1",
+          "title": "Sequences as data",
+          "path": "bioinformatics/01-sequences/",
+          "ready": false,
+          "kind": "Project",
+          "desc": "FASTA, GC content, k-mers, reading frames and gene finding in a real virus genome."
+        },
+        {
+          "n": "2",
+          "title": "Sequence alignment from scratch",
+          "path": "bioinformatics/02-alignment/",
+          "ready": false,
+          "kind": "Project",
+          "desc": "Dynamic programming, Needleman–Wunsch and Smith–Waterman, substitution matrices, and how BLAST searches billions of letters."
+        },
+        {
+          "n": "3",
+          "title": "Phylogenetics: trees of life",
+          "path": "bioinformatics/03-phylogenetics/",
+          "ready": false,
+          "kind": "Project",
+          "desc": "Evolutionary distances, UPGMA and neighbour joining, and a tree of real viral genomes."
+        },
+        {
+          "n": "4",
+          "title": "Genome assembly and read mapping",
+          "path": "bioinformatics/04-assembly/",
+          "ready": false,
+          "kind": "Project",
+          "desc": "Sequencing reads, quality scores, de Bruijn graph assembly and fast read mapping with k-mer indexes."
+        },
+        {
+          "n": "5",
+          "title": "Variants and population genomics",
+          "path": "bioinformatics/05-variants/",
+          "ready": false,
+          "kind": "Project",
+          "desc": "Calling variants, allele frequencies, Hardy–Weinberg, linkage and a genome-wide association study."
+        }
+      ]
+    },
+    {
+      "name": "Part 2 · Omics and machine learning",
+      "blurb": "Measuring thousands of genes at once and learning from it: RNA-seq, single-cell data, cancer classification and deep learning on DNA and proteins.",
+      "chapters": [
+        {
+          "n": "6",
+          "title": "Transcriptomics and differential expression",
+          "path": "omics/06-rnaseq/",
+          "ready": false,
+          "kind": "Project",
+          "desc": "RNA-seq counts, normalisation, statistical testing with false-discovery control, on real tumour data."
+        },
+        {
+          "n": "7",
+          "title": "Single-cell RNA-seq",
+          "path": "omics/07-single-cell/",
+          "ready": false,
+          "kind": "Project",
+          "desc": "Quality control, PCA, neighbourhood graphs, clustering and cell-type annotation of 2,700 real blood cells."
+        },
+        {
+          "n": "8",
+          "title": "Machine learning for cancer genomics",
+          "path": "omics/08-ml-cancer/",
+          "ready": false,
+          "kind": "Project",
+          "desc": "Classifying tumours from gene expression honestly: high dimensions, feature selection, leakage and interpretation."
+        },
+        {
+          "n": "9",
+          "title": "Deep learning on DNA",
+          "path": "omics/09-deep-dna/",
+          "ready": false,
+          "kind": "Project",
+          "desc": "One-hot sequences, convolutional networks that learn binding motifs, and how to read what they learned."
+        },
+        {
+          "n": "10",
+          "title": "Protein machine learning and AlphaFold",
+          "path": "omics/10-protein-ml/",
+          "ready": false,
+          "kind": "Project",
+          "desc": "Sequence embeddings, coevolution, contact prediction and how AlphaFold and protein language models work."
+        }
+      ]
+    },
+    {
+      "name": "Part 3 · Structure, chemistry and drug discovery",
+      "blurb": "Molecules in 3D, physics-based simulation and the computational side of finding new medicines.",
+      "chapters": [
+        {
+          "n": "11",
+          "title": "Protein structure",
+          "path": "drug-discovery/11-structure/",
+          "ready": false,
+          "kind": "Project",
+          "desc": "PDB files, coordinates, contacts, RMSD and superposition, binding pockets and AlphaFold confidence."
+        },
+        {
+          "n": "12",
+          "title": "Molecular dynamics from scratch",
+          "path": "drug-discovery/12-molecular-dynamics/",
+          "ready": false,
+          "kind": "Project",
+          "desc": "Force fields, Verlet integration, temperature, and a toy protein that folds on a lattice."
+        },
+        {
+          "n": "13",
+          "title": "Cheminformatics",
+          "path": "drug-discovery/13-cheminformatics/",
+          "ready": false,
+          "kind": "Project",
+          "desc": "Molecules as graphs: SMILES, descriptors, fingerprints, drug-likeness and similarity search with RDKit."
+        },
+        {
+          "n": "14",
+          "title": "QSAR and virtual screening",
+          "path": "drug-discovery/14-qsar/",
+          "ready": false,
+          "kind": "Project",
+          "desc": "Predicting activity against a cancer target from real ChEMBL data, with honest scaffold splits."
+        },
+        {
+          "n": "15",
+          "title": "Docking and binding",
+          "path": "drug-discovery/15-docking/",
+          "ready": false,
+          "kind": "Project",
+          "desc": "Scoring functions, a docking search from scratch, and what binding free energy means."
+        },
+        {
+          "n": "16",
+          "title": "Pharmacokinetics and dosing",
+          "path": "drug-discovery/16-pkpd/",
+          "ready": false,
+          "kind": "Project",
+          "desc": "Compartment models, half-life, dosing regimens and dose–response, as differential equations."
+        }
+      ]
+    },
+    {
+      "name": "Part 4 · Systems biology and simulation",
+      "blurb": "Cells and tissues as dynamical systems: gene circuits, noise, and the evolution of tumours, simulated.",
+      "chapters": [
+        {
+          "n": "17",
+          "title": "Gene circuits as dynamical systems",
+          "path": "systems/17-gene-circuits/",
+          "ready": false,
+          "kind": "Project",
+          "desc": "Differential equations for gene expression: switches, oscillators and feedback."
+        },
+        {
+          "n": "18",
+          "title": "Noise and stochastic simulation",
+          "path": "systems/18-stochastic/",
+          "ready": false,
+          "kind": "Project",
+          "desc": "Why identical cells differ: the Gillespie algorithm and bursting gene expression."
+        },
+        {
+          "n": "19",
+          "title": "Tumour growth and cancer evolution",
+          "path": "systems/19-tumour-evolution/",
+          "ready": false,
+          "kind": "Project",
+          "desc": "Growth laws, agent-based tumours, clonal evolution and how drug resistance emerges."
+        }
+      ]
+    },
+    {
+      "name": "Part 5 · Cancer research and capstones",
+      "blurb": "Real cancer genomics and clinical data, then end-to-end projects that use the whole course.",
+      "chapters": [
+        {
+          "n": "20",
+          "title": "Cancer genomics and mutational signatures",
+          "path": "cancer/20-cancer-genomics/",
+          "ready": false,
+          "kind": "Project",
+          "desc": "Driver genes, mutation spectra and signature extraction with non-negative matrix factorisation."
+        },
+        {
+          "n": "21",
+          "title": "Survival analysis",
+          "path": "cancer/21-survival/",
+          "ready": false,
+          "kind": "Project",
+          "desc": "Kaplan–Meier curves, log-rank tests and Cox models on real patient cohorts."
+        },
+        {
+          "n": "22",
+          "title": "Capstone: a drug-discovery campaign",
+          "path": "cancer/22-capstone-drug/",
+          "ready": false,
+          "kind": "Capstone",
+          "desc": "From a cancer target to ranked candidate molecules: data, models, screening, filtering and a report."
+        },
+        {
+          "n": "23",
+          "title": "Capstone: a precision-oncology analysis",
+          "path": "cancer/23-capstone-oncology/",
+          "ready": false,
+          "kind": "Capstone",
+          "desc": "From a tumour cohort's mutations and expression to subtypes, biomarkers and outcomes."
+        }
+      ]
+    }
+  ]
+}
