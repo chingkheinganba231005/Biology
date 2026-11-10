@@ -226,7 +226,7 @@
           "n": "13",
           "title": "Cheminformatics",
           "path": "drug-discovery/13-cheminformatics/",
-          "ready": false,
+          "ready": true,
           "kind": "Project",
           "desc": "Molecules as graphs: SMILES, descriptors, fingerprints, drug-likeness and similarity search with RDKit."
         },

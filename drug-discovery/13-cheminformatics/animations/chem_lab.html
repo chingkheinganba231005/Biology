@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Cheminformatics Lab</title><link rel="stylesheet" href="../../../assets/pg.css">
+<style>.mol{border:1px solid var(--line);border-radius:10px;padding:6px;background:var(--surface);text-align:center}
+.mol svg{max-width:100%;height:auto} .mol .nm{font:600 13px Manrope;margin-top:2px}
+.simrow{display:flex;align-items:center;gap:8px;margin:2px 0;font-size:13px}.simrow .bar{height:14px;border-radius:3px;background:var(--accent)}
+.props{display:flex;flex-wrap:wrap;gap:4px 10px;font-size:12.5px;color:var(--muted);justify-content:center;margin-top:3px}</style></head><body>
+<div class="tabs"><button class="on" data-t="sim" type="button">Molecular similarity</button><button data-t="prop" type="button">Chemical space</button></div>
+<section class="pane on" id="sim">
+  <div class="row"><label>query drug <select id="q"></select></label></div>
+  <div style="display:flex;gap:16px;flex-wrap:wrap;align-items:flex-start">
+    <div class="mol" id="qmol" style="width:200px"></div>
+    <div style="flex:1;min-width:240px"><div class="tx" style="margin-bottom:4px">most similar drugs (Tanimoto on Morgan fingerprints):</div><div id="simlist"></div></div></div>
+  <div class="msg" id="smsg"></div>
+</section>
+<section class="pane" id="prop">
+  <div class="row"><label>x <select id="xax"></select></label><label>y <select id="yax"></select></label></div>
+  <svg id="psvg" viewBox="0 0 700 360" role="img" aria-label="Drugs plotted in chemical property space"></svg>
+  <div class="msg" id="pmsg"></div>
+</section>
+<script src="../../../assets/pg.js"></script>
+<script src="chem.js"></script>
+<script>
+const {$, h, s, tabs} = PG; tabs();
+CHEM.order.forEach((n) => $("q").append(h("option", {value: n}, n)));
+function showMol(el, name) {
+  const d = CHEM.drugs[name];
+  el.innerHTML = d.svg + `<div class="nm">${name}</div><div class="props"><span>MW ${d.mw}</span><span>logP ${d.logp}</span><span>HBD ${d.hbd}</span><span>HBA ${d.hba}</span><span>TPSA ${d.tpsa}</span></div>`;
+}
+function drawSim() {
+  const q = $("q").value; showMol($("qmol"), q);
+  const sims = CHEM.order.filter((n) => n !== q).map((n) => [n, CHEM.sim[q][n]]).sort((a, b) => b[1] - a[1]);
+  $("simlist").replaceChildren(...sims.slice(0, 8).map(([n, v]) => h("div", {class: "simrow"},
+    h("div", {style: `width:${Math.max(v * 180, 2)}px`, class: "bar"}), h("b", null, v.toFixed(2)), h("span", null, n))));
+  const top = sims[0];
+  $("smsg").innerHTML = `A molecule is turned into a <b>fingerprint</b>: a bit-string marking which small substructures it contains. The <b>Tanimoto similarity</b> of two fingerprints (shared bits / total bits) scores how alike two molecules are, from 0 to 1. ` +
+    `<b>${q}</b>'s closest relative here is <b>${top[0]}</b> (${top[1].toFixed(2)}). Drugs above about 0.7 are usually close analogues (often same drug class); below 0.3 they are chemically unrelated. This "similar molecules have similar activity" principle drives <b>similarity search</b>: to find new drug leads, search millions of molecules for ones similar to a known active.`;
+}
+$("q").onchange = drawSim; drawSim();
+// chemical space
+const AX = { mw: "molecular weight", logp: "logP (lipophilicity)", tpsa: "polar surface area", hbd: "H-bond donors", hba: "H-bond acceptors", rotb: "rotatable bonds", rings: "rings" };
+Object.keys(AX).forEach((k) => { $("xax").append(h("option", {value: k}, AX[k])); $("yax").append(h("option", {value: k}, AX[k])); });
+$("xax").value = "mw"; $("yax").value = "logp";
+function drawProp() {
+  const xk = $("xax").value, yk = $("yax").value, names = CHEM.order, parts = [];
+  const xs = names.map((n) => CHEM.drugs[n][xk]), ys = names.map((n) => CHEM.drugs[n][yk]);
+  const xmin = Math.min(...xs), xmax = Math.max(...xs), ymin = Math.min(...ys), ymax = Math.max(...ys);
+  const X = (v) => 60 + 560 * (v - xmin) / (xmax - xmin || 1), Y = (v) => 320 - 290 * (v - ymin) / (ymax - ymin || 1);
+  // Lipinski lines if relevant
+  if (xk === "mw") parts.push(s("line", {x1: X(500), x2: X(500), y1: 30, y2: 320, stroke: "var(--accent2)", "stroke-dasharray": "3 3"}));
+  if (yk === "logp") parts.push(s("line", {x1: 60, x2: 660, y1: Y(5), y2: Y(5), stroke: "var(--accent2)", "stroke-dasharray": "3 3"}));
+  names.forEach((n, i) => { parts.push(s("circle", {cx: X(xs[i]), cy: Y(ys[i]), r: 4, fill: "var(--accent)"})); parts.push(s("text", {x: X(xs[i]) + 5, y: Y(ys[i]) + 3, class: "tx", style: "font-size:9px"}, n.slice(0, 10))); });
+  parts.push(s("text", {x: 360, y: 352, class: "tx", "text-anchor": "middle"}, AX[xk]), s("text", {x: 16, y: 175, class: "tx", "text-anchor": "middle", transform: "rotate(-90 16 175)"}, AX[yk]));
+  $("psvg").replaceChildren(...parts);
+  $("pmsg").innerHTML = `Each drug is a point in <b>chemical property space</b>. These numbers (molecular weight, lipophilicity logP, polar surface area, hydrogen-bond donors/acceptors, flexibility) are <b>molecular descriptors</b> computed directly from structure. ` +
+    `They predict drug-like behaviour: the pink <b>Lipinski lines</b> (MW 500, logP 5, prerequisite P13) bound the region where most oral drugs sit. Big natural-product drugs like paclitaxel and doxorubicin sit outside it, they are given by infusion, not as pills. Descriptors are the simplest features for the activity models of chapter 14.`;
+}
+$("xax").onchange = drawProp; $("yax").onchange = drawProp; drawProp();
+</script></body></html>
