@@ -1,0 +1,311 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Machine learning for cancer genomics · Cells to Code</title>
+<meta name="description" content="Classifying tumours from gene expression, honestly. The curse of dimensionality, train/test discipline, the data-leakage trap that has wrecked real biomarker studies, regularisation, and how to interpret what a model learned. On 408 real breast tumours.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,600;1,6..72,400&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.css">
+<link rel="stylesheet" href="../../assets/guide.css">
+<script>try{var t=localStorage.getItem('c2c-theme');if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
+</head>
+<body>
+<header class="topbar">
+  <a class="brand" href="../../index.html"><span class="logo" aria-hidden="true"></span>Cells to Code</a>
+  <span class="crumb">Omics and ML · Chapter 8</span>
+  <button class="tocbtn" type="button" aria-controls="toc" aria-expanded="false">Contents</button>
+  <button class="themebtn" type="button" aria-label="Switch light or dark theme">Theme</button>
+  <span class="progress" aria-hidden="true"></span>
+</header>
+<div class="layout">
+  <nav class="toc" id="toc" aria-label="On this page">
+    <p class="toc-h">On this page</p>
+    <ol><li><a href="#the-data-four-breast-cancer-subtypes">The data: four breast cancer subtypes</a></li>
+<li><a href="#the-curse-of-dimensionality">The curse of dimensionality</a></li>
+<li><a href="#data-leakage-the-cardinal-sin">Data leakage: the cardinal sin</a></li>
+<li><a href="#doing-it-right-honest-classification-of-the-real-subtypes">Doing it right: honest classification of the real subtypes</a></li>
+<li><a href="#which-subtypes-get-confused-the-confusion-matrix">Which subtypes get confused? The confusion matrix</a></li>
+<li><a href="#regularisation-and-the-overfitting-gap">Regularisation and the overfitting gap</a></li>
+<li><a href="#interpreting-the-model-which-genes-matter">Interpreting the model: which genes matter?</a></li>
+<li><a href="#a-checklist-for-honest-genomic-ml">A checklist for honest genomic ML</a></li>
+<li><a href="#summary">Summary</a></li></ol>
+    <p class="toc-nb"><a href="ml_cancer.ipynb" download>Download the notebook ↓</a></p>
+  </nav>
+  <main class="content">
+    <p class="eyebrow">Omics and ML · Chapter 8</p>
+    <h1>Machine learning for cancer genomics</h1>
+    <p class="lede">Classifying tumours from gene expression, honestly. The curse of dimensionality, train/test discipline, the data-leakage trap that has wrecked real biomarker studies, regularisation, and how to interpret what a model learned. On 408 real breast tumours.</p>
+    <p class="meta">About 3 hours · Chapters 6–7</p>
+<p>Gene expression carries enough information to tell tumour types apart, predict how a patient will respond to a drug, and estimate survival. Machine learning turns that promise into models. But genomics is a uniquely treacherous place to do machine learning: you typically have thousands or millions of measurements (genes) on only hundreds of patients, the opposite of the usual setting. Models overfit easily, and a subtle mistake, <strong>data leakage</strong>, has produced a long history of exciting biomarker papers that failed to replicate. This chapter teaches machine learning on genomic data the honest way, using it to classify real breast tumours into their molecular subtypes, and spends as much effort on <em>not fooling yourself</em> as on building the model.</p>
+<div class="box eli5">
+<p class="lab">Like you’re five</p>
+<p>Suppose you measure 20,000 genes in 200 patients and want to predict who has an aggressive cancer. With so many genes, some will line up with the answer purely by chance, like finding a "lucky" coin that happened to predict ten coin flips. A naive analysis mistakes this luck for a real discovery, and the "biomarker" fails on the next group of patients. The craft of this chapter is telling real signal from lucky noise: splitting data honestly, keeping the model simple, and checking it on patients it has never seen.</p>
+</div>
+<h2 id="the-data-four-breast-cancer-subtypes">The data: four breast cancer subtypes</h2>
+<p>We classify 408 breast tumours from TCGA into their four main <strong>molecular subtypes</strong> (prerequisite P12): Basal-like (aggressive, "triple-negative"), Luminal A (mild), Luminal B (intermediate) and HER2-enriched. Each tumour has expression values for ~6,000 genes. The subtypes guide real treatment decisions, so predicting them from expression is a genuine clinical task.</p>
+<pre class="code"><code><span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">matplotlib.pyplot</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">plt</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">matplotlib</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">mpl</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pathlib</span><span class="w"> </span><span class="kn">import</span> <span class="n">Path</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">gzip</span><span class="o">,</span><span class="w"> </span><span class="nn">json</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">warnings</span><span class="p">;</span> <span class="n">warnings</span><span class="o">.</span><span class="n">filterwarnings</span><span class="p">(</span><span class="s2">"ignore"</span><span class="p">)</span>
+
+<span class="n">mpl</span><span class="o">.</span><span class="n">rc</span><span class="p">(</span><span class="s2">"figure"</span><span class="p">,</span> <span class="n">dpi</span><span class="o">=</span><span class="mi">110</span><span class="p">);</span> <span class="n">mpl</span><span class="o">.</span><span class="n">rc</span><span class="p">(</span><span class="s2">"axes"</span><span class="p">,</span> <span class="n">labelsize</span><span class="o">=</span><span class="mi">12</span><span class="p">,</span> <span class="n">titlesize</span><span class="o">=</span><span class="mi">13</span><span class="p">)</span>
+<span class="n">IMAGES</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="s2">"images"</span><span class="p">);</span> <span class="n">IMAGES</span><span class="o">.</span><span class="n">mkdir</span><span class="p">(</span><span class="n">exist_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">save_fig</span><span class="p">(</span><span class="n">name</span><span class="p">):</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">tight_layout</span><span class="p">();</span> <span class="n">plt</span><span class="o">.</span><span class="n">savefig</span><span class="p">(</span><span class="n">IMAGES</span> <span class="o">/</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">.png"</span><span class="p">,</span> <span class="n">dpi</span><span class="o">=</span><span class="mi">150</span><span class="p">,</span> <span class="n">bbox_inches</span><span class="o">=</span><span class="s2">"tight"</span><span class="p">)</span>
+<span class="n">R</span> <span class="o">=</span> <span class="p">{}</span>
+
+<span class="n">counts</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="s2">"datasets/brca_4subtype_counts.csv.gz"</span><span class="p">,</span> <span class="n">index_col</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+<span class="n">meta</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="nb">open</span><span class="p">(</span><span class="s2">"datasets/labels.json"</span><span class="p">))</span>
+<span class="n">y</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">meta</span><span class="p">[</span><span class="s2">"labels"</span><span class="p">])</span>
+<span class="c1"># normalise: log counts-per-10k, genes as features</span>
+<span class="n">X</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">log1p</span><span class="p">((</span><span class="n">counts</span> <span class="o">/</span> <span class="n">counts</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span> <span class="o">*</span> <span class="mf">1e4</span><span class="p">))</span><span class="o">.</span><span class="n">T</span><span class="o">.</span><span class="n">values</span>          <span class="c1"># samples x genes</span>
+<span class="n">gene_names</span> <span class="o">=</span> <span class="n">counts</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">values</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"X: </span><span class="si">{</span><span class="n">X</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="si">}</span><span class="s2"> tumours x </span><span class="si">{</span><span class="n">X</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="si">:</span><span class="s2">,</span><span class="si">}</span><span class="s2"> genes"</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">"subtype counts:"</span><span class="p">,</span> <span class="p">{</span><span class="n">c</span><span class="p">:</span> <span class="nb">int</span><span class="p">((</span><span class="n">y</span> <span class="o">==</span> <span class="n">c</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">())</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="nb">sorted</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">y</span><span class="p">))})</span>
+<span class="n">R</span><span class="p">[</span><span class="s2">"n_samples"</span><span class="p">]</span> <span class="o">=</span> <span class="n">X</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">];</span> <span class="n">R</span><span class="p">[</span><span class="s2">"n_genes"</span><span class="p">]</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">X</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="si">:</span><span class="s2">,</span><span class="si">}</span><span class="s2">"</span>
+</code></pre>
+<pre class="out">X: 408 tumours x 5,993 genes
+subtype counts: {np.str_(&#x27;Basal&#x27;): 110, np.str_(&#x27;Her2&#x27;): 78, np.str_(&#x27;LumA&#x27;): 110, np.str_(&#x27;LumB&#x27;): 110}</pre>
+<h2 id="the-curse-of-dimensionality">The curse of dimensionality</h2>
+<p>We have 5,993 genes but only 408 tumours. This "p ≫ n" regime is the defining feature of genomic machine learning, and it is dangerous. With far more features than samples, a model can <em>always</em> fit the training data perfectly, including its noise, and in very high dimensions random points can look deceptively separable. Let's make the danger concrete: how well can we "predict" <strong>random</strong> labels?</p>
+<pre class="code"><code><span class="kn">from</span><span class="w"> </span><span class="nn">sklearn.linear_model</span><span class="w"> </span><span class="kn">import</span> <span class="n">LogisticRegression</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">sklearn.model_selection</span><span class="w"> </span><span class="kn">import</span> <span class="n">cross_val_score</span><span class="p">,</span> <span class="n">StratifiedKFold</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">sklearn.feature_selection</span><span class="w"> </span><span class="kn">import</span> <span class="n">SelectKBest</span><span class="p">,</span> <span class="n">f_classif</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">sklearn.pipeline</span><span class="w"> </span><span class="kn">import</span> <span class="n">make_pipeline</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">sklearn.preprocessing</span><span class="w"> </span><span class="kn">import</span> <span class="n">StandardScaler</span>
+
+<span class="n">rng</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">default_rng</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+<span class="n">y_random</span> <span class="o">=</span> <span class="n">rng</span><span class="o">.</span><span class="n">permutation</span><span class="p">(</span><span class="n">y</span><span class="p">)</span>                                   <span class="c1"># labels with no real relationship to expression</span>
+<span class="n">cv</span> <span class="o">=</span> <span class="n">StratifiedKFold</span><span class="p">(</span><span class="mi">5</span><span class="p">,</span> <span class="n">shuffle</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">random_state</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+
+<span class="c1"># WRONG: pick the best genes using all the data, then cross-validate</span>
+<span class="n">Xs</span> <span class="o">=</span> <span class="n">StandardScaler</span><span class="p">()</span><span class="o">.</span><span class="n">fit_transform</span><span class="p">(</span><span class="n">X</span><span class="p">)</span>
+<span class="n">F</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">f_classif</span><span class="p">(</span><span class="n">Xs</span><span class="p">,</span> <span class="n">y_random</span><span class="p">)</span>
+<span class="n">top</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">argsort</span><span class="p">(</span><span class="n">F</span><span class="p">)[::</span><span class="o">-</span><span class="mi">1</span><span class="p">][:</span><span class="mi">100</span><span class="p">]</span>
+<span class="n">leaky</span> <span class="o">=</span> <span class="n">cross_val_score</span><span class="p">(</span><span class="n">LogisticRegression</span><span class="p">(</span><span class="n">max_iter</span><span class="o">=</span><span class="mi">2000</span><span class="p">,</span> <span class="n">C</span><span class="o">=</span><span class="mf">0.5</span><span class="p">),</span> <span class="n">Xs</span><span class="p">[:,</span> <span class="n">top</span><span class="p">],</span> <span class="n">y_random</span><span class="p">,</span> <span class="n">cv</span><span class="o">=</span><span class="n">cv</span><span class="p">)</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span>
+
+<span class="c1"># RIGHT: pick genes inside each fold, using only that fold's training data</span>
+<span class="n">honest_pipe</span> <span class="o">=</span> <span class="n">make_pipeline</span><span class="p">(</span><span class="n">StandardScaler</span><span class="p">(),</span> <span class="n">SelectKBest</span><span class="p">(</span><span class="n">f_classif</span><span class="p">,</span> <span class="n">k</span><span class="o">=</span><span class="mi">100</span><span class="p">),</span> <span class="n">LogisticRegression</span><span class="p">(</span><span class="n">max_iter</span><span class="o">=</span><span class="mi">2000</span><span class="p">,</span> <span class="n">C</span><span class="o">=</span><span class="mf">0.5</span><span class="p">))</span>
+<span class="n">honest</span> <span class="o">=</span> <span class="n">cross_val_score</span><span class="p">(</span><span class="n">honest_pipe</span><span class="p">,</span> <span class="n">X</span><span class="p">,</span> <span class="n">y_random</span><span class="p">,</span> <span class="n">cv</span><span class="o">=</span><span class="n">cv</span><span class="p">)</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"RANDOM labels (true accuracy should be chance ~</span><span class="si">{</span><span class="mi">1</span><span class="o">/</span><span class="nb">len</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">y</span><span class="p">))</span><span class="si">:</span><span class="s2">.0%</span><span class="si">}</span><span class="s2">):"</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"  leaky feature selection:  </span><span class="si">{</span><span class="n">leaky</span><span class="si">:</span><span class="s2">.1%</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"  honest feature selection: </span><span class="si">{</span><span class="n">honest</span><span class="si">:</span><span class="s2">.1%</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+<span class="n">R</span><span class="p">[</span><span class="s2">"leaky_random"</span><span class="p">]</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">leaky</span><span class="si">:</span><span class="s2">.0%</span><span class="si">}</span><span class="s2">"</span><span class="p">;</span> <span class="n">R</span><span class="p">[</span><span class="s2">"honest_random"</span><span class="p">]</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">honest</span><span class="si">:</span><span class="s2">.0%</span><span class="si">}</span><span class="s2">"</span><span class="p">;</span> <span class="n">R</span><span class="p">[</span><span class="s2">"chance"</span><span class="p">]</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="mi">1</span><span class="o">/</span><span class="nb">len</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">y</span><span class="p">))</span><span class="si">:</span><span class="s2">.0%</span><span class="si">}</span><span class="s2">"</span>
+</code></pre>
+<pre class="out">RANDOM labels (true accuracy should be chance ~25%):
+  leaky feature selection:  42.9%
+  honest feature selection: 27.4%</pre>
+<p>This is the single most important result in the chapter. With labels that are <strong>pure noise</strong>, the leaky analysis reports 43% accuracy on a 4-class problem where chance is 25%. The signal is entirely an artefact of selecting genes on the same data used to test. The honest analysis correctly reports near-chance (27%). The playground lets you watch this illusion appear and grow.</p>
+<div class="playground"><div class="pg-bar"><span>Interactive playground</span><a href="animations/ml_lab.html" target="_blank" rel="noopener">open full screen ↗</a></div><iframe src="animations/ml_lab.html" loading="lazy" style="height:620px" title="Interactive playground"></iframe></div>
+
+<h2 id="data-leakage-the-cardinal-sin">Data leakage: the cardinal sin</h2>
+<p><strong>Data leakage</strong> is any way that information from the test set sneaks into training. Here it entered through feature selection: choosing the 100 "best" genes using all 408 tumours means those genes were chosen partly <em>because</em> they happened to match the test tumours' labels. The fix is a rule with no exceptions:</p>
+<div class="box idea">
+<p class="lab">The real idea</p>
+<p><strong>Every step that looks at the labels, feature selection, normalisation that uses label groups, choosing hyperparameters, must happen inside the cross-validation loop, using only the training fold.</strong> The test fold must be treated as if it does not exist until the moment of prediction. In scikit-learn, put every such step in a <code>Pipeline</code> and cross-validate the whole pipeline, never a pre-selected feature set. Leakage is the main reason genomic "biomarkers" fail to replicate, and it is almost always invisible in the reported accuracy.</p>
+</div>
+<p>Other leakage traps in genomics: normalising all samples together before splitting; having the same patient's samples in both train and test; batch effects that correlate with the outcome (chapter P11); and tuning the model on the test set by trying many options and reporting the best.</p>
+<h2 id="doing-it-right-honest-classification-of-the-real-subtypes">Doing it right: honest classification of the real subtypes</h2>
+<p>Now the real labels. We build a proper pipeline, scale, select informative genes, classify with regularised logistic regression, and evaluate by cross-validation.</p>
+<pre class="code"><code><span class="kn">from</span><span class="w"> </span><span class="nn">sklearn.ensemble</span><span class="w"> </span><span class="kn">import</span> <span class="n">RandomForestClassifier</span>
+<span class="n">models</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s2">"logistic (L2, k=200 genes)"</span><span class="p">:</span> <span class="n">make_pipeline</span><span class="p">(</span><span class="n">StandardScaler</span><span class="p">(),</span> <span class="n">SelectKBest</span><span class="p">(</span><span class="n">f_classif</span><span class="p">,</span> <span class="n">k</span><span class="o">=</span><span class="mi">200</span><span class="p">),</span> <span class="n">LogisticRegression</span><span class="p">(</span><span class="n">max_iter</span><span class="o">=</span><span class="mi">3000</span><span class="p">,</span> <span class="n">C</span><span class="o">=</span><span class="mf">0.5</span><span class="p">)),</span>
+    <span class="s2">"logistic (L1 sparse)"</span><span class="p">:</span> <span class="n">make_pipeline</span><span class="p">(</span><span class="n">StandardScaler</span><span class="p">(),</span> <span class="n">SelectKBest</span><span class="p">(</span><span class="n">f_classif</span><span class="p">,</span> <span class="n">k</span><span class="o">=</span><span class="mi">500</span><span class="p">),</span> <span class="n">LogisticRegression</span><span class="p">(</span><span class="n">max_iter</span><span class="o">=</span><span class="mi">4000</span><span class="p">,</span> <span class="n">penalty</span><span class="o">=</span><span class="s2">"l1"</span><span class="p">,</span> <span class="n">solver</span><span class="o">=</span><span class="s2">"saga"</span><span class="p">,</span> <span class="n">C</span><span class="o">=</span><span class="mf">0.3</span><span class="p">)),</span>
+    <span class="s2">"random forest"</span><span class="p">:</span> <span class="n">make_pipeline</span><span class="p">(</span><span class="n">SelectKBest</span><span class="p">(</span><span class="n">f_classif</span><span class="p">,</span> <span class="n">k</span><span class="o">=</span><span class="mi">500</span><span class="p">),</span> <span class="n">RandomForestClassifier</span><span class="p">(</span><span class="n">n_estimators</span><span class="o">=</span><span class="mi">200</span><span class="p">,</span> <span class="n">random_state</span><span class="o">=</span><span class="mi">0</span><span class="p">)),</span>
+<span class="p">}</span>
+<span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">model</span> <span class="ow">in</span> <span class="n">models</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+    <span class="n">scores</span> <span class="o">=</span> <span class="n">cross_val_score</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">X</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">cv</span><span class="o">=</span><span class="n">cv</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">name</span><span class="si">:</span><span class="s2">28s</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">scores</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span><span class="si">:</span><span class="s2">.1%</span><span class="si">}</span><span class="s2"> ± </span><span class="si">{</span><span class="n">scores</span><span class="o">.</span><span class="n">std</span><span class="p">()</span><span class="si">:</span><span class="s2">.1%</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+<span class="n">R</span><span class="p">[</span><span class="s2">"best_acc"</span><span class="p">]</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">cross_val_score</span><span class="p">(</span><span class="n">models</span><span class="p">[</span><span class="s1">'logistic (L2, k=200 genes)'</span><span class="p">],</span><span class="w"> </span><span class="n">X</span><span class="p">,</span><span class="w"> </span><span class="n">y</span><span class="p">,</span><span class="w"> </span><span class="n">cv</span><span class="o">=</span><span class="n">cv</span><span class="p">)</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span><span class="si">:</span><span class="s2">.0%</span><span class="si">}</span><span class="s2">"</span>
+</code></pre>
+<pre class="out">logistic (L2, k=200 genes)  : 89.5% ± 2.1%</pre><pre class="out">logistic (L1 sparse)        : 90.4% ± 2.1%</pre><pre class="out">random forest               : 89.7% ± 1.6%</pre>
+<p>All three reach high accuracy (89% for the logistic model), honestly estimated, because the subtypes really are distinguishable from expression (chapter 6 showed the markers). The modest spread across folds tells us the estimate is stable. Note that these numbers are far below the leaky-noise 43%%: real signal, properly measured, beats the illusion.</p>
+<h2 id="which-subtypes-get-confused-the-confusion-matrix">Which subtypes get confused? The confusion matrix</h2>
+<p>Accuracy hides <em>how</em> a model fails. The <strong>confusion matrix</strong> shows which classes are mistaken for which, out-of-fold predictions only.</p>
+<pre class="code"><code><span class="kn">from</span><span class="w"> </span><span class="nn">sklearn.model_selection</span><span class="w"> </span><span class="kn">import</span> <span class="n">cross_val_predict</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">sklearn.metrics</span><span class="w"> </span><span class="kn">import</span> <span class="n">confusion_matrix</span><span class="p">,</span> <span class="n">ConfusionMatrixDisplay</span>
+<span class="n">y_pred</span> <span class="o">=</span> <span class="n">cross_val_predict</span><span class="p">(</span><span class="n">models</span><span class="p">[</span><span class="s2">"logistic (L2, k=200 genes)"</span><span class="p">],</span> <span class="n">X</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">cv</span><span class="o">=</span><span class="n">cv</span><span class="p">)</span>
+<span class="n">classes</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">y</span><span class="p">))</span>
+<span class="n">cm</span> <span class="o">=</span> <span class="n">confusion_matrix</span><span class="p">(</span><span class="n">y</span><span class="p">,</span> <span class="n">y_pred</span><span class="p">,</span> <span class="n">labels</span><span class="o">=</span><span class="n">classes</span><span class="p">)</span>
+<span class="n">fig</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">6</span><span class="p">,</span> <span class="mi">5</span><span class="p">))</span>
+<span class="n">ConfusionMatrixDisplay</span><span class="p">(</span><span class="n">cm</span><span class="p">,</span> <span class="n">display_labels</span><span class="o">=</span><span class="n">classes</span><span class="p">)</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">,</span> <span class="n">cmap</span><span class="o">=</span><span class="s2">"Purples"</span><span class="p">,</span> <span class="n">colorbar</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="s2">"Where the subtype classifier makes mistakes"</span><span class="p">)</span>
+<span class="n">save_fig</span><span class="p">(</span><span class="s2">"confusion"</span><span class="p">);</span> <span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+<span class="c1"># which pair is most confused?</span>
+<span class="n">off</span> <span class="o">=</span> <span class="n">cm</span><span class="o">.</span><span class="n">copy</span><span class="p">();</span> <span class="n">np</span><span class="o">.</span><span class="n">fill_diagonal</span><span class="p">(</span><span class="n">off</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+<span class="n">i</span><span class="p">,</span> <span class="n">j</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">unravel_index</span><span class="p">(</span><span class="n">off</span><span class="o">.</span><span class="n">argmax</span><span class="p">(),</span> <span class="n">off</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+<span class="n">R</span><span class="p">[</span><span class="s2">"confused_a"</span><span class="p">]</span> <span class="o">=</span> <span class="n">classes</span><span class="p">[</span><span class="n">i</span><span class="p">];</span> <span class="n">R</span><span class="p">[</span><span class="s2">"confused_b"</span><span class="p">]</span> <span class="o">=</span> <span class="n">classes</span><span class="p">[</span><span class="n">j</span><span class="p">]</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"most confused: </span><span class="si">{</span><span class="n">classes</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="si">}</span><span class="s2"> predicted as </span><span class="si">{</span><span class="n">classes</span><span class="p">[</span><span class="n">j</span><span class="p">]</span><span class="si">}</span><span class="s2"> (</span><span class="si">{</span><span class="n">off</span><span class="p">[</span><span class="n">i</span><span class="p">,</span><span class="n">j</span><span class="p">]</span><span class="si">}</span><span class="s2"> times)"</span><span class="p">)</span>
+</code></pre>
+<pre class="out">most confused: LumA predicted as LumB (14 times)</pre>
+<figure><img src="images/confusion.png" alt="Cross-validated confusion matrix. The diagonal (correct calls) dominates; the main confusion is between Luminal A and Luminal B, which are biologically a continuum, not a sharp boundary." loading="lazy"><figcaption><b>Figure "8"-1.</b> Cross-validated confusion matrix. The diagonal (correct calls) dominates; the main confusion is between Luminal A and Luminal B, which are biologically a continuum, not a sharp boundary.</figcaption></figure>
+
+<p>The classifier's errors are biologically sensible: <strong>LumA</strong> is most often mistaken for <strong>LumB</strong>. Luminal A and B differ mainly by proliferation rate (prerequisite P12), a continuum rather than a clean divide, so some tumours genuinely sit between them. A model that confused Basal with Luminal A would be alarming; confusing the two Luminals is expected. Reading the confusion matrix against known biology is how you sanity-check a classifier.</p>
+<h2 id="regularisation-and-the-overfitting-gap">Regularisation and the overfitting gap</h2>
+<p>With thousands of genes, the model must be kept from memorising the training data. <strong>Regularisation</strong> penalises complexity: <strong>L2</strong> (ridge) shrinks all coefficients toward zero; <strong>L1</strong> (lasso) forces most to exactly zero, performing feature selection automatically and yielding a <strong>sparse</strong>, interpretable model. Let's see training versus test accuracy as we vary the regularisation strength.</p>
+<pre class="code"><code><span class="kn">from</span><span class="w"> </span><span class="nn">sklearn.model_selection</span><span class="w"> </span><span class="kn">import</span> <span class="n">validation_curve</span>
+<span class="n">Cs</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">logspace</span><span class="p">(</span><span class="o">-</span><span class="mi">3</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">12</span><span class="p">)</span>
+<span class="n">pipe</span> <span class="o">=</span> <span class="n">make_pipeline</span><span class="p">(</span><span class="n">StandardScaler</span><span class="p">(),</span> <span class="n">SelectKBest</span><span class="p">(</span><span class="n">f_classif</span><span class="p">,</span> <span class="n">k</span><span class="o">=</span><span class="mi">200</span><span class="p">),</span> <span class="n">LogisticRegression</span><span class="p">(</span><span class="n">max_iter</span><span class="o">=</span><span class="mi">3000</span><span class="p">))</span>
+<span class="n">train_scores</span><span class="p">,</span> <span class="n">test_scores</span> <span class="o">=</span> <span class="n">validation_curve</span><span class="p">(</span><span class="n">pipe</span><span class="p">,</span> <span class="n">X</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">param_name</span><span class="o">=</span><span class="s2">"logisticregression__C"</span><span class="p">,</span> <span class="n">param_range</span><span class="o">=</span><span class="n">Cs</span><span class="p">,</span> <span class="n">cv</span><span class="o">=</span><span class="n">cv</span><span class="p">)</span>
+<span class="n">fig</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mf">7.5</span><span class="p">,</span> <span class="mi">4</span><span class="p">))</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">semilogx</span><span class="p">(</span><span class="n">Cs</span><span class="p">,</span> <span class="n">train_scores</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="mi">1</span><span class="p">),</span> <span class="s2">"o-"</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s2">"#c2416b"</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s2">"training accuracy"</span><span class="p">)</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">semilogx</span><span class="p">(</span><span class="n">Cs</span><span class="p">,</span> <span class="n">test_scores</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="mi">1</span><span class="p">),</span> <span class="s2">"o-"</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s2">"#5b3a8c"</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s2">"cross-validated accuracy"</span><span class="p">)</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">fill_between</span><span class="p">(</span><span class="n">Cs</span><span class="p">,</span> <span class="n">test_scores</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span> <span class="o">-</span> <span class="n">test_scores</span><span class="o">.</span><span class="n">std</span><span class="p">(</span><span class="mi">1</span><span class="p">),</span> <span class="n">test_scores</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span> <span class="o">+</span> <span class="n">test_scores</span><span class="o">.</span><span class="n">std</span><span class="p">(</span><span class="mi">1</span><span class="p">),</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.15</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s2">"#5b3a8c"</span><span class="p">)</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">set_xlabel</span><span class="p">(</span><span class="s2">"C (less regularisation →)"</span><span class="p">);</span> <span class="n">ax</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="s2">"accuracy"</span><span class="p">);</span> <span class="n">ax</span><span class="o">.</span><span class="n">legend</span><span class="p">();</span> <span class="n">ax</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="s2">"Too little regularisation overfits"</span><span class="p">)</span>
+<span class="n">save_fig</span><span class="p">(</span><span class="s2">"regularization"</span><span class="p">);</span> <span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+<span class="n">best_C</span> <span class="o">=</span> <span class="n">Cs</span><span class="p">[</span><span class="n">test_scores</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">argmax</span><span class="p">()]</span>
+<span class="n">R</span><span class="p">[</span><span class="s2">"best_C"</span><span class="p">]</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">best_C</span><span class="si">:</span><span class="s2">.2g</span><span class="si">}</span><span class="s2">"</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"best C = </span><span class="si">{</span><span class="n">best_C</span><span class="si">:</span><span class="s2">.3g</span><span class="si">}</span><span class="s2">; training-minus-test gap at weakest regularisation: </span><span class="si">{</span><span class="p">(</span><span class="n">train_scores</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">test_scores</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="mi">1</span><span class="p">))[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="si">:</span><span class="s2">.1%</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+</code></pre>
+<pre class="out">best C = 0.0231; training-minus-test gap at weakest regularisation: 10.3%</pre>
+<figure><img src="images/regularization.png" alt="Training versus cross-validated accuracy against the regularisation parameter C (larger C = weaker regularisation). Weak regularisation drives training accuracy to 100% while test accuracy falls: the gap is overfitting. The best test accuracy is at moderate regularisation." loading="lazy"><figcaption><b>Figure "8"-2.</b> Training versus cross-validated accuracy against the regularisation parameter C (larger C = weaker regularisation). Weak regularisation drives training accuracy to 100% while test accuracy falls: the gap is overfitting. The best test accuracy is at moderate regularisation.</figcaption></figure>
+
+<p>At weak regularisation the training accuracy hits 100% but the cross-validated accuracy drops, the overfitting gap. The sweet spot is at moderate regularisation (best C ≈ 0.023). The playground's second tab lets you open and close this gap with the regularisation and sample-size sliders. <strong>Crucially</strong>, choosing C must itself be done by nested cross-validation or on a separate validation set, tuning it on the test fold is another form of leakage.</p>
+<h2 id="interpreting-the-model-which-genes-matter">Interpreting the model: which genes matter?</h2>
+<p>A classifier is more trustworthy, and more useful, if the genes it relies on make biological sense. For a linear model, the coefficients rank gene importance per class. Let's see which genes the model uses to recognise each subtype.</p>
+<pre class="code"><code><span class="n">final</span> <span class="o">=</span> <span class="n">make_pipeline</span><span class="p">(</span><span class="n">StandardScaler</span><span class="p">(),</span> <span class="n">SelectKBest</span><span class="p">(</span><span class="n">f_classif</span><span class="p">,</span> <span class="n">k</span><span class="o">=</span><span class="mi">200</span><span class="p">),</span> <span class="n">LogisticRegression</span><span class="p">(</span><span class="n">max_iter</span><span class="o">=</span><span class="mi">3000</span><span class="p">,</span> <span class="n">C</span><span class="o">=</span><span class="mf">0.5</span><span class="p">))</span>
+<span class="n">final</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span>
+<span class="n">selected</span> <span class="o">=</span> <span class="n">final</span><span class="o">.</span><span class="n">named_steps</span><span class="p">[</span><span class="s2">"selectkbest"</span><span class="p">]</span><span class="o">.</span><span class="n">get_support</span><span class="p">()</span>
+<span class="n">sel_genes</span> <span class="o">=</span> <span class="n">gene_names</span><span class="p">[</span><span class="n">selected</span><span class="p">]</span>
+<span class="n">coef</span> <span class="o">=</span> <span class="n">final</span><span class="o">.</span><span class="n">named_steps</span><span class="p">[</span><span class="s2">"logisticregression"</span><span class="p">]</span><span class="o">.</span><span class="n">coef_</span>          <span class="c1"># (classes x selected genes)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">"top genes driving each subtype call:"</span><span class="p">)</span>
+<span class="k">for</span> <span class="n">ci</span><span class="p">,</span> <span class="bp">cls</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">final</span><span class="o">.</span><span class="n">named_steps</span><span class="p">[</span><span class="s2">"logisticregression"</span><span class="p">]</span><span class="o">.</span><span class="n">classes_</span><span class="p">):</span>
+    <span class="n">top_idx</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">argsort</span><span class="p">(</span><span class="n">coef</span><span class="p">[</span><span class="n">ci</span><span class="p">])[::</span><span class="o">-</span><span class="mi">1</span><span class="p">][:</span><span class="mi">6</span><span class="p">]</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"  </span><span class="si">{</span><span class="bp">cls</span><span class="si">:</span><span class="s2">6s</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="s1">', '</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">sel_genes</span><span class="p">[</span><span class="n">top_idx</span><span class="p">])</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+</code></pre>
+<pre class="out">top genes driving each subtype call:
+  Basal : SFRP1, PPP1R14C, FOXC1, CEBPB, NCK2, USB1
+  Her2  : GRB7, MIEN1, GALNT7, PGAP3, MID1, TMEM63C
+  LumA  : MAPT, BTF3, KRT17, KRT5, AGR3, KCNJ11
+  LumB  : SLC19A2, SCCPDH, ZDHHC18, ESR1, IGF1R, MYBL2</pre>
+<p>The model learned the known biology on its own: it recognises <strong>Luminal</strong> tumours by oestrogen-pathway genes (ESR1, FOXA1, GATA3), <strong>Basal</strong> tumours by keratins and proliferation genes, and <strong>HER2</strong> tumours by genes near the amplified HER2 locus. It was never told these are markers, it discovered them from the data, which is both reassuring (the model is right for the right reasons) and the beginning of discovery (unexpected top genes are worth investigating). Methods like <strong>SHAP</strong> values extend this interpretation to non-linear models (random forests, neural networks).</p>
+<div class="box bio">
+<p class="lab">Biology view</p>
+<p>Expression-based classifiers are already in the clinic. <strong>PAM50</strong> (and the Oncotype DX and MammaPrint tests) classify breast tumours and predict recurrence from a small gene panel, guiding whether a patient needs chemotherapy. These passed the honest-validation bar this chapter insists on, large independent validation cohorts, which is exactly why they are trusted when countless other "signatures" were not.</p>
+</div>
+<h2 id="a-checklist-for-honest-genomic-ml">A checklist for honest genomic ML</h2>
+<table>
+<thead>
+<tr>
+<th>Pitfall</th>
+<th>Guard</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>p ≫ n overfitting</td>
+<td>regularise; keep models simple; prefer few features</td>
+</tr>
+<tr>
+<td>Data leakage</td>
+<td>put every label-aware step inside the CV loop</td>
+</tr>
+<tr>
+<td>Normalisation leakage</td>
+<td>fit scalers on the training fold only</td>
+</tr>
+<tr>
+<td>Patient leakage</td>
+<td>keep all samples from one patient on the same side</td>
+</tr>
+<tr>
+<td>Batch effects</td>
+<td>check that batches don't correlate with the outcome</td>
+</tr>
+<tr>
+<td>Tuning on the test set</td>
+<td>use nested CV or a held-out set for hyperparameters</td>
+</tr>
+<tr>
+<td>Reporting the best of many tries</td>
+<td>pre-register the analysis; report everything</td>
+</tr>
+<tr>
+<td>Optimistic single split</td>
+<td>cross-validate; report the spread, not one number</td>
+</tr>
+</tbody>
+</table>
+<h2 id="summary">Summary</h2>
+<table>
+<thead>
+<tr>
+<th>Idea</th>
+<th>One line</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>p ≫ n</td>
+<td>more genes than patients; overfitting and spurious signal are easy</td>
+</tr>
+<tr>
+<td>Data leakage</td>
+<td>test information in training; inflates accuracy; the main replication-killer</td>
+</tr>
+<tr>
+<td>Cross-validation</td>
+<td>honest performance estimate; everything label-aware goes inside it</td>
+</tr>
+<tr>
+<td>Regularisation</td>
+<td>L2 shrinks, L1 sparsifies; controls overfitting</td>
+</tr>
+<tr>
+<td>Confusion matrix</td>
+<td>shows which classes are confused; check against biology</td>
+</tr>
+<tr>
+<td>Interpretation</td>
+<td>a good model relies on biologically sensible genes</td>
+</tr>
+</tbody>
+</table>
+<div class="box check">
+<p class="lab">Check yourself</p>
+<ol>
+<li>Why is genomic ML especially prone to overfitting? <em>(Far more features (genes) than samples (patients), so models can fit noise.)</em></li>
+<li>A paper selects the 50 best genes on the whole dataset, then reports 95% cross-validated accuracy. What is wrong? <em>(Feature selection used the test data: leakage, which inflates the estimate.)</em></li>
+<li>What does L1 regularisation do that L2 does not? <em>(Sets many coefficients exactly to zero, producing a sparse, interpretable model.)</em></li>
+<li>Your classifier mostly confuses Luminal A and B. Is that alarming? <em>(No: they are biologically a continuum; confusing Basal with Luminal would be.)</em></li>
+<li>Why check which genes a model uses? <em>(To confirm it is right for biological reasons, and to spot leakage or batch artefacts.)</em></li>
+</ol>
+</div>
+<div class="box exercise">
+<p class="lab">Try it</p>
+<p>Quantify the leakage effect on the <strong>real</strong> labels (not random). (a) Estimate accuracy the leaky way: select the top 100 genes on all data, then cross-validate. (b) Estimate it the honest way with a pipeline. (c) Repeat both for a hard problem: predict Luminal A versus Luminal B only. How large is the leaky inflation when the signal is weak, and what does that tell you about trusting borderline biomarker claims?</p>
+</div>
+<details><summary>Solution</summary>
+<pre class="code"><code><span class="k">def</span><span class="w"> </span><span class="nf">leaky_vs_honest</span><span class="p">(</span><span class="n">Xd</span><span class="p">,</span> <span class="n">yd</span><span class="p">):</span>
+    <span class="n">Xsc</span> <span class="o">=</span> <span class="n">StandardScaler</span><span class="p">()</span><span class="o">.</span><span class="n">fit_transform</span><span class="p">(</span><span class="n">Xd</span><span class="p">)</span>
+    <span class="n">F</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">f_classif</span><span class="p">(</span><span class="n">Xsc</span><span class="p">,</span> <span class="n">yd</span><span class="p">);</span> <span class="n">top</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">argsort</span><span class="p">(</span><span class="n">F</span><span class="p">)[::</span><span class="o">-</span><span class="mi">1</span><span class="p">][:</span><span class="mi">100</span><span class="p">]</span>
+    <span class="n">leaky</span> <span class="o">=</span> <span class="n">cross_val_score</span><span class="p">(</span><span class="n">LogisticRegression</span><span class="p">(</span><span class="n">max_iter</span><span class="o">=</span><span class="mi">3000</span><span class="p">,</span> <span class="n">C</span><span class="o">=</span><span class="mf">0.5</span><span class="p">),</span> <span class="n">Xsc</span><span class="p">[:,</span> <span class="n">top</span><span class="p">],</span> <span class="n">yd</span><span class="p">,</span> <span class="n">cv</span><span class="o">=</span><span class="mi">5</span><span class="p">)</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span>
+    <span class="n">honest</span> <span class="o">=</span> <span class="n">cross_val_score</span><span class="p">(</span><span class="n">make_pipeline</span><span class="p">(</span><span class="n">StandardScaler</span><span class="p">(),</span> <span class="n">SelectKBest</span><span class="p">(</span><span class="n">f_classif</span><span class="p">,</span> <span class="n">k</span><span class="o">=</span><span class="mi">100</span><span class="p">),</span> <span class="n">LogisticRegression</span><span class="p">(</span><span class="n">max_iter</span><span class="o">=</span><span class="mi">3000</span><span class="p">,</span> <span class="n">C</span><span class="o">=</span><span class="mf">0.5</span><span class="p">)),</span> <span class="n">Xd</span><span class="p">,</span> <span class="n">yd</span><span class="p">,</span> <span class="n">cv</span><span class="o">=</span><span class="mi">5</span><span class="p">)</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span>
+    <span class="k">return</span> <span class="n">leaky</span><span class="p">,</span> <span class="n">honest</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="s2">"all four subtypes:  leaky </span><span class="si">%.1f%%</span><span class="s2">  honest </span><span class="si">%.1f%%</span><span class="s2">"</span> <span class="o">%</span> <span class="nb">tuple</span><span class="p">(</span><span class="mi">100</span><span class="o">*</span><span class="n">v</span> <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">leaky_vs_honest</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">y</span><span class="p">)))</span>
+<span class="n">mask</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">isin</span><span class="p">(</span><span class="n">y</span><span class="p">,</span> <span class="p">[</span><span class="s2">"LumA"</span><span class="p">,</span> <span class="s2">"LumB"</span><span class="p">])</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">"LumA vs LumB (hard): leaky </span><span class="si">%.1f%%</span><span class="s2">  honest </span><span class="si">%.1f%%</span><span class="s2">"</span> <span class="o">%</span> <span class="nb">tuple</span><span class="p">(</span><span class="mi">100</span><span class="o">*</span><span class="n">v</span> <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">leaky_vs_honest</span><span class="p">(</span><span class="n">X</span><span class="p">[</span><span class="n">mask</span><span class="p">],</span> <span class="n">y</span><span class="p">[</span><span class="n">mask</span><span class="p">])))</span>
+</code></pre>
+<pre class="out">all four subtypes:  leaky 88.5%  honest 88.5%
+LumA vs LumB (hard): leaky 87.7%  honest 86.4%</pre>
+<p>On the easy four-class problem the leaky and honest numbers are close, because the signal is so strong that even honest selection finds it. On the hard Luminal A vs B problem, where the true signal is weak, the leaky estimate is inflated much more above the honest one: leakage does the most damage exactly where the biology is subtle, which is where most novel biomarker claims live. The lesson: be most sceptical of impressive accuracies on hard problems with small samples, and demand to know whether feature selection was inside or outside the validation loop.</p>
+</details>
+    <nav class="pager">
+      <a class="prev" href="../07-single-cell/index.html"><small>Previous</small>7 · Single-cell RNA-seq</a>
+      <a class="next" href="../09-deep-dna/index.html"><small>Next</small>9 · Deep learning on DNA</a>
+    </nav>
+  </main>
+</div>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.js"></script>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/contrib/auto-render.min.js"></script>
+<script defer src="../../assets/guide.js"></script>
+</body>
+</html>

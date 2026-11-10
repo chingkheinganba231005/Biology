@@ -180,7 +180,7 @@
           "n": "8",
           "title": "Machine learning for cancer genomics",
           "path": "omics/08-ml-cancer/",
-          "ready": false,
+          "ready": true,
           "kind": "Project",
           "desc": "Classifying tumours from gene expression honestly: high dimensions, feature selection, leakage and interpretation."
         },

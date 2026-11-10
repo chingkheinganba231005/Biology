@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ML Lab</title><link rel="stylesheet" href="../../../assets/pg.css"></head><body>
+<div class="tabs"><button class="on" data-t="leak" type="button">The leakage trap</button><button data-t="curve" type="button">Overfitting and sample size</button></div>
+<section class="pane on" id="leak">
+  <div class="ctl" id="lctl"></div>
+  <div class="row"><button class="pri" type="button" id="lrun">Run on new random data</button></div>
+  <svg id="lsvg" viewBox="0 0 700 220" role="img" aria-label="Accuracy with leaky vs honest feature selection"></svg>
+  <div class="msg" id="lmsg"></div>
+</section>
+<section class="pane" id="curve">
+  <div class="ctl" id="cctl"></div>
+  <svg id="csvg" viewBox="0 0 700 260" role="img" aria-label="Training vs test accuracy learning curve"></svg>
+  <div class="msg" id="cmsg"></div>
+</section>
+<script src="../../../assets/pg.js"></script>
+<script>
+const {$, h, s, tabs, slider, plot, rng} = PG; tabs();
+let r = rng(3);
+// ---------- leakage: pure-noise features, random labels. Leaky selection inflates accuracy.
+const nfeat = slider("number of genes (features) measured", 50, 5000, 50, 2000, (v) => v.toLocaleString(), null);
+const nsel = slider("genes kept by feature selection", 2, 50, 1, 20, (v) => v, null);
+const signal = slider("truly informative genes (real signal)", 0, 30, 1, 0, (v) => v, null);
+$("lctl").append(nfeat.el, nsel.el, signal.el);
+function makeData(n, p, nsig) {
+  const y = Array.from({length: n}, (_, i) => i < n / 2 ? 0 : 1);
+  const Xcol = []; // columns
+  for (let j = 0; j < p; j++) {
+    const col = [], eff = j < nsig ? 1.2 : 0;
+    for (let i = 0; i < n; i++) col.push(r.normal() + (y[i] ? eff : -eff));
+    Xcol.push(col);
+  }
+  return { y, Xcol };
+}
+function corr(col, y) { const n = y.length; let sx = 0, sy = 0, sxx = 0, syy = 0, sxy = 0; for (let i = 0; i < n; i++) { sx += col[i]; sy += y[i]; sxx += col[i] * col[i]; syy += y[i] * y[i]; sxy += col[i] * y[i]; } const cov = sxy - sx * sy / n; return cov / Math.sqrt((sxx - sx * sx / n) * (syy - sy * sy / n) + 1e-9); }
+// nearest-centroid classifier on selected features; returns CV accuracy
+function cvAccuracy(Xcol, y, selectOnAll) {
+  const n = y.length, folds = 5, acc = [];
+  // if selectOnAll: pick features using ALL data (leaky)
+  let globalSel = null;
+  if (selectOnAll) globalSel = Xcol.map((c, j) => [Math.abs(corr(c, y)), j]).sort((a, b) => b[0] - a[0]).slice(0, nsel.value).map((x) => x[1]);
+  let correct = 0;
+  for (let f = 0; f < folds; f++) {
+    const test = [], train = [];
+    for (let i = 0; i < n; i++) (i % folds === f ? test : train).push(i);
+    let sel = globalSel;
+    if (!selectOnAll) { // honest: select using TRAIN only
+      const ytr = train.map((i) => y[i]);
+      sel = Xcol.map((c, j) => [Math.abs(corr(train.map((i) => c[i]), ytr)), j]).sort((a, b) => b[0] - a[0]).slice(0, nsel.value).map((x) => x[1]);
+    }
+    // centroids from train
+    const c0 = sel.map((j) => mean(train.filter((i) => y[i] === 0).map((i) => Xcol[j][i])));
+    const c1 = sel.map((j) => mean(train.filter((i) => y[i] === 1).map((i) => Xcol[j][i])));
+    test.forEach((i) => { let d0 = 0, d1 = 0; sel.forEach((j, k) => { d0 += (Xcol[j][i] - c0[k]) ** 2; d1 += (Xcol[j][i] - c1[k]) ** 2; }); const pred = d1 < d0 ? 1 : 0; if (pred === y[i]) correct++; });
+  }
+  return correct / n;
+}
+function mean(a) { return a.reduce((x, y) => x + y, 0) / a.length; }
+function runLeak() {
+  const n = 80, { y, Xcol } = makeData(n, nfeat.value, signal.value);
+  const leaky = cvAccuracy(Xcol, y, true), honest = cvAccuracy(Xcol, y, false);
+  const parts = [], X0 = 120, W = 480, base = 180;
+  [["leaky: pick genes using ALL data, then cross-validate", leaky, "var(--accent2)", 60], ["honest: pick genes inside each fold", honest, "var(--accent)", 130]].forEach(([lab, v, c, y0]) => {
+    parts.push(s("text", {x: X0 - 8, y: y0 + 4, class: "tx", "text-anchor": "end"}, ""));
+    parts.push(s("rect", {x: X0, y: y0 - 14, width: W * v, height: 26, rx: 4, fill: c}));
+    parts.push(s("text", {x: X0 + W * v + 6, y: y0 + 5, class: "lb"}, (100 * v).toFixed(0) + "%"));
+    parts.push(s("text", {x: X0, y: y0 - 20, class: "tx"}, lab));
+  });
+  parts.push(s("line", {x1: X0 + W * 0.5, x2: X0 + W * 0.5, y1: 30, y2: 170, stroke: "var(--muted)", "stroke-dasharray": "3 3"}), s("text", {x: X0 + W * 0.5, y: 192, class: "tx", "text-anchor": "middle"}, "chance (50%)"));
+  $("lsvg").replaceChildren(...parts);
+  $("lmsg").innerHTML = `${signal.value === 0 ? `<b>The labels are random noise</b> and there is <b>no real signal</b>: honest cross-validation should give ~50%. ` : `There are <b>${signal.value} genuinely informative genes</b> hidden among ${nfeat.value.toLocaleString()}. `}` +
+    `With <b>leaky</b> feature selection (choosing the best-correlated genes using the whole dataset, then cross-validating) accuracy is <b>${(100 * leaky).toFixed(0)}%</b>; the honest method gives <b>${(100 * honest).toFixed(0)}%</b>. ` +
+    (signal.value === 0 ? `The leaky number is <b>far above chance on pure noise</b>, a complete illusion: among thousands of random genes, some correlate with the labels by luck, and selecting them on the same data you test on bakes that luck in. This is <b>data leakage</b>, and it has produced many irreproducible biomarker papers. The more genes you measure and the fewer you keep, the worse it gets, raise the feature count and watch the leaky bar climb.` : `Even with real signal, leaky selection still inflates the estimate. Only the honest number reflects what the model would do on new patients.`);
+}
+$("lrun").onclick = () => { r = rng(Math.floor(Math.random() * 1e9)); runLeak(); };
+[nfeat, nsel, signal].forEach((sl) => sl.input.addEventListener("input", runLeak));
+runLeak();
+// ---------- learning curve
+const dims = slider("number of features (genes)", 10, 2000, 10, 500, (v) => v.toLocaleString(), drawCurve);
+const reg = slider("regularisation strength", 0, 3, 0.1, 1, (v) => v.toFixed(1), drawCurve);
+$("cctl").append(dims.el, reg.el);
+function drawCurve() {
+  const ns = [20, 40, 80, 150, 300, 600], p = dims.value, lambda = reg.value;
+  const train = [], test = [];
+  ns.forEach((n) => {
+    // model: with n samples and p features, overfitting gap ~ p/(n*(1+lambda))
+    const overfit = p / (n * (1 + lambda) + p * 0.1);
+    const trueAcc = 0.5 + 0.4 * (1 - Math.exp(-n / 120)) / (1 + lambda * 0.15);
+    train.push(Math.min(1, trueAcc + 0.5 * Math.min(overfit, 1)));
+    test.push(Math.max(0.5, trueAcc - 0.35 * Math.min(overfit, 1)));
+  });
+  plot($("csvg"), [{xs: ns, ys: train, color: "var(--accent2)", label: "training accuracy"}, {xs: ns, ys: test, color: "var(--accent)", label: "test accuracy (what matters)"}], {ymin: 0.4, ymax: 1.02, xmin: 0, xmax: 620, xlabel: "number of training patients", ylabel: "accuracy"});
+  const gap = (train[2] - test[2]);
+  $("cmsg").innerHTML = `With <b>${p.toLocaleString()} genes</b> and <b>${ns.length ? "" : ""}</b> few patients, a flexible model can <b>memorise</b> the training set: training accuracy (pink) is high but <b>test accuracy</b> (purple, the only one that counts) is much lower, the gap is <b>overfitting</b>. ` +
+    `Overfitting shrinks as you add patients (the curves converge) and as you increase <b>regularisation</b> (which penalises complex models). In genomics the features (genes) usually far outnumber the patients, so regularisation and honest validation are not optional. Raise the regularisation and watch the gap close; raise the feature count and watch it open.`;
+}
+drawCurve();
+</script></body></html>
