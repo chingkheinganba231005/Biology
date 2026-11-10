@@ -134,7 +134,7 @@
           "n": "3",
           "title": "Phylogenetics: trees of life",
           "path": "bioinformatics/03-phylogenetics/",
-          "ready": false,
+          "ready": true,
           "kind": "Project",
           "desc": "Evolutionary distances, UPGMA and neighbour joining, and a tree of real viral genomes."
         },
@@ -142,7 +142,7 @@
           "n": "4",
           "title": "Genome assembly and read mapping",
           "path": "bioinformatics/04-assembly/",
-          "ready": false,
+          "ready": true,
           "kind": "Project",
           "desc": "Sequencing reads, quality scores, de Bruijn graph assembly and fast read mapping with k-mer indexes."
         },
@@ -150,7 +150,7 @@
           "n": "5",
           "title": "Variants and population genomics",
           "path": "bioinformatics/05-variants/",
-          "ready": false,
+          "ready": true,
           "kind": "Project",
           "desc": "Calling variants, allele frequencies, Hardy–Weinberg, linkage and a genome-wide association study."
         }

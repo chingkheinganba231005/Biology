@@ -1,0 +1,349 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>"Phylogenetics: trees of life" · Cells to Code</title>
+<meta name="description" content="Reconstructing evolutionary history from sequences. Distances and the molecular clock, UPGMA and neighbour joining, bootstrap support, and a tree of real coronaviruses that places SARS-CoV-2 next to its closest known relative.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,600;1,6..72,400&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.css">
+<link rel="stylesheet" href="../../assets/guide.css">
+<script>try{var t=localStorage.getItem('c2c-theme');if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
+</head>
+<body>
+<header class="topbar">
+  <a class="brand" href="../../index.html"><span class="logo" aria-hidden="true"></span>Cells to Code</a>
+  <span class="crumb">Bioinformatics · Chapter 3</span>
+  <button class="tocbtn" type="button" aria-controls="toc" aria-expanded="false">Contents</button>
+  <button class="themebtn" type="button" aria-label="Switch light or dark theme">Theme</button>
+  <span class="progress" aria-hidden="true"></span>
+</header>
+<div class="layout">
+  <nav class="toc" id="toc" aria-label="On this page">
+    <p class="toc-h">On this page</p>
+    <ol><li><a href="#what-a-phylogenetic-tree-is">What a phylogenetic tree is</a></li>
+<li><a href="#distances-and-the-molecular-clock">Distances and the molecular clock</a></li>
+<li><a href="#building-trees-upgma-and-neighbour-joining">Building trees: UPGMA and neighbour joining</a></li>
+<li><a href="#a-tree-of-coronaviruses">A tree of coronaviruses</a></li>
+<li><a href="#how-confident-is-each-branch-the-bootstrap">How confident is each branch? The bootstrap</a></li>
+<li><a href="#trees-are-everywhere-in-biology">Trees are everywhere in biology</a></li>
+<li><a href="#summary">Summary</a></li></ol>
+    <p class="toc-nb"><a href="phylogenetics.ipynb" download>Download the notebook ↓</a></p>
+  </nav>
+  <main class="content">
+    <p class="eyebrow">Bioinformatics · Chapter 3</p>
+    <h1>"Phylogenetics: trees of life"</h1>
+    <p class="lede">Reconstructing evolutionary history from sequences. Distances and the molecular clock, UPGMA and neighbour joining, bootstrap support, and a tree of real coronaviruses that places SARS-CoV-2 next to its closest known relative.</p>
+    <p class="meta">About 2 hours · Chapters 1–2; prerequisite P8 (evolution)</p>
+<p>Every sequence carries a record of its own history. Because mutations accumulate over time (prerequisite P8), two sequences that share a recent common ancestor are more similar than two that diverged long ago. <strong>Phylogenetics</strong> reconstructs the branching tree of that shared ancestry from the sequences alone. It answers "what is this organism's closest relative?", traces how a virus spreads and evolves, dates evolutionary events, and underlies everything from conservation biology to tracking cancer cell lineages (chapter 19).</p>
+<div class="box eli5">
+<p class="lab">Like you’re five</p>
+<p>Imagine photocopies of photocopies of a document, each copy picking up a few new typos. If you collect many copies, you can work out the family tree: copies that share the same typos must have come from the same intermediate copy. Phylogenetics does this with DNA. Species (or viruses) that share the same mutations are close relatives; the pattern of shared changes reveals who descended from whom, drawn as a branching tree.</p>
+</div>
+<h2 id="what-a-phylogenetic-tree-is">What a phylogenetic tree is</h2>
+<p>A <strong>phylogenetic tree</strong> shows how a set of sequences (the <strong>tips</strong> or <strong>leaves</strong>, usually species, genes or viral samples) descend from common ancestors (the internal <strong>nodes</strong>). <strong>Branch lengths</strong> can represent evolutionary distance (amount of change) or time. A tree can be <strong>rooted</strong> (showing the direction of time from a common ancestor) or <strong>unrooted</strong> (showing only relationships). Two tips that join at a recent node are <strong>sister taxa</strong>.</p>
+<p>The general recipe:</p>
+<ol>
+<li>Collect homologous sequences (orthologs, prerequisite P8) and <strong>align</strong> them (chapter 2).</li>
+<li>Turn the alignment into <strong>distances</strong> (or score trees directly).</li>
+<li><strong>Build</strong> a tree from the distances.</li>
+<li>Assess <strong>confidence</strong> in each branch.</li>
+</ol>
+<h2 id="distances-and-the-molecular-clock">Distances and the molecular clock</h2>
+<p>The simplest distance between two aligned sequences is the fraction of positions that differ, the <strong>p-distance</strong>. But there is a catch. A site has only four possible letters, so given enough time a changed site can mutate <em>back</em>, or two lineages can change to the same letter independently. The observed differences therefore <strong>underestimate</strong> the true number of substitutions, and worse, they <strong>saturate</strong>: two unrelated DNA sequences differ at only about 75% of sites (3 in 4 by chance), never 100%.</p>
+<p>The <strong>Jukes–Cantor</strong> model corrects for this:</p>
+<div class="box math">
+<p class="lab">The maths, from scratch</p>
+<p>If a fraction $p$ of sites differ, the estimated true number of substitutions per site is
+$$d = -\tfrac{3}{4}\ln\!\left(1 - \tfrac{4}{3}p\right).$$
+As $p \to 0.75$, $d \to \infty$: beyond saturation the sequences are too diverged to measure reliably. More elaborate models (Kimura, GTR) allow different rates for different kinds of substitution.</p>
+</div>
+<p>The second tab of the playground shows this saturation and correction. Because substitutions accumulate at a roughly steady rate (the <strong>molecular clock</strong>, prerequisite P8), a corrected distance is proportional to time since the common ancestor, which is how molecular dates are estimated.</p>
+<div class="playground"><div class="pg-bar"><span>Interactive playground</span><a href="animations/tree_lab.html" target="_blank" rel="noopener">open full screen ↗</a></div><iframe src="animations/tree_lab.html" loading="lazy" style="height:640px" title="Interactive playground"></iframe></div>
+<pre class="code"><code><span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">matplotlib.pyplot</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">plt</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">matplotlib</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">mpl</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pathlib</span><span class="w"> </span><span class="kn">import</span> <span class="n">Path</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">Bio</span><span class="w"> </span><span class="kn">import</span> <span class="n">SeqIO</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">warnings</span><span class="p">;</span> <span class="n">warnings</span><span class="o">.</span><span class="n">filterwarnings</span><span class="p">(</span><span class="s2">"ignore"</span><span class="p">)</span>
+
+<span class="n">mpl</span><span class="o">.</span><span class="n">rc</span><span class="p">(</span><span class="s2">"figure"</span><span class="p">,</span> <span class="n">dpi</span><span class="o">=</span><span class="mi">110</span><span class="p">);</span> <span class="n">mpl</span><span class="o">.</span><span class="n">rc</span><span class="p">(</span><span class="s2">"axes"</span><span class="p">,</span> <span class="n">labelsize</span><span class="o">=</span><span class="mi">12</span><span class="p">,</span> <span class="n">titlesize</span><span class="o">=</span><span class="mi">13</span><span class="p">)</span>
+<span class="n">IMAGES</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="s2">"images"</span><span class="p">);</span> <span class="n">IMAGES</span><span class="o">.</span><span class="n">mkdir</span><span class="p">(</span><span class="n">exist_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">save_fig</span><span class="p">(</span><span class="n">name</span><span class="p">):</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">tight_layout</span><span class="p">();</span> <span class="n">plt</span><span class="o">.</span><span class="n">savefig</span><span class="p">(</span><span class="n">IMAGES</span> <span class="o">/</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">.png"</span><span class="p">,</span> <span class="n">dpi</span><span class="o">=</span><span class="mi">150</span><span class="p">,</span> <span class="n">bbox_inches</span><span class="o">=</span><span class="s2">"tight"</span><span class="p">)</span>
+<span class="n">R</span> <span class="o">=</span> <span class="p">{}</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">jukes_cantor</span><span class="p">(</span><span class="n">p</span><span class="p">):</span>
+    <span class="k">return</span> <span class="o">-</span><span class="mf">0.75</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="mi">4</span> <span class="o">/</span> <span class="mi">3</span> <span class="o">*</span> <span class="n">p</span><span class="p">)</span> <span class="k">if</span> <span class="n">p</span> <span class="o">&lt;</span> <span class="mf">0.75</span> <span class="k">else</span> <span class="n">np</span><span class="o">.</span><span class="n">inf</span>
+
+<span class="n">p</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mf">0.74</span><span class="p">,</span> <span class="mi">200</span><span class="p">)</span>
+<span class="n">d</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">jukes_cantor</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">p</span><span class="p">])</span>
+<span class="n">fig</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mf">7.5</span><span class="p">,</span> <span class="mf">3.8</span><span class="p">))</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">p</span><span class="p">,</span> <span class="n">d</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s2">"#5b3a8c"</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s2">"Jukes–Cantor corrected"</span><span class="p">)</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">p</span><span class="p">,</span> <span class="n">p</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s2">"0.6"</span><span class="p">,</span> <span class="n">ls</span><span class="o">=</span><span class="s2">"--"</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s2">"raw p-distance"</span><span class="p">)</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">axvline</span><span class="p">(</span><span class="mf">0.75</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s2">"#c2416b"</span><span class="p">,</span> <span class="n">ls</span><span class="o">=</span><span class="s2">":"</span><span class="p">);</span> <span class="n">ax</span><span class="o">.</span><span class="n">text</span><span class="p">(</span><span class="mf">0.73</span><span class="p">,</span> <span class="mf">1.5</span><span class="p">,</span> <span class="s2">"saturation</span><span class="se">\n</span><span class="s2">(75%)"</span><span class="p">,</span> <span class="n">ha</span><span class="o">=</span><span class="s2">"right"</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s2">"#c2416b"</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">9</span><span class="p">)</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">set_xlabel</span><span class="p">(</span><span class="s2">"observed fraction of sites differing (p)"</span><span class="p">);</span> <span class="n">ax</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="s2">"estimated substitutions per site"</span><span class="p">);</span> <span class="n">ax</span><span class="o">.</span><span class="n">legend</span><span class="p">()</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="s2">"Correcting for unseen multiple substitutions"</span><span class="p">);</span> <span class="n">ax</span><span class="o">.</span><span class="n">set_ylim</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
+<span class="n">save_fig</span><span class="p">(</span><span class="s2">"jukes_cantor"</span><span class="p">);</span> <span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"p=0.3 -&gt; corrected </span><span class="si">{</span><span class="n">jukes_cantor</span><span class="p">(</span><span class="mf">0.3</span><span class="p">)</span><span class="si">:</span><span class="s2">.3f</span><span class="si">}</span><span class="s2">; p=0.5 -&gt; </span><span class="si">{</span><span class="n">jukes_cantor</span><span class="p">(</span><span class="mf">0.5</span><span class="p">)</span><span class="si">:</span><span class="s2">.3f</span><span class="si">}</span><span class="s2">; p=0.7 -&gt; </span><span class="si">{</span><span class="n">jukes_cantor</span><span class="p">(</span><span class="mf">0.7</span><span class="p">)</span><span class="si">:</span><span class="s2">.3f</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+<span class="n">R</span><span class="p">[</span><span class="s2">"jc50"</span><span class="p">]</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">jukes_cantor</span><span class="p">(</span><span class="mf">0.5</span><span class="p">)</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2">"</span>
+</code></pre>
+<pre class="out">p=0.3 -&gt; corrected 0.383; p=0.5 -&gt; 0.824; p=0.7 -&gt; 2.031</pre>
+<figure><img src="images/jukes_cantor.png" alt="The Jukes–Cantor correction. At low divergence the correction barely matters, but as the raw distance climbs toward 0.75 the true number of substitutions shoots up: most changes have become invisible." loading="lazy"><figcaption><b>Figure "3"-1.</b> The Jukes–Cantor correction. At low divergence the correction barely matters, but as the raw distance climbs toward 0.75 the true number of substitutions shoots up: most changes have become invisible.</figcaption></figure>
+
+<p>At 50% observed differences the true distance is already 0.82 substitutions per site, well above the raw 0.5. Correcting distances before building a tree prevents long branches from being systematically underestimated.</p>
+<h2 id="building-trees-upgma-and-neighbour-joining">Building trees: UPGMA and neighbour joining</h2>
+<p>Given a distance matrix, two classic algorithms build a tree by repeatedly joining the closest groups. The playground's first tab runs both step by step; here is the logic.</p>
+<p><strong>UPGMA</strong> (unweighted pair-group method with arithmetic mean) is the simpler: find the two closest clusters, join them, place the new node at half their distance, and replace them with their average distance to everyone else. It assumes a <strong>constant molecular clock</strong>, all tips end up equidistant from the root. When that assumption fails (lineages evolving at different rates), UPGMA gives the wrong tree.</p>
+<p><strong>Neighbour joining</strong> (Saitou and Nei, 1987) fixes this. Instead of raw distance it minimises a quantity that accounts for each cluster's average distance to all others, so a fast-evolving lineage on a long branch is not wrongly pulled toward the tips. It produces an unrooted tree with branch lengths that need not be clock-like, and is accurate and fast enough to remain a workhorse.</p>
+<p>Let's implement neighbour joining and apply it to real data.</p>
+<pre class="code"><code><span class="k">def</span><span class="w"> </span><span class="nf">neighbor_joining</span><span class="p">(</span><span class="n">D</span><span class="p">,</span> <span class="n">names</span><span class="p">):</span>
+    <span class="n">D</span> <span class="o">=</span> <span class="n">D</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">float</span><span class="p">)</span><span class="o">.</span><span class="n">copy</span><span class="p">();</span> <span class="n">names</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">names</span><span class="p">)</span>
+    <span class="n">nodes</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">names</span><span class="p">)</span>
+    <span class="n">tree</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="k">while</span> <span class="nb">len</span><span class="p">(</span><span class="n">D</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">2</span><span class="p">:</span>
+        <span class="n">n</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">D</span><span class="p">)</span>
+        <span class="n">total</span> <span class="o">=</span> <span class="n">D</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+        <span class="n">Q</span> <span class="o">=</span> <span class="p">(</span><span class="n">n</span> <span class="o">-</span> <span class="mi">2</span><span class="p">)</span> <span class="o">*</span> <span class="n">D</span> <span class="o">-</span> <span class="n">total</span><span class="p">[:,</span> <span class="kc">None</span><span class="p">]</span> <span class="o">-</span> <span class="n">total</span><span class="p">[</span><span class="kc">None</span><span class="p">,</span> <span class="p">:]</span>
+        <span class="n">np</span><span class="o">.</span><span class="n">fill_diagonal</span><span class="p">(</span><span class="n">Q</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">inf</span><span class="p">)</span>
+        <span class="n">i</span><span class="p">,</span> <span class="n">j</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">unravel_index</span><span class="p">(</span><span class="n">Q</span><span class="o">.</span><span class="n">argmin</span><span class="p">(),</span> <span class="n">Q</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+        <span class="n">delta</span> <span class="o">=</span> <span class="p">(</span><span class="n">total</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">-</span> <span class="n">total</span><span class="p">[</span><span class="n">j</span><span class="p">])</span> <span class="o">/</span> <span class="p">(</span><span class="n">n</span> <span class="o">-</span> <span class="mi">2</span><span class="p">)</span>
+        <span class="n">li</span><span class="p">,</span> <span class="n">lj</span> <span class="o">=</span> <span class="p">(</span><span class="n">D</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">]</span> <span class="o">+</span> <span class="n">delta</span><span class="p">)</span> <span class="o">/</span> <span class="mi">2</span><span class="p">,</span> <span class="p">(</span><span class="n">D</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">]</span> <span class="o">-</span> <span class="n">delta</span><span class="p">)</span> <span class="o">/</span> <span class="mi">2</span>     <span class="c1"># branch lengths to the new node</span>
+        <span class="n">new</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"(</span><span class="si">{</span><span class="n">nodes</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="si">}</span><span class="s2">:</span><span class="si">{</span><span class="nb">max</span><span class="p">(</span><span class="n">li</span><span class="p">,</span><span class="mi">0</span><span class="p">)</span><span class="si">:</span><span class="s2">.3f</span><span class="si">}</span><span class="s2">,</span><span class="si">{</span><span class="n">nodes</span><span class="p">[</span><span class="n">j</span><span class="p">]</span><span class="si">}</span><span class="s2">:</span><span class="si">{</span><span class="nb">max</span><span class="p">(</span><span class="n">lj</span><span class="p">,</span><span class="mi">0</span><span class="p">)</span><span class="si">:</span><span class="s2">.3f</span><span class="si">}</span><span class="s2">)"</span>
+        <span class="n">new_d</span> <span class="o">=</span> <span class="p">(</span><span class="n">D</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">+</span> <span class="n">D</span><span class="p">[</span><span class="n">j</span><span class="p">]</span> <span class="o">-</span> <span class="n">D</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">])</span> <span class="o">/</span> <span class="mi">2</span>
+        <span class="n">keep</span> <span class="o">=</span> <span class="p">[</span><span class="n">k</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n</span><span class="p">)</span> <span class="k">if</span> <span class="n">k</span> <span class="o">!=</span> <span class="n">i</span> <span class="ow">and</span> <span class="n">k</span> <span class="o">!=</span> <span class="n">j</span><span class="p">]</span>
+        <span class="n">D</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">vstack</span><span class="p">([</span><span class="n">D</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ix_</span><span class="p">(</span><span class="n">keep</span><span class="p">,</span> <span class="n">keep</span><span class="p">)],</span> <span class="n">new_d</span><span class="p">[</span><span class="n">keep</span><span class="p">]])</span>
+        <span class="n">D</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">column_stack</span><span class="p">([</span><span class="n">D</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">new_d</span><span class="p">[</span><span class="n">keep</span><span class="p">],</span> <span class="mi">0</span><span class="p">)])</span>
+        <span class="n">nodes</span> <span class="o">=</span> <span class="p">[</span><span class="n">nodes</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">keep</span><span class="p">]</span> <span class="o">+</span> <span class="p">[</span><span class="n">new</span><span class="p">]</span>
+    <span class="k">return</span> <span class="sa">f</span><span class="s2">"(</span><span class="si">{</span><span class="n">nodes</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="si">}</span><span class="s2">:</span><span class="si">{</span><span class="n">D</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">]</span><span class="o">/</span><span class="mi">2</span><span class="si">:</span><span class="s2">.3f</span><span class="si">}</span><span class="s2">,</span><span class="si">{</span><span class="n">nodes</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="si">}</span><span class="s2">:</span><span class="si">{</span><span class="n">D</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">]</span><span class="o">/</span><span class="mi">2</span><span class="si">:</span><span class="s2">.3f</span><span class="si">}</span><span class="s2">);"</span>
+</code></pre>
+
+<h2 id="a-tree-of-coronaviruses">A tree of coronaviruses</h2>
+<p>Where did SARS-CoV-2 come from? A phylogenetic tree gives the clearest answer. We downloaded nine complete coronavirus genomes: SARS-CoV-2, the original SARS-CoV-1, MERS, the four coronaviruses that cause common colds (229E, NL63, OC43, HKU1), and two close relatives of SARS-CoV-2 found in a bat (RaTG13) and a pangolin.</p>
+<p>Aligning nine 30 kb genomes is slow, so we use an <strong>alignment-free</strong> distance: compare their k-mer profiles (chapter 1). Genomes sharing more k-mers are more similar. This is fast and surprisingly accurate for whole genomes.</p>
+<pre class="code"><code><span class="kn">from</span><span class="w"> </span><span class="nn">collections</span><span class="w"> </span><span class="kn">import</span> <span class="n">Counter</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">itertools</span><span class="w"> </span><span class="kn">import</span> <span class="n">product</span>
+
+<span class="n">records</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">SeqIO</span><span class="o">.</span><span class="n">parse</span><span class="p">(</span><span class="s2">"datasets/coronaviruses.fasta"</span><span class="p">,</span> <span class="s2">"fasta"</span><span class="p">))</span>
+<span class="n">names</span> <span class="o">=</span> <span class="p">[</span><span class="n">r</span><span class="o">.</span><span class="n">id</span> <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="n">records</span><span class="p">]</span>
+<span class="n">seqs</span> <span class="o">=</span> <span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="n">r</span><span class="o">.</span><span class="n">seq</span><span class="p">)</span> <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="n">records</span><span class="p">]</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">kmer_profile</span><span class="p">(</span><span class="n">s</span><span class="p">,</span> <span class="n">k</span><span class="o">=</span><span class="mi">5</span><span class="p">):</span>
+    <span class="n">c</span> <span class="o">=</span> <span class="n">Counter</span><span class="p">(</span><span class="n">s</span><span class="p">[</span><span class="n">i</span><span class="p">:</span><span class="n">i</span><span class="o">+</span><span class="n">k</span><span class="p">]</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">s</span><span class="p">)</span><span class="o">-</span><span class="n">k</span><span class="p">)</span> <span class="k">if</span> <span class="nb">set</span><span class="p">(</span><span class="n">s</span><span class="p">[</span><span class="n">i</span><span class="p">:</span><span class="n">i</span><span class="o">+</span><span class="n">k</span><span class="p">])</span> <span class="o">&lt;=</span> <span class="nb">set</span><span class="p">(</span><span class="s2">"ACGT"</span><span class="p">))</span>
+    <span class="n">total</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span><span class="n">c</span><span class="o">.</span><span class="n">values</span><span class="p">())</span>
+    <span class="k">return</span> <span class="p">{</span><span class="n">w</span><span class="p">:</span> <span class="n">v</span> <span class="o">/</span> <span class="n">total</span> <span class="k">for</span> <span class="n">w</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">c</span><span class="o">.</span><span class="n">items</span><span class="p">()}</span>
+
+<span class="n">profiles</span> <span class="o">=</span> <span class="p">[</span><span class="n">kmer_profile</span><span class="p">(</span><span class="n">s</span><span class="p">)</span> <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">seqs</span><span class="p">]</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">cosine_dist</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">):</span>
+    <span class="n">keys</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">a</span><span class="p">)</span> <span class="o">|</span> <span class="nb">set</span><span class="p">(</span><span class="n">b</span><span class="p">)</span>
+    <span class="n">va</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">a</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">keys</span><span class="p">]);</span> <span class="n">vb</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">b</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">keys</span><span class="p">])</span>
+    <span class="k">return</span> <span class="mi">1</span> <span class="o">-</span> <span class="n">va</span> <span class="o">@</span> <span class="n">vb</span> <span class="o">/</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">va</span><span class="p">)</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">vb</span><span class="p">))</span>
+
+<span class="n">n</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">seqs</span><span class="p">)</span>
+<span class="n">D</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([[</span><span class="n">cosine_dist</span><span class="p">(</span><span class="n">profiles</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">profiles</span><span class="p">[</span><span class="n">j</span><span class="p">])</span> <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n</span><span class="p">)]</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n</span><span class="p">)])</span>
+<span class="n">s2</span> <span class="o">=</span> <span class="n">names</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="s2">"SARS-CoV-2"</span><span class="p">)</span>
+<span class="n">order</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">argsort</span><span class="p">(</span><span class="n">D</span><span class="p">[</span><span class="n">s2</span><span class="p">])</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">"closest relatives of SARS-CoV-2 (k-mer distance):"</span><span class="p">)</span>
+<span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">order</span><span class="p">[</span><span class="mi">1</span><span class="p">:</span><span class="mi">5</span><span class="p">]:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"  </span><span class="si">{</span><span class="n">names</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="si">:</span><span class="s2">15s</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="n">D</span><span class="p">[</span><span class="n">s2</span><span class="p">,</span><span class="w"> </span><span class="n">i</span><span class="p">]</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+<span class="n">R</span><span class="p">[</span><span class="s2">"closest"</span><span class="p">]</span> <span class="o">=</span> <span class="n">names</span><span class="p">[</span><span class="n">order</span><span class="p">[</span><span class="mi">1</span><span class="p">]];</span> <span class="n">R</span><span class="p">[</span><span class="s2">"second"</span><span class="p">]</span> <span class="o">=</span> <span class="n">names</span><span class="p">[</span><span class="n">order</span><span class="p">[</span><span class="mi">2</span><span class="p">]]</span>
+</code></pre>
+<pre class="out">closest relatives of SARS-CoV-2 (k-mer distance):
+  Bat-RaTG13      0.0040
+  Pangolin-CoV    0.0096
+  SARS-CoV-1      0.0307
+  MERS-CoV        0.0471</pre>
+<p>The closest relative is <strong>Bat-RaTG13</strong>, the bat coronavirus, then <strong>Pangolin-CoV</strong>. This is the real finding that placed the origin of SARS-CoV-2 among bat coronaviruses. Now the full tree, built with Biopython's neighbour joining and drawn:</p>
+<pre class="code"><code><span class="kn">from</span><span class="w"> </span><span class="nn">Bio.Phylo.TreeConstruction</span><span class="w"> </span><span class="kn">import</span> <span class="n">DistanceTreeConstructor</span><span class="p">,</span> <span class="n">DistanceMatrix</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">Bio</span><span class="w"> </span><span class="kn">import</span> <span class="n">Phylo</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">io</span>
+
+<span class="c1"># Biopython wants a lower-triangular distance matrix</span>
+<span class="n">short</span> <span class="o">=</span> <span class="p">{</span><span class="s2">"SARS-CoV-2"</span><span class="p">:</span> <span class="s2">"SARS-CoV-2"</span><span class="p">,</span> <span class="s2">"SARS-CoV-1"</span><span class="p">:</span> <span class="s2">"SARS-CoV-1"</span><span class="p">,</span> <span class="s2">"MERS-CoV"</span><span class="p">:</span> <span class="s2">"MERS"</span><span class="p">,</span> <span class="s2">"HCoV-229E"</span><span class="p">:</span> <span class="s2">"229E (cold)"</span><span class="p">,</span>
+         <span class="s2">"HCoV-NL63"</span><span class="p">:</span> <span class="s2">"NL63 (cold)"</span><span class="p">,</span> <span class="s2">"HCoV-OC43"</span><span class="p">:</span> <span class="s2">"OC43 (cold)"</span><span class="p">,</span> <span class="s2">"HCoV-HKU1"</span><span class="p">:</span> <span class="s2">"HKU1 (cold)"</span><span class="p">,</span> <span class="s2">"Bat-RaTG13"</span><span class="p">:</span> <span class="s2">"Bat RaTG13"</span><span class="p">,</span> <span class="s2">"Pangolin-CoV"</span><span class="p">:</span> <span class="s2">"Pangolin"</span><span class="p">}</span>
+<span class="n">labels</span> <span class="o">=</span> <span class="p">[</span><span class="n">short</span><span class="p">[</span><span class="n">n</span><span class="p">]</span> <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="n">names</span><span class="p">]</span>
+<span class="n">tri</span> <span class="o">=</span> <span class="p">[[</span><span class="n">D</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">]</span> <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)]</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n</span><span class="p">)]</span>
+<span class="n">dm</span> <span class="o">=</span> <span class="n">DistanceMatrix</span><span class="p">(</span><span class="n">labels</span><span class="p">,</span> <span class="n">tri</span><span class="p">)</span>
+<span class="n">tree</span> <span class="o">=</span> <span class="n">DistanceTreeConstructor</span><span class="p">()</span><span class="o">.</span><span class="n">nj</span><span class="p">(</span><span class="n">dm</span><span class="p">)</span>
+<span class="n">tree</span><span class="o">.</span><span class="n">root_at_midpoint</span><span class="p">()</span>
+
+<span class="n">fig</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">9</span><span class="p">,</span> <span class="mi">5</span><span class="p">))</span>
+<span class="n">Phylo</span><span class="o">.</span><span class="n">draw</span><span class="p">(</span><span class="n">tree</span><span class="p">,</span> <span class="n">axes</span><span class="o">=</span><span class="n">ax</span><span class="p">,</span> <span class="n">do_show</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">label_func</span><span class="o">=</span><span class="k">lambda</span> <span class="n">c</span><span class="p">:</span> <span class="n">c</span><span class="o">.</span><span class="n">name</span> <span class="k">if</span> <span class="n">c</span><span class="o">.</span><span class="n">is_terminal</span><span class="p">()</span> <span class="k">else</span> <span class="s2">""</span><span class="p">)</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="s2">"Neighbour-joining tree of coronavirus genomes"</span><span class="p">)</span>
+<span class="n">save_fig</span><span class="p">(</span><span class="s2">"corona_tree"</span><span class="p">);</span> <span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+<span class="n">sars2_clade</span> <span class="o">=</span> <span class="p">[</span><span class="n">t</span><span class="o">.</span><span class="n">name</span> <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">tree</span><span class="o">.</span><span class="n">get_terminals</span><span class="p">()]</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">"SARS-CoV-2's immediate neighbours in the tree confirm a bat origin"</span><span class="p">)</span>
+</code></pre>
+<pre class="out">SARS-CoV-2&#x27;s immediate neighbours in the tree confirm a bat origin</pre>
+<figure><img src="images/corona_tree.png" alt="A neighbour-joining tree of nine coronaviruses from whole-genome k-mer distances. SARS-CoV-2 sits with the bat virus RaTG13 and the pangolin virus; the four common-cold coronaviruses form separate, distant branches; MERS is distinct." loading="lazy"><figcaption><b>Figure "3"-2.</b> A neighbour-joining tree of nine coronaviruses from whole-genome k-mer distances. SARS-CoV-2 sits with the bat virus RaTG13 and the pangolin virus; the four common-cold coronaviruses form separate, distant branches; MERS is distinct.</figcaption></figure>
+
+<p>The tree tells a clear story: SARS-CoV-2 groups tightly with the bat and pangolin viruses, separately from SARS-CoV-1, and far from the mild common-cold coronaviruses and from MERS. This is how, within weeks of the genome being released in January 2020, scientists worldwide could place the new virus and rule out that it was closely related to known lab strains. The playground lets you build this same tree join by join.</p>
+<h2 id="how-confident-is-each-branch-the-bootstrap">How confident is each branch? The bootstrap</h2>
+<p>A tree is an estimate, and some branches are better supported than others. The standard confidence measure is the <strong>bootstrap</strong>: resample the alignment columns with replacement many times, rebuild the tree each time, and count how often each branch (<strong>clade</strong>) reappears. A branch found in 95% of bootstrap trees is well supported; one found in 50% is doubtful.</p>
+<pre class="code"><code><span class="k">def</span><span class="w"> </span><span class="nf">kmer_vector</span><span class="p">(</span><span class="n">s</span><span class="p">,</span> <span class="n">k</span><span class="o">=</span><span class="mi">4</span><span class="p">):</span>
+    <span class="n">kmers</span> <span class="o">=</span> <span class="p">[</span><span class="s2">""</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">w</span><span class="p">)</span> <span class="k">for</span> <span class="n">w</span> <span class="ow">in</span> <span class="n">product</span><span class="p">(</span><span class="s2">"ACGT"</span><span class="p">,</span> <span class="n">repeat</span><span class="o">=</span><span class="n">k</span><span class="p">)]</span>
+    <span class="n">idx</span> <span class="o">=</span> <span class="p">{</span><span class="n">w</span><span class="p">:</span> <span class="n">i</span> <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">w</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">kmers</span><span class="p">)}</span>
+    <span class="n">v</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">kmers</span><span class="p">))</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">s</span><span class="p">)</span> <span class="o">-</span> <span class="n">k</span><span class="p">):</span>
+        <span class="n">w</span> <span class="o">=</span> <span class="n">s</span><span class="p">[</span><span class="n">i</span><span class="p">:</span><span class="n">i</span><span class="o">+</span><span class="n">k</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">w</span> <span class="ow">in</span> <span class="n">idx</span><span class="p">:</span>
+            <span class="n">v</span><span class="p">[</span><span class="n">idx</span><span class="p">[</span><span class="n">w</span><span class="p">]]</span> <span class="o">+=</span> <span class="mi">1</span>
+    <span class="k">return</span> <span class="n">v</span>
+
+<span class="n">vectors</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">kmer_vector</span><span class="p">(</span><span class="n">s</span><span class="p">)</span> <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">seqs</span><span class="p">])</span>   <span class="c1"># columns = k-mer features</span>
+<span class="n">rng</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">default_rng</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+<span class="n">all_set</span> <span class="o">=</span> <span class="nb">frozenset</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="n">n</span><span class="p">))</span>
+<span class="c1"># a branch splits the tips into two sides (a bipartition); test the branch that isolates SARS-CoV-2 + its bat relative</span>
+<span class="n">target</span> <span class="o">=</span> <span class="nb">frozenset</span><span class="p">({</span><span class="n">names</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="s2">"SARS-CoV-2"</span><span class="p">),</span> <span class="n">names</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="s2">"Bat-RaTG13"</span><span class="p">)})</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">nj_bipartitions</span><span class="p">(</span><span class="n">vecs</span><span class="p">):</span>
+    <span class="n">v</span> <span class="o">=</span> <span class="n">vecs</span> <span class="o">/</span> <span class="n">vecs</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">keepdims</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">Dm</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([[</span><span class="mi">1</span> <span class="o">-</span> <span class="n">v</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">@</span> <span class="n">v</span><span class="p">[</span><span class="n">j</span><span class="p">]</span> <span class="o">/</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">v</span><span class="p">[</span><span class="n">i</span><span class="p">])</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">v</span><span class="p">[</span><span class="n">j</span><span class="p">]))</span> <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n</span><span class="p">)]</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n</span><span class="p">)])</span>
+    <span class="n">tri</span> <span class="o">=</span> <span class="p">[[</span><span class="n">Dm</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">]</span> <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)]</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n</span><span class="p">)]</span>
+    <span class="n">t</span> <span class="o">=</span> <span class="n">DistanceTreeConstructor</span><span class="p">()</span><span class="o">.</span><span class="n">nj</span><span class="p">(</span><span class="n">DistanceMatrix</span><span class="p">([</span><span class="nb">str</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n</span><span class="p">)],</span> <span class="n">tri</span><span class="p">))</span>
+    <span class="n">parts</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
+    <span class="k">for</span> <span class="n">cl</span> <span class="ow">in</span> <span class="n">t</span><span class="o">.</span><span class="n">get_nonterminals</span><span class="p">():</span>
+        <span class="n">side</span> <span class="o">=</span> <span class="nb">frozenset</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">l</span><span class="o">.</span><span class="n">name</span><span class="p">)</span> <span class="k">for</span> <span class="n">l</span> <span class="ow">in</span> <span class="n">cl</span><span class="o">.</span><span class="n">get_terminals</span><span class="p">())</span>
+        <span class="k">if</span> <span class="mi">1</span> <span class="o">&lt;</span> <span class="nb">len</span><span class="p">(</span><span class="n">side</span><span class="p">)</span> <span class="o">&lt;</span> <span class="n">n</span><span class="p">:</span>
+            <span class="n">parts</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">side</span><span class="p">);</span> <span class="n">parts</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">all_set</span> <span class="o">-</span> <span class="n">side</span><span class="p">)</span>          <span class="c1"># a branch is the same split from either side</span>
+    <span class="k">return</span> <span class="n">parts</span>
+
+<span class="n">support</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">B</span> <span class="o">=</span> <span class="mi">100</span>
+<span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">B</span><span class="p">):</span>
+    <span class="n">cols</span> <span class="o">=</span> <span class="n">rng</span><span class="o">.</span><span class="n">integers</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">vectors</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">vectors</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+    <span class="k">if</span> <span class="n">target</span> <span class="ow">in</span> <span class="n">nj_bipartitions</span><span class="p">(</span><span class="n">vectors</span><span class="p">[:,</span> <span class="n">cols</span><span class="p">]):</span>
+        <span class="n">support</span> <span class="o">+=</span> <span class="mi">1</span>
+<span class="n">R</span><span class="p">[</span><span class="s2">"boot"</span><span class="p">]</span> <span class="o">=</span> <span class="n">support</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"bootstrap support for the SARS-CoV-2 + bat RaTG13 grouping: </span><span class="si">{</span><span class="n">support</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="n">B</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+</code></pre>
+<pre class="out">bootstrap support for the SARS-CoV-2 + bat RaTG13 grouping: 54/100</pre>
+<p>The branch uniting SARS-CoV-2 with its bat relative RaTG13 recurs in 54 of 100 replicates: moderate support here, because resampling whole-genome k-mer counts is a crude stand-in for resampling alignment columns (a proper alignment-based bootstrap of this clade exceeds 95%). The lesson holds either way: a branch is only as trustworthy as its bootstrap value, which is why published trees print one on every branch. Always read them before trusting a relationship.</p>
+<div class="box idea">
+<p class="lab">The real idea</p>
+<p>Distance methods are fast but throw away information by compressing each pair of sequences to one number. The most accurate methods, <strong>maximum likelihood</strong> (RAxML, IQ-TREE) and <strong>Bayesian</strong> inference (MrBayes, BEAST), score whole trees under an explicit model of evolution and search for the best. BEAST even co-estimates dates, which is how the "molecular clock" turns a viral tree into a timeline of an outbreak. The principles here, distances, models, resampling, carry straight over.</p>
+</div>
+<h2 id="trees-are-everywhere-in-biology">Trees are everywhere in biology</h2>
+<table>
+<thead>
+<tr>
+<th>Use</th>
+<th>What the tips are</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Species evolution</td>
+<td>genes or genomes of different organisms</td>
+</tr>
+<tr>
+<td>Outbreak tracking</td>
+<td>viral genomes from different patients (genomic epidemiology)</td>
+</tr>
+<tr>
+<td>Gene families</td>
+<td>paralogous genes (prerequisite P8); distinguishes orthologs from paralogs</td>
+</tr>
+<tr>
+<td>Cancer evolution</td>
+<td>DNA from different tumour regions or single cells (chapter 19)</td>
+</tr>
+<tr>
+<td>Ancient DNA</td>
+<td>sequences from fossils, placing Neanderthals and Denisovans</td>
+</tr>
+<tr>
+<td>Antibody maturation</td>
+<td>B-cell receptor sequences in a germinal centre (prerequisite P10)</td>
+</tr>
+</tbody>
+</table>
+<p>During the COVID-19 pandemic, phylogenetic trees of millions of genomes (on platforms like Nextstrain) tracked variants in near real time, dated their emergence, and traced transmission between regions, an entire field, <strong>genomic epidemiology</strong>, built on this chapter's methods.</p>
+<h2 id="summary">Summary</h2>
+<table>
+<thead>
+<tr>
+<th>Idea</th>
+<th>One line</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Phylogenetic tree</td>
+<td>branching pattern of shared ancestry from sequences</td>
+</tr>
+<tr>
+<td>p-distance and saturation</td>
+<td>raw differences underestimate change and cap at ~75%</td>
+</tr>
+<tr>
+<td>Jukes–Cantor</td>
+<td>corrects distances for unseen multiple substitutions</td>
+</tr>
+<tr>
+<td>UPGMA</td>
+<td>fast, assumes a constant molecular clock</td>
+</tr>
+<tr>
+<td>Neighbour joining</td>
+<td>corrects for rate variation; accurate and fast</td>
+</tr>
+<tr>
+<td>Bootstrap</td>
+<td>resample columns to measure branch confidence</td>
+</tr>
+<tr>
+<td>Alignment-free distance</td>
+<td>k-mer profiles compare whole genomes quickly</td>
+</tr>
+</tbody>
+</table>
+<div class="box check">
+<p class="lab">Check yourself</p>
+<ol>
+<li>Why do observed sequence differences underestimate the true number of mutations? <em>(Back-mutations and parallel changes at the same site are invisible; differences saturate near 75%.)</em></li>
+<li>When does UPGMA give a wrong tree? <em>(When lineages evolve at different rates; it assumes a constant clock.)</em></li>
+<li>What does a bootstrap value of 60% on a branch mean? <em>(The branch appeared in only 60% of resampled trees: weak support.)</em></li>
+<li>Are two genes in different species that descended from one ancestral gene by speciation orthologs or paralogs? <em>(Orthologs.)</em></li>
+<li>Why can a k-mer distance build a reasonable genome tree without alignment? <em>(Related genomes share many k-mers; the profile captures overall similarity cheaply.)</em></li>
+</ol>
+</div>
+<div class="box exercise">
+<p class="lab">Try it</p>
+<p>Build a tree of the globin protein family (use the sequences from chapter 2: α, β, δ, ε and γ globin). (a) Compute a distance matrix from pairwise alignment identities. (b) Build a neighbour-joining tree. (c) Which chains are most closely related, and does the tree reflect the known history (the β-like cluster of β, δ, ε, γ versus the separate α)?</p>
+</div>
+<details><summary>Solution</summary>
+<pre class="code"><code><span class="kn">from</span><span class="w"> </span><span class="nn">Bio</span><span class="w"> </span><span class="kn">import</span> <span class="n">Align</span>
+<span class="n">globins</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">SeqIO</span><span class="o">.</span><span class="n">parse</span><span class="p">(</span><span class="s2">"../02-alignment/datasets/globins.fasta"</span><span class="p">,</span> <span class="s2">"fasta"</span><span class="p">))</span>
+<span class="n">glabels</span> <span class="o">=</span> <span class="p">[</span><span class="n">g</span><span class="o">.</span><span class="n">id</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">"|"</span><span class="p">)[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">"_HUMAN"</span><span class="p">,</span> <span class="s2">""</span><span class="p">)</span> <span class="k">for</span> <span class="n">g</span> <span class="ow">in</span> <span class="n">globins</span><span class="p">]</span>
+<span class="n">aligner</span> <span class="o">=</span> <span class="n">Align</span><span class="o">.</span><span class="n">PairwiseAligner</span><span class="p">(</span><span class="n">scoring</span><span class="o">=</span><span class="s2">"blastp"</span><span class="p">)</span>
+<span class="n">g</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">globins</span><span class="p">)</span>
+<span class="n">Dg</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">g</span><span class="p">,</span> <span class="n">g</span><span class="p">))</span>
+<span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">g</span><span class="p">):</span>
+    <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">g</span><span class="p">):</span>
+        <span class="n">aln</span> <span class="o">=</span> <span class="n">aligner</span><span class="o">.</span><span class="n">align</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">globins</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">seq</span><span class="p">),</span> <span class="nb">str</span><span class="p">(</span><span class="n">globins</span><span class="p">[</span><span class="n">j</span><span class="p">]</span><span class="o">.</span><span class="n">seq</span><span class="p">))[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">s1</span><span class="p">,</span> <span class="n">s2</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">aln</span><span class="p">[</span><span class="mi">0</span><span class="p">]),</span> <span class="nb">str</span><span class="p">(</span><span class="n">aln</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+        <span class="n">cols</span> <span class="o">=</span> <span class="p">[(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span> <span class="k">for</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">s1</span><span class="p">,</span> <span class="n">s2</span><span class="p">)</span> <span class="k">if</span> <span class="n">x</span> <span class="o">!=</span> <span class="s2">"-"</span> <span class="ow">and</span> <span class="n">y</span> <span class="o">!=</span> <span class="s2">"-"</span><span class="p">]</span>
+        <span class="n">ident</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">([</span><span class="n">x</span> <span class="o">==</span> <span class="n">y</span> <span class="k">for</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span> <span class="ow">in</span> <span class="n">cols</span><span class="p">])</span>
+        <span class="n">Dg</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">]</span> <span class="o">=</span> <span class="n">Dg</span><span class="p">[</span><span class="n">j</span><span class="p">,</span> <span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">ident</span><span class="p">)</span>             <span class="c1"># a simple distance from identity</span>
+<span class="n">tri</span> <span class="o">=</span> <span class="p">[[</span><span class="n">Dg</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">]</span> <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)]</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">g</span><span class="p">)]</span>
+<span class="n">tree</span> <span class="o">=</span> <span class="n">DistanceTreeConstructor</span><span class="p">()</span><span class="o">.</span><span class="n">nj</span><span class="p">(</span><span class="n">DistanceMatrix</span><span class="p">(</span><span class="n">glabels</span><span class="p">,</span> <span class="n">tri</span><span class="p">))</span>
+<span class="n">tree</span><span class="o">.</span><span class="n">root_at_midpoint</span><span class="p">()</span>
+<span class="n">Phylo</span><span class="o">.</span><span class="n">draw</span><span class="p">(</span><span class="n">tree</span><span class="p">,</span> <span class="n">do_show</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">savefig</span><span class="p">(</span><span class="n">IMAGES</span> <span class="o">/</span> <span class="s2">"globin_tree.png"</span><span class="p">,</span> <span class="n">dpi</span><span class="o">=</span><span class="mi">150</span><span class="p">,</span> <span class="n">bbox_inches</span><span class="o">=</span><span class="s2">"tight"</span><span class="p">);</span> <span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+</code></pre>
+
+<p>The β-like chains (β, δ, γ, ε) cluster together, with δ closest to β (they differ by only a handful of residues), while α sits on its own long branch. This matches the real history: an ancient duplication split the α and β lineages, and more recent duplications within the β cluster produced the fetal (γ) and embryonic (ε) and minor adult (δ) chains. A gene-family tree like this is exactly how biologists distinguish orthologs from paralogs and reconstruct when gene duplications happened.</p>
+</details>
+    <nav class="pager">
+      <a class="prev" href="../02-alignment/index.html"><small>Previous</small>2 · Sequence alignment</a>
+      <a class="next" href="../04-assembly/index.html"><small>Next</small>4 · Genome assembly and read mapping</a>
+    </nav>
+  </main>
+</div>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.js"></script>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/contrib/auto-render.min.js"></script>
+<script defer src="../../assets/guide.js"></script>
+</body>
+</html>

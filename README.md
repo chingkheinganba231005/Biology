@@ -32,9 +32,9 @@ Biological sequences as data: reading genomes, aligning sequences, building evol
 |---|---|---|
 | 1 | [Sequences as data](bioinformatics/01-sequences/) | FASTA, GC content, k-mers, reading frames and gene finding in a real virus genome. |
 | 2 | [Sequence alignment from scratch](bioinformatics/02-alignment/) | Dynamic programming, Needleman–Wunsch and Smith–Waterman, substitution matrices, and how BLAST searches billions of letters. |
-| 3 | Phylogenetics: trees of life *(coming)* | Evolutionary distances, UPGMA and neighbour joining, and a tree of real viral genomes. |
-| 4 | Genome assembly and read mapping *(coming)* | Sequencing reads, quality scores, de Bruijn graph assembly and fast read mapping with k-mer indexes. |
-| 5 | Variants and population genomics *(coming)* | Calling variants, allele frequencies, Hardy–Weinberg, linkage and a genome-wide association study. |
+| 3 | [Phylogenetics: trees of life](bioinformatics/03-phylogenetics/) | Evolutionary distances, UPGMA and neighbour joining, and a tree of real viral genomes. |
+| 4 | [Genome assembly and read mapping](bioinformatics/04-assembly/) | Sequencing reads, quality scores, de Bruijn graph assembly and fast read mapping with k-mer indexes. |
+| 5 | [Variants and population genomics](bioinformatics/05-variants/) | Calling variants, allele frequencies, Hardy–Weinberg, linkage and a genome-wide association study. |
 
 ## Part 2 · Omics and machine learning
 

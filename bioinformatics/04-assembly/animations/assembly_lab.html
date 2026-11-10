@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Assembly Lab</title><link rel="stylesheet" href="../../../assets/pg.css">
+<style>.node circle{fill:var(--soft);stroke:var(--accent);stroke-width:2}.node text{font:11px "JetBrains Mono",monospace;fill:var(--ink)}
+.seqout{font:13px/1.7 "JetBrains Mono",monospace;background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:8px;word-break:break-all;margin-top:6px}</style></head><body>
+<div class="tabs"><button class="on" data-t="db" type="button">Assemble reads (de Bruijn graph)</button><button data-t="map" type="button">Map reads to a reference</button></div>
+<section class="pane on" id="db">
+  <div class="row"><label>target text <input id="txt" type="text" value="TOBEORNOTTOBE" style="flex:1;min-width:200px"></label><label>k <select id="k"><option>3</option><option selected>4</option><option>5</option></select></label></div>
+  <div class="ctl" id="dctl"></div>
+  <svg id="dbsvg" viewBox="0 0 700 300" role="img" aria-label="de Bruijn graph of k-mers"></svg>
+  <div class="seqout" id="dbout"></div>
+  <div class="msg" id="dbmsg"></div>
+</section>
+<section class="pane" id="map">
+  <div class="ctl" id="mctl"></div>
+  <div class="row"><button class="pri" type="button" id="go">Sequence and map</button></div>
+  <svg id="mapsvg" viewBox="0 0 700 260" role="img" aria-label="Reads piled up on a reference with a variant"></svg>
+  <div class="msg" id="mmsg"></div>
+</section>
+<script src="../../../assets/pg.js"></script>
+<script>
+const {$, h, s, tabs, slider, plot, rng} = PG; tabs();
+// ---------- de Bruijn
+const cov = slider("read coverage (copies of each k-1 overlap)", 1, 5, 1, 1, (v) => v + "×", drawDB);
+$("dctl").append(cov.el);
+function drawDB() {
+  const text = ($("txt").value.toUpperCase().replace(/[^A-Z]/g, "") || "TOBEORNOTTOBE"), k = +$("k").value;
+  // nodes = (k-1)-mers, edges = k-mers
+  const edges = [], nodeSet = new Map();
+  for (let i = 0; i + k <= text.length; i++) { const km = text.slice(i, i + k), a = km.slice(0, k - 1), b = km.slice(1); edges.push([a, b, km]); [a, b].forEach((x) => { if (!nodeSet.has(x)) nodeSet.set(x, nodeSet.size); }); }
+  const nodes = [...nodeSet.keys()];
+  // position nodes along a line in first-seen order
+  const parts = [], N = nodes.length, perRow = Math.ceil(Math.sqrt(N) * 1.6);
+  const pos = {};
+  nodes.forEach((nd, i) => { const col = i % perRow, row = Math.floor(i / perRow); pos[nd] = [50 + col * (620 / Math.max(perRow - 1, 1)), 50 + row * 90]; });
+  // edges with multiplicity
+  const emult = {}; edges.forEach(([a, b, km]) => { const key = a + ">" + b; emult[key] = (emult[key] || 0) + 1; });
+  const drawn = new Set();
+  edges.forEach(([a, b]) => { const key = a + ">" + b; if (drawn.has(key)) return; drawn.add(key); const [x1, y1] = pos[a], [x2, y2] = pos[b]; const mid = emult[key] > 1; parts.push(s("line", {x1, y1, x2, y2, stroke: mid ? "var(--accent2)" : "var(--muted)", "stroke-width": mid ? 3 : 1.5, "marker-end": "url(#a)"})); });
+  parts.unshift(s("defs", null, s("marker", {id: "a", viewBox: "0 0 10 10", refX: 16, refY: 5, markerWidth: 7, markerHeight: 7, orient: "auto"}, s("path", {d: "M0 0L10 5L0 10z", fill: "var(--muted)"}))));
+  nodes.forEach((nd) => { const [x, y] = pos[nd]; parts.push(s("g", {class: "node"}, s("circle", {cx: x, cy: y, r: 15}), s("text", {x, y: y + 4, "text-anchor": "middle"}, nd))); });
+  $("dbsvg").replaceChildren(...parts);
+  // Eulerian-ish reconstruction: greedy walk
+  const adj = {}; edges.forEach(([a, b]) => { (adj[a] = adj[a] || []).push(b); });
+  const indeg = {}, outdeg = {}; edges.forEach(([a, b]) => { outdeg[a] = (outdeg[a] || 0) + 1; indeg[b] = (indeg[b] || 0) + 1; });
+  let start = nodes.find((nd) => (outdeg[nd] || 0) - (indeg[nd] || 0) === 1) || nodes[0];
+  const g = JSON.parse(JSON.stringify(adj)); let walk = [start], path = [];
+  const stack = [start];
+  while (stack.length) { const v = stack[stack.length - 1]; if (g[v] && g[v].length) { stack.push(g[v].pop()); } else { path.push(stack.pop()); } }
+  path.reverse();
+  let recon = path.length ? path[0] : "";
+  for (let i = 1; i < path.length; i++) recon += path[i].slice(-1);
+  $("dbout").innerHTML = `reconstructed: <b>${recon}</b>`;
+  const uniqueKmers = new Set(edges.map((e) => e[2])).size;
+  const repeat = text.length - uniqueKmers - (k - 1) > 0;
+  $("dbmsg").innerHTML = `Every ${k}-letter window of the text becomes an edge between two (${k - 1})-letter nodes. To <b>assemble</b>, walk the graph using each edge once (an Eulerian path) and read off the overlapping nodes. ` +
+    (recon === text ? "The walk <b>recovers the original text exactly</b>." : `The walk gives <b>${recon.length === text.length ? "a sequence of the right length but reordered" : "an ambiguous result"}</b>: ${uniqueKmers < text.length - k + 1 ? "a repeated " + k + "-mer creates a loop the graph can't resolve, so the assembly is ambiguous. Increase k until the repeat is spanned, and the text reconstructs." : "try a different k."}`) +
+    ` This is how real assemblers (SPAdes, Velvet) stitch millions of short reads into a genome: repeats longer than k are the central difficulty, which is why longer reads make assembly easier.`;
+}
+$("txt").addEventListener("input", drawDB); $("k").onchange = drawDB;
+drawDB();
+// ---------- read mapping + variant calling
+const depth = slider("sequencing depth", 5, 60, 5, 20, (v) => v + "×", null);
+const err = slider("per-base error rate", 0, 0.1, 0.005, 0.01, (v) => (100 * v).toFixed(1) + "%", null);
+const vaf = slider("true variant allele fraction", 0, 1, 0.05, 0.5, (v) => (100 * v).toFixed(0) + "%", null);
+$("mctl").append(depth.el, err.el, vaf.el);
+const r = rng(5);
+function drawMap() {
+  const refLen = 60, varpos = 30, L = 14, parts = [];
+  const ref = Array.from({length: refLen}, () => "ACGT"[Math.floor(r() * 4)]);
+  const X = (i) => 20 + i * (660 / refLen);
+  // reference track
+  ref.forEach((b, i) => parts.push(s("text", {x: X(i) + 2, y: 30, class: "mono", style: "font-size:11px;fill:var(--muted)"}, b)));
+  parts.push(s("text", {x: 20, y: 16, class: "lb"}, "reference"));
+  parts.push(s("rect", {x: X(varpos), y: 20, width: 660 / refLen, height: 215, fill: "var(--accent2)", opacity: 0.12}));
+  // reads
+  const nReads = depth.value, ry = 42, rh = Math.min(11, 190 / nReads);
+  let altCount = 0, totCount = 0;
+  for (let k2 = 0; k2 < nReads; k2++) {
+    const start = Math.floor(r() * (refLen - L)), isAlt = r() < vaf.value;
+    const y = ry + k2 * rh;
+    for (let i = start; i < start + L; i++) {
+      let base = ref[i]; let mism = false;
+      if (i === varpos && isAlt) { base = "G" === ref[i] ? "T" : "G"; mism = true; }
+      if (r() < err.value) { base = "ACGT"[Math.floor(r() * 4)]; mism = base !== ref[i]; }
+      if (i === varpos) { totCount++; if (base !== ref[i]) altCount++; }
+      parts.push(s("rect", {x: X(i), y, width: 660 / refLen - 0.5, height: rh - 0.5, fill: mism || base !== ref[i] ? "var(--accent2)" : "var(--accent)", opacity: 0.8}));
+    }
+  }
+  $("mapsvg").replaceChildren(...parts);
+  const obsVaf = totCount ? altCount / totCount : 0;
+  $("mmsg").innerHTML = `Short <b>reads</b> (blue) are aligned to the <b>reference</b>; each covers part of it. To call a <b>variant</b> at a position, count how many reads disagree with the reference there (pink column). ` +
+    `At the marked site, <b>${altCount}/${totCount}</b> reads carry the alternate base (observed allele fraction ${(100 * obsVaf).toFixed(0)}%). ` +
+    `A real variant shows a consistent column of mismatches; scattered single mismatches are sequencing <b>errors</b>. Raise the error rate and watch false mismatches appear, then raise the depth and see how averaging over many reads still pins down the true ${(100 * vaf.value).toFixed(0)}% variant. This is the basis of chapter 5.`;
+}
+$("go").onclick = drawMap;
+drawMap();
+</script></body></html>

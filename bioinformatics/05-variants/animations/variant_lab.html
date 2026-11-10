@@ -1,0 +1,104 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Variant Lab</title><link rel="stylesheet" href="../../../assets/pg.css"></head><body>
+<div class="tabs"><button class="on" data-t="hw" type="button">Allele frequencies and populations</button><button data-t="gwas" type="button">Run a GWAS (Manhattan plot)</button></div>
+<section class="pane on" id="hw">
+  <div class="row"><label>real SNP <select id="snp"></select></label></div>
+  <svg id="hwsvg" viewBox="0 0 700 230" role="img" aria-label="Genotype frequencies and population allele frequencies"></svg>
+  <div class="ctl" id="hctl"></div>
+  <div class="msg" id="hmsg"></div>
+</section>
+<section class="pane" id="gwas">
+  <div class="ctl" id="gctl"></div>
+  <div class="row"><button class="pri" type="button" id="run">New study</button><label><input type="checkbox" id="strat"> add hidden population structure</label></div>
+  <svg id="gsvg" viewBox="0 0 700 260" role="img" aria-label="Manhattan plot of association p-values"></svg>
+  <div class="msg" id="gmsg"></div>
+</section>
+<script src="../../../assets/pg.js"></script>
+<script src="snps.js"></script>
+<script>
+const {$, h, s, tabs, slider, plot, rng} = PG; tabs();
+Object.keys(SNPS).forEach((rs) => $("snp").append(h("option", {value: rs}, rs + " (" + SNPS[rs].gene + ")")));
+const q = slider("minor-allele frequency q", 0, 0.5, 0.01, 0.1, (v) => v.toFixed(2), drawHW);
+$("hctl").append(q.el);
+let lockSNP = null;
+function drawHW() {
+  const rs = $("snp").value, info = SNPS[rs], parts = [];
+  const qq = lockSNP === rs ? q.value : (q.value);
+  const p = 1 - qq, geno = [["homozygous major", p * p, "var(--accent)"], ["heterozygous (carrier)", 2 * p * qq, "var(--c)"], ["homozygous minor", qq * qq, "var(--accent2)"]];
+  // genotype bar
+  let x = 20; const W = 420;
+  geno.forEach(([lab, f, c]) => { const w = W * f; parts.push(s("rect", {x, y: 30, width: Math.max(w, 1), height: 34, fill: c})); if (w > 40) parts.push(s("text", {x: x + w / 2, y: 51, class: "tx", "text-anchor": "middle", style: "fill:#fff"}, (100 * f).toFixed(0) + "%")); x += w; });
+  parts.push(s("text", {x: 20, y: 22, class: "lb"}, `Hardy–Weinberg genotypes at q = ${qq.toFixed(2)}`));
+  geno.forEach(([lab, f, c], i) => { parts.push(s("rect", {x: 20 + i * 155, y: 78, width: 10, height: 10, fill: c}), s("text", {x: 34 + i * 155, y: 87, class: "tx"}, lab)); });
+  // population frequencies (real data)
+  const pops = info.pops, names = Object.keys(pops), maxf = Math.max(...names.map((n) => pops[n]), 0.05);
+  parts.push(s("text", {x: 20, y: 122, class: "lb"}, `Real ${rs} minor-allele frequency by population (1000 Genomes)`));
+  names.forEach((nm, i) => { const bx = 30 + i * 120, bh = 70 * pops[nm] / maxf; parts.push(s("rect", {x: bx, y: 200 - bh, width: 60, height: bh, fill: "var(--accent2)"}), s("text", {x: bx + 30, y: 214, class: "tx", "text-anchor": "middle"}, nm), s("text", {x: bx + 30, y: 196 - bh, class: "tx", "text-anchor": "middle"}, (100 * pops[nm]).toFixed(1) + "%")); });
+  $("hwsvg").replaceChildren(...parts);
+  $("hmsg").innerHTML = `<b>${rs}</b> in <b>${info.gene}</b>: ${info.desc}. Under <b>Hardy–Weinberg equilibrium</b>, an allele of frequency q gives genotypes p², 2pq, q². At q = ${qq.toFixed(2)}, about <b>${(100 * 2 * p * qq).toFixed(0)}%</b> of people are carriers but only <b>${(100 * qq * qq).toFixed(1)}%</b> carry two copies. ` +
+    `The real frequency varies enormously between populations (bars): ${info.gene.includes("E6V") ? "the sickle allele reaches 10% in African populations, where it protects against malaria, and is near zero elsewhere (prerequisite P8)." : "allele frequencies differ across ancestries, which is why genetic studies must account for ancestry."} Set q with the slider to explore the genotype proportions.`;
+}
+$("snp").onchange = () => { lockSNP = null; drawHW(); };
+q.input.addEventListener("input", () => { lockSNP = $("snp").value; });
+drawHW();
+// ---------- GWAS
+const nsnp = 400, causal = 160;
+const samp = slider("sample size (people)", 200, 5000, 100, 1000, (v) => v.toLocaleString(), null);
+const effect = slider("true effect size of the causal SNP", 0, 1.5, 0.05, 0.5, (v) => v.toFixed(2), null);
+$("gctl").append(samp.el, effect.el);
+const r = rng(9);
+function normcdf(z) { return 0.5 * (1 + erf(z / Math.SQRT2)); }
+function erf(x) { const t = 1 / (1 + 0.3275911 * Math.abs(x)); const y = 1 - (((((1.061405429 * t - 1.453152027) * t) + 1.421413741) * t - 0.284496736) * t + 0.254829592) * t * Math.exp(-x * x); return x >= 0 ? y : -y; }
+function run() {
+  const N = samp.value, strat = $("strat").checked;
+  // two subpopulations; causal SNP has effect; a different SNP (300) differs in freq between pops (confounder)
+  const group = Array.from({length: N}, () => r() < 0.5 ? 0 : 1);
+  const freqs = Array.from({length: nsnp}, (_, j) => 0.1 + 0.4 * r());
+  const logp = [];
+  for (let j = 0; j < nsnp; j++) {
+    // genotype 0/1/2
+    let f0 = freqs[j], f1 = freqs[j];
+    if (j === 300) { f0 = 0.2; f1 = 0.6; }                      // this SNP's frequency differs between groups
+    const g = [], y = [];
+    for (let i = 0; i < N; i++) {
+      const f = group[i] ? f1 : f0;
+      const gi = (r() < f ? 1 : 0) + (r() < f ? 1 : 0); g.push(gi);
+    }
+    // phenotype: causal SNP effect + population effect (if strat) + noise
+    const yv = g.map((gi, i) => (j === causal ? effect.value * gi : 0) + (strat ? 0 : 0));
+    // build phenotype once using the causal SNP and population
+    logp.push(null);
+    g._ = { g, f0, f1 };
+    freqs[j] = freqs[j]; // noop
+    logp[j] = { g };
+  }
+  // build the real phenotype from causal genotype + population confounder
+  const gc = logp[causal].g;
+  const pheno = [];
+  for (let i = 0; i < N; i++) pheno.push(effect.value * gc[i] + (strat ? 1.2 * group[i] : 0) + r.normal());
+  // association test: correlation t-test of each SNP's genotype with phenotype
+  const my = pheno.reduce((a, b) => a + b, 0) / N;
+  const results = [];
+  for (let j = 0; j < nsnp; j++) {
+    const g = logp[j].g, mg = g.reduce((a, b) => a + b, 0) / N;
+    let sxy = 0, sxx = 0, syy = 0;
+    for (let i = 0; i < N; i++) { const dx = g[i] - mg, dy = pheno[i] - my; sxy += dx * dy; sxx += dx * dx; syy += dy * dy; }
+    const rcorr = sxy / Math.sqrt(sxx * syy || 1);
+    const tstat = Math.abs(rcorr) * Math.sqrt((N - 2) / Math.max(1 - rcorr * rcorr, 1e-9));
+    const pval = 2 * (1 - normcdf(tstat));
+    results.push(Math.min(50, -Math.log10(Math.max(pval, 1e-50))));
+  }
+  const thr = -Math.log10(0.05 / nsnp);
+  const {X, Y} = plot($("gsvg"), [{xs: results.map((_, i) => i), ys: results, color: "var(--accent)", dots: true, r: 2.5}], {ymin: 0, ymax: Math.max(10, Math.max(...results) * 1.1), xmin: 0, xmax: nsnp, xlabel: "SNP position along the genome", ylabel: "−log10 p-value"});
+  $("gsvg").append(s("line", {x1: X(0), x2: X(nsnp), y1: Y(thr), y2: Y(thr), stroke: "var(--accent2)", "stroke-dasharray": "4 3"}), s("text", {x: X(nsnp) - 4, y: Y(thr) - 5, class: "tx", "text-anchor": "end", style: "fill:var(--accent2)"}, "genome-wide significance"));
+  $("gsvg").append(s("circle", {cx: X(causal), cy: Y(results[causal]), r: 5, fill: "none", stroke: "var(--g)", "stroke-width": 2}));
+  const hits = results.map((v, i) => [v, i]).filter(([v]) => v > thr);
+  $("gmsg").innerHTML = `Each dot is one of ${nsnp} SNPs tested for association with the trait; the <b>causal SNP</b> is circled. The peak rises above the <b>significance line</b> (corrected for testing ${nsnp} SNPs: 0.05/${nsnp}) when the sample is large enough and the effect strong enough: with ${N.toLocaleString()} people and effect ${effect.value.toFixed(2)}, <b>${hits.length}</b> SNP(s) are significant. ` +
+    ($("strat").checked ? "<b>Hidden population structure is ON:</b> a SNP whose frequency differs between the two groups (near position 300) now also looks associated, because ancestry affects both the SNP and the trait. This <b>confounding</b> produces false hits, the classic GWAS pitfall, fixed by correcting for ancestry (principal components)." : "Turn on hidden population structure to see how ancestry creates false associations. Raise the sample size to see the true peak grow.");
+}
+$("run").onclick = run;
+["input", "change"].forEach((e) => { samp.input.addEventListener(e, run); effect.input.addEventListener(e, run); });
+$("strat").onchange = run;
+run();
+</script></body></html>

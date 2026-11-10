@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Tree Lab</title><link rel="stylesheet" href="../../../assets/pg.css">
+<style>table.dm{border-collapse:collapse;font:12px "JetBrains Mono",monospace;margin:6px 0}
+table.dm td{padding:3px 7px;text-align:center;border:1px solid var(--line)}table.dm td.hd{background:var(--soft);color:var(--accent);font-weight:700}
+table.dm td.min{background:color-mix(in srgb,var(--accent2) 30%,transparent);font-weight:700}</style></head><body>
+<div class="tabs"><button class="on" data-t="build" type="button">Build a tree step by step</button><button data-t="clock" type="button">Molecular clock and saturation</button></div>
+<section class="pane on" id="build">
+  <div class="row"><label>data <select id="preset"></select></label><label>method <select id="meth"><option value="upgma">UPGMA</option><option value="nj">neighbour joining</option></select></label></div>
+  <div class="row"><button class="pri" type="button" id="step">Join closest pair ▶</button><button type="button" id="reset">Restart</button><span class="tx" id="cnt"></span></div>
+  <div style="display:flex;gap:16px;flex-wrap:wrap"><div id="dm"></div><svg id="tsvg" viewBox="0 0 430 300" role="img" aria-label="Tree being built" style="flex:1;min-width:280px"></svg></div>
+  <div class="msg" id="bmsg"></div>
+</section>
+<section class="pane" id="clock">
+  <div class="ctl" id="cctl"></div>
+  <svg id="csvg" viewBox="0 0 700 280" role="img" aria-label="Observed vs real distance"></svg>
+  <div class="msg" id="cmsg"></div>
+</section>
+<script src="../../../assets/pg.js"></script>
+<script src="dists.js"></script>
+<script>
+const {$, h, s, tabs, slider, plot} = PG; tabs();
+let data, labels, D, nodes, joins, heights;
+Object.keys(DATA).forEach((k) => $("preset").append(h("option", {value: k}, k)));
+function reset() {
+  const d = DATA[$("preset").value]; labels = d.labels.slice();
+  D = d.matrix.map((r) => r.slice()); nodes = labels.map((l, i) => ({name: l, x: 0, y: 0, h: 0, leaf: true, id: i, size: 1}));
+  joins = []; render();
+}
+function closestPair(method) {
+  const n = D.length; let bi = 0, bj = 1, best = Infinity;
+  if (method === "upgma") {
+    for (let i = 0; i < n; i++) for (let j = i + 1; j < n; j++) if (D[i][j] < best) { best = D[i][j]; bi = i; bj = j; }
+  } else {
+    const r = D.map((row) => row.reduce((a, b) => a + b, 0));
+    for (let i = 0; i < n; i++) for (let j = i + 1; j < n; j++) { const q = (n - 2) * D[i][j] - r[i] - r[j]; if (q < best) { best = q; bi = i; bj = j; } }
+  }
+  return [bi, bj];
+}
+function step() {
+  if (D.length <= 1) return;
+  const method = $("meth").value, [i, j] = closestPair(method), d = D[i][j];
+  const h0 = method === "upgma" ? d / 2 : Math.max(nodes[i].h, nodes[j].h) + d / 2;
+  const nn = {name: "", leaf: false, h: h0, left: nodes[i], right: nodes[j], size: nodes[i].size + nodes[j].size};
+  // new distance row
+  const n = D.length, nd = [];
+  for (let k = 0; k < n; k++) if (k !== i && k !== j) {
+    nd.push(method === "upgma" ? (D[i][k] * nodes[i].size + D[j][k] * nodes[j].size) / nn.size : (D[i][k] + D[j][k] - d) / 2);
+  }
+  const keep = [];
+  for (let k = 0; k < n; k++) if (k !== i && k !== j) keep.push(k);
+  const newD = [];
+  keep.forEach((a, ai) => { const row = []; keep.forEach((b, bi) => row.push(D[a][b])); row.push(nd[ai]); newD.push(row); });
+  newD.push([...nd, 0]);
+  D = newD; nodes = keep.map((k) => nodes[k]).concat([nn]);
+  joins.push(nn); render();
+}
+function layout(root) {
+  let leaf = 0; const assign = (nd) => { if (nd.leaf) { nd.y = leaf++; } else { assign(nd.left); assign(nd.right); nd.y = (nd.left.y + nd.right.y) / 2; } };
+  assign(root); return leaf;
+}
+function render() {
+  // distance matrix
+  const method = $("meth").value, pair = D.length > 1 ? closestPair(method) : [-1, -1];
+  const tbl = h("table", {class: "dm"});
+  tbl.append(h("tr", null, h("td", {class: "hd"}, ""), ...nodes.map((nd) => h("td", {class: "hd"}, nd.leaf ? nd.name.slice(0, 6) : "•"))));
+  for (let i = 0; i < D.length; i++) {
+    const tr = h("tr", null, h("td", {class: "hd"}, nodes[i].leaf ? nodes[i].name.slice(0, 6) : "•"));
+    for (let j = 0; j < D.length; j++) tr.append(h("td", {class: (i === pair[0] && j === pair[1]) || (i === pair[1] && j === pair[0]) ? "min" : ""}, i === j ? "–" : D[i][j].toFixed(2)));
+    tbl.append(tr);
+  }
+  $("dm").replaceChildren(tbl);
+  // tree (draw whatever roots exist)
+  const roots = nodes.slice(); let totLeaves = 0; roots.forEach((r) => totLeaves += layoutCount(r));
+  const parts = []; let yoff = 0; const maxh = Math.max(...joins.map((j) => j.h), 0.01);
+  const X = (hh) => 250 - 230 * hh / (maxh * 1.1), YH = 300 / (totLeaves + 1);
+  let yc = 0;
+  const draw = (nd, depth) => {
+    if (nd.leaf) { nd.px = X(0); nd.py = (++yc) * YH; parts.push(s("text", {x: X(0) + 4, y: nd.py + 4, class: "lb"}, nd.name)); return; }
+    draw(nd.left, depth + 1); draw(nd.right, depth + 1);
+    nd.py = (nd.left.py + nd.right.py) / 2; nd.px = X(nd.h);
+    [nd.left, nd.right].forEach((c) => { parts.push(s("path", {d: `M${nd.px} ${nd.py} L${nd.px} ${c.py} L${c.px} ${c.py}`, fill: "none", stroke: "var(--accent)", "stroke-width": 2})); });
+  };
+  roots.forEach((r) => draw(r, 0));
+  $("tsvg").replaceChildren(...parts);
+  $("cnt").textContent = `${nodes.length} group${nodes.length > 1 ? "s" : ""} left`;
+  $("bmsg").innerHTML = (nodes.length > 1 ?
+    `Find the <b>closest pair</b> in the distance matrix (highlighted), join them into a new group, then recompute distances from that group to all the rest. Repeat until one tree remains. ` :
+    `Done: a single tree. `) +
+    `<b>UPGMA</b> joins the closest pair and places the node at half their distance, assuming a constant molecular clock (all tips line up). <b>Neighbour joining</b> corrects for lineages that evolve at different rates, so its branch lengths can differ, usually giving more accurate trees. Switch method and rebuild to compare.`;
+}
+function layoutCount(nd) { return nd.leaf ? 1 : layoutCount(nd.left) + layoutCount(nd.right); }
+$("preset").onchange = reset; $("meth").onchange = reset;
+$("step").onclick = step; $("reset").onclick = reset;
+reset();
+// ---------- molecular clock: Jukes-Cantor saturation
+const rate = slider("substitutions per site per million years", 0.001, 0.05, 0.001, 0.01, (v) => v.toFixed(3), drawClock);
+$("cctl").append(rate.el);
+function drawClock() {
+  const ts = []; for (let t = 0; t <= 200; t += 2) ts.push(t);
+  const real = ts.map((t) => rate.value * t);                     // true substitutions per site
+  const obs = real.map((d) => 0.75 * (1 - Math.exp(-4 / 3 * d))); // Jukes-Cantor: observed differences saturate at 0.75
+  plot($("csvg"), [{xs: ts, ys: real.map((v) => Math.min(v, 1)), color: "var(--accent2)", label: "true changes (unseen)"}, {xs: ts, ys: obs, color: "var(--accent)", label: "observed % different"}], {ymin: 0, ymax: 1, xmin: 0, xmax: 200, xlabel: "time since common ancestor (million years)", ylabel: "distance per site"});
+  $("csvg").append(s("line", {x1: 48, x2: 688, y1: 14 + (280 - 14 - 34) * (1 - 0.75), y2: 14 + (280 - 14 - 34) * (1 - 0.75), stroke: "var(--muted)", "stroke-dasharray": "3 3"}));
+  $("cmsg").innerHTML = `Mutations accumulate at a roughly steady rate (the <b>molecular clock</b>), so sequence distance measures time. But each site has only 4 letters, so as time passes a site can mutate <b>back</b> to a previous base or to the same base twice: the <b>observed</b> fraction of differences (purple) lags the true number of changes (pink) and <b>saturates near 75%</b> (random DNA). ` +
+    `The <b>Jukes–Cantor correction</b> d = −¾ ln(1 − 4p/3) turns observed differences p back into true distance, which is why phylogenetics corrects distances before building trees. Beyond saturation, DNA is too diverged to align reliably and slower-evolving proteins are used instead.`;
+}
+drawClock();
+</script></body></html>
