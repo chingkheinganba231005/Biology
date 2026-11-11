@@ -57,7 +57,7 @@ Molecules in 3D, physics-based simulation and the computational side of finding 
 | 11 | [Protein structure](drug-discovery/11-structure/) | PDB files, coordinates, contacts, RMSD and superposition, binding pockets and AlphaFold confidence. |
 | 12 | [Molecular dynamics from scratch](drug-discovery/12-molecular-dynamics/) | Force fields, Verlet integration, temperature, and a toy protein that folds on a lattice. |
 | 13 | [Cheminformatics](drug-discovery/13-cheminformatics/) | Molecules as graphs: SMILES, descriptors, fingerprints, drug-likeness and similarity search with RDKit. |
-| 14 | QSAR and virtual screening *(coming)* | Predicting activity against a cancer target from real ChEMBL data, with honest scaffold splits. |
+| 14 | [QSAR and virtual screening](drug-discovery/14-qsar/) | Predicting activity against a cancer target from real ChEMBL data, with honest scaffold splits. |
 | 15 | Docking and binding *(coming)* | Scoring functions, a docking search from scratch, and what binding free energy means. |
 | 16 | Pharmacokinetics and dosing *(coming)* | Compartment models, half-life, dosing regimens and dose–response, as differential equations. |
 

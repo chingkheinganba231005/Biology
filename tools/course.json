@@ -234,7 +234,7 @@
           "n": "14",
           "title": "QSAR and virtual screening",
           "path": "drug-discovery/14-qsar/",
-          "ready": false,
+          "ready": true,
           "kind": "Project",
           "desc": "Predicting activity against a cancer target from real ChEMBL data, with honest scaffold splits."
         },

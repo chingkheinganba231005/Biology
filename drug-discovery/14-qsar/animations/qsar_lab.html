@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>QSAR Lab</title><link rel="stylesheet" href="../../../assets/pg.css"></head><body>
+<div class="tabs"><button class="on" data-t="pred" type="button">Predicted vs measured activity</button><button data-t="enrich" type="button">Virtual screening enrichment</button></div>
+<section class="pane on" id="pred">
+  <svg id="psvg" viewBox="0 0 440 400" role="img" aria-label="Predicted vs measured pIC50" style="max-width:460px"></svg>
+  <div class="msg" id="pmsg"></div>
+</section>
+<section class="pane" id="enrich">
+  <div class="ctl" id="ectl"></div>
+  <svg id="esvg" viewBox="0 0 560 360" role="img" aria-label="Enrichment curve"></svg>
+  <div class="msg" id="emsg"></div>
+</section>
+<script src="../../../assets/pg.js"></script>
+<script src="qsar.js"></script>
+<script>
+const {$, h, s, tabs, slider} = PG; tabs();
+function drawPred() {
+  const d = QSAR.scatter, parts = [], lo = 2, hi = 11;
+  const X = (v) => 50 + 360 * (v - lo) / (hi - lo), Y = (v) => 360 - 340 * (v - lo) / (hi - lo);
+  parts.push(s("line", {x1: X(lo), y1: Y(lo), x2: X(hi), y2: Y(hi), stroke: "var(--muted)", "stroke-dasharray": "4 3"}));
+  d.forEach(([a, p]) => parts.push(s("circle", {cx: X(a), cy: Y(p), r: 3, fill: "var(--accent)", opacity: 0.5})));
+  [4, 6, 8, 10].forEach((v) => { parts.push(s("text", {x: X(v), y: 378, class: "tx", "text-anchor": "middle"}, v)); parts.push(s("text", {x: 40, y: Y(v) + 3, class: "tx", "text-anchor": "end"}, v)); });
+  parts.push(s("text", {x: 230, y: 396, class: "tx", "text-anchor": "middle"}, "measured pIC50 (higher = more potent)"));
+  parts.push(s("text", {x: 14, y: 190, class: "tx", "text-anchor": "middle", transform: "rotate(-90 14 190)"}, "predicted pIC50"));
+  $("psvg").replaceChildren(...parts);
+  $("pmsg").innerHTML = `Each dot is one of ${QSAR.n} real <b>EGFR inhibitors</b> (from ChEMBL). The model, a random forest on Morgan fingerprints, was trained on other molecules and here predicts the <b>potency</b> (pIC50 = −log of IC50) of each held-out molecule. ` +
+    `Dots near the diagonal are well predicted; the cross-validated <b>R² is ${QSAR.r2}</b>. This is a real <b>QSAR</b> (quantitative structure–activity relationship) model: it learns, from structure alone, how potent a molecule will be against the target, before anyone makes it. It is imperfect (activity cliffs and novel scaffolds are hard), but good enough to prioritise which molecules to test.`;
+}
+drawPred();
+const frac = slider("fraction of the library you can afford to test", 0.05, 1, 0.05, 0.1, (v) => (100 * v).toFixed(0) + "%", drawEnrich);
+$("ectl").append(frac.el);
+function drawEnrich() {
+  const e = QSAR.enrichment, parts = [];
+  const X = (v) => 50 + 480 * v, Y = (v) => 320 - 290 * v;
+  // random baseline
+  parts.push(s("line", {x1: X(0), y1: Y(0), x2: X(1), y2: Y(1), stroke: "var(--muted)", "stroke-dasharray": "4 3"}));
+  parts.push(s("polyline", {points: e.map(([x, y]) => X(x) + "," + Y(y)).join(" "), fill: "none", stroke: "var(--accent)", "stroke-width": 2.5}));
+  // marker at chosen fraction
+  const f = frac.value, pt = e.reduce((best, p) => Math.abs(p[0] - f) < Math.abs(best[0] - f) ? p : best, e[0]);
+  parts.push(s("line", {x1: X(f), y1: 30, x2: X(f), y2: 320, stroke: "var(--accent2)", "stroke-dasharray": "2 3"}));
+  parts.push(s("circle", {cx: X(pt[0]), cy: Y(pt[1]), r: 5, fill: "var(--accent2)"}));
+  [0, 0.25, 0.5, 0.75, 1].forEach((v) => { parts.push(s("text", {x: X(v), y: 338, class: "tx", "text-anchor": "middle"}, (100 * v) + "%")); parts.push(s("text", {x: 44, y: Y(v) + 3, class: "tx", "text-anchor": "end"}, (100 * v) + "%")); });
+  parts.push(s("text", {x: 290, y: 356, class: "tx", "text-anchor": "middle"}, "% of library tested (ranked by the model)"));
+  parts.push(s("text", {x: 14, y: 175, class: "tx", "text-anchor": "middle", transform: "rotate(-90 14 175)"}, "% of active drugs found"));
+  $("esvg").replaceChildren(...parts);
+  $("emsg").innerHTML = `A QSAR model earns its keep in <b>virtual screening</b>: rank a huge library by predicted potency and test only the top slice. The curve shows what fraction of the truly active molecules you recover as you test down the ranked list. ` +
+    `Testing the top <b>${(100 * f).toFixed(0)}%</b> recovers <b>${(100 * pt[1]).toFixed(0)}%</b> of all actives, versus ${(100 * f).toFixed(0)}% if you tested at random (dashed line). That multiple is the <b>enrichment</b>, the whole point: find most of the good molecules while testing a small fraction, saving enormous time and money. Real screens apply this to libraries of millions or billions of molecules no lab could test directly.`;
+}
+drawEnrich();
+</script></body></html>
